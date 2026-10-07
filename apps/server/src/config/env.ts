@@ -10,7 +10,7 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().int().min(0).max(65_535).default(4000),
+  API_PORT: z.coerce.number().int().min(0).max(65_535).default(4000),
   MONGODB_URI: z
     .string()
     .trim()

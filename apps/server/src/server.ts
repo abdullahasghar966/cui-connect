@@ -34,7 +34,7 @@ export async function startServer(options: StartOptions): Promise<RunningServer>
   if (options.resetSeed) {
     const summary = await seedDatabase();
     logger.info(summary, 'Database reset with demo data');
-  } else if (options.autoSeed && (await User.estimatedDocumentCount()) === 0) {
+  } else if (options.autoSeed && !(await User.exists({}))) {
     const summary = await seedDatabase();
     logger.info(summary, 'Empty database: demo data seeded');
   }

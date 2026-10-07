@@ -7,7 +7,7 @@ const mongo = await resolveMongo({ waitForEmbedded: process.argv.includes('--wai
 logger.info(`MongoDB: ${mongo.mode === 'external' ? 'MONGODB_URI' : `embedded (${mongo.uri})`}`);
 
 const server = await startServer({
-  port: env.PORT,
+  port: env.API_PORT,
   mongoUri: mongo.uri,
   dbName: env.MONGO_DB_NAME,
   autoSeed: env.AUTO_SEED,
