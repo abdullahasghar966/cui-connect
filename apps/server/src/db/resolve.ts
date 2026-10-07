@@ -1,7 +1,12 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { env } from '../config/env';
 import { logger } from '../lib/logger';
-import { embeddedMongoUri, isMongoReachable, startEmbeddedMongo } from './embedded';
+import {
+  EMBEDDED_DB_PATH,
+  embeddedMongoUri,
+  isMongoReachable,
+  startEmbeddedMongo,
+} from './embedded';
 
 export interface MongoTarget {
   uri: string;
@@ -33,7 +38,7 @@ export async function resolveMongo({ waitForEmbedded = false } = {}): Promise<Mo
     throw new Error(`Embedded MongoDB did not become reachable at ${uri}`);
   }
 
-  logger.info('Starting embedded MongoDB (data in .data/mongo)...');
+  logger.info(`Starting embedded MongoDB (data in ${EMBEDDED_DB_PATH})...`);
   const server = await startEmbeddedMongo();
   return {
     uri,

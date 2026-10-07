@@ -7,7 +7,7 @@
     "db": "tsx src/db/embedded-cli.ts",
     "dev": "tsx watch --clear-screen=false src/index.ts --wait-for-db",
     "build": "tsdown",
-    "start": "node dist/index.js",
+    "start": "node dist/index.mjs",
     "seed": "tsx src/seed/cli.ts",
     "typecheck": "tsc -p tsconfig.json"
   },

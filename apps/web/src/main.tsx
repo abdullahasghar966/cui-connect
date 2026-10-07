@@ -23,7 +23,7 @@ const queryClient = new QueryClient({
 
 function ThemedToaster() {
   const theme = useTheme((s) => s.preference);
-  return <Toaster theme={theme} position="top-right" richColors closeButton />;
+  return <Toaster theme={theme} position="top-center" richColors closeButton />;
 }
 
 const root = document.getElementById('root');

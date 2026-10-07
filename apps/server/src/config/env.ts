@@ -18,6 +18,8 @@ const schema = z.object({
     .transform((v) => v || undefined),
   MONGO_DB_NAME: z.string().trim().min(1).default('cui_connect'),
   EMBEDDED_MONGO_PORT: z.coerce.number().int().min(1).max(65_535).default(27019),
+  /** Folder (relative to the repo root) where the embedded MongoDB keeps its data. */
+  EMBEDDED_MONGO_DIR: z.string().trim().min(1).default('.data/mongo'),
   JWT_SECRET: z
     .string()
     .trim()

@@ -3,9 +3,9 @@ import path from 'node:path';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { env } from '../config/env';
-import { DATA_DIR } from '../config/paths';
+import { REPO_ROOT } from '../config/paths';
 
-export const EMBEDDED_DB_PATH = path.join(DATA_DIR, 'mongo');
+export const EMBEDDED_DB_PATH = path.resolve(REPO_ROOT, env.EMBEDDED_MONGO_DIR);
 
 export function embeddedMongoUri(port = env.EMBEDDED_MONGO_PORT): string {
   return `mongodb://127.0.0.1:${port}/`;

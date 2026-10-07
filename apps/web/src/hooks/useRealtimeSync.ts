@@ -149,7 +149,9 @@ export function useRealtimeSync(): void {
       const { groupId, ...patch } = update;
       const before = findGroup(qc, groupId);
       patchGroup(qc, groupId, patch);
-      if (before && patch.settings && patch.settings.locked !== before.settings.locked) {
+      // Members are told when posting opens/closes; moderators can see the button they used.
+      const member = before?.myRole === 'member';
+      if (member && patch.settings && patch.settings.locked !== before.settings.locked) {
         toast.info(
           patch.settings.locked
             ? `${before.name} is now announcement-only`

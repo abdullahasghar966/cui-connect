@@ -29,7 +29,14 @@ export function closeSocket(): void {
 }
 
 export function connectAdminSocket(): AdminSocket {
-  return io('/admin', { withCredentials: true, transports: ['websocket', 'polling'] });
+  const admin: AdminSocket = io('/admin', {
+    withCredentials: true,
+    transports: ['websocket', 'polling'],
+  });
+  // `/admin` is multiplexed over the main connection's Manager, which is created with
+  // autoConnect: false, so the namespace has to be connected explicitly.
+  admin.connect();
+  return admin;
 }
 
 export const ACK_TIMEOUT_MS = 8000;

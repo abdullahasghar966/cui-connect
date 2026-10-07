@@ -58,7 +58,7 @@ adminRouter.get('/overview', async (_req, res) => {
     Group.aggregate<{ _id: GroupDoc['type']; n: number }>([
       { $group: { _id: '$type', n: { $sum: 1 } } },
     ]),
-    Message.estimatedDocumentCount(),
+    Message.countDocuments(),
   ]);
   const users = Object.fromEntries(ROLES.map((r) => [r, 0])) as Record<Role, number>;
   for (const row of userCounts) users[row._id] = row.n;

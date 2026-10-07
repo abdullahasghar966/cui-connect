@@ -74,7 +74,9 @@ export function createApp() {
     );
     app.use(express.static(WEB_DIST_DIR, { index: false }));
     app.use((req, res, next) => {
-      if (req.method !== 'GET' || req.path.startsWith('/socket.io')) return next();
+      if ((req.method !== 'GET' && req.method !== 'HEAD') || req.path.startsWith('/socket.io')) {
+        return next();
+      }
       res.sendFile(indexHtml);
     });
   }
