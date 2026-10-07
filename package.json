@@ -1,0 +1,42 @@
+{
+  "name": "cui-connect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CUI Connect: real-time communication system for COMSATS University Islamabad (Socket.IO)",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n db,api,web -c gray,blue,green \"npm:dev:db\" \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:db": "npm run db -w @cui/server",
+    "dev:api": "npm run dev -w @cui/server",
+    "dev:web": "npm run dev -w @cui/web",
+    "build": "npm run build -w @cui/web && npm run build -w @cui/server",
+    "start": "npm run start -w @cui/server",
+    "seed": "npm run seed -w @cui/server",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "biome check .",
+    "format": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^5.0.3",
+    "concurrently": "^10.0.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "mongodb-memory-server@11.3.0": true
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "@cui/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db": "tsx src/db/embedded-cli.ts",
+    "dev": "tsx watch --clear-screen=false src/index.ts --wait-for-db",
+    "build": "tsdown",
+    "start": "node dist/index.js",
+    "seed": "tsx src/seed/cli.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@node-rs/argon2": "^2.2.2",
+    "compression": "^1.8.2",
+    "cookie": "^2.0.1",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "jose": "^6.2.12",
+    "mongodb-memory-server": "^11.3.0",
+    "mongoose": "^9.11.0",
+    "pino": "^10.4.0",
+    "pino-pretty": "^13.2.0",
+    "socket.io": "^4.8.4",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
+    "@types/supertest": "^7.2.1",
+    "socket.io-client": "^4.8.4",
+    "supertest": "^7.3.1",
+    "tsdown": "^0.23.0",
+    "tsx": "^4.23.15"
+  }
+}
