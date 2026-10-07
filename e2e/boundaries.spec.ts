@@ -102,13 +102,11 @@ test('the server blocks a crafted post and the admin sees it live', async ({
     forceNew: true,
     extraHeaders: { cookie: `cui_session=${session?.value}` },
   });
-  const result = await socket
-    .timeout(5_000)
-    .emitWithAck('message:send', {
-      groupId: campus.id,
-      body: 'Tomorrow is a holiday!',
-      clientId: `e2e-${Date.now()}`,
-    });
+  const result = await socket.timeout(5_000).emitWithAck('message:send', {
+    groupId: campus.id,
+    body: 'Tomorrow is a holiday!',
+    clientId: `e2e-${Date.now()}`,
+  });
   socket.disconnect();
 
   expect(result).toMatchObject({ ok: false, code: 'FORBIDDEN' });
