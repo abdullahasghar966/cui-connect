@@ -40,6 +40,8 @@ test('capture documentation screenshots', async ({ browser, person, baseURL }) =
   await imran.screenshot({ path: shot('chat-instructor') });
 
   await openConversation(hira, 'CS Department Notices');
+  await expect(hira.locator('.group\\/message').first()).toBeVisible();
+  await hira.waitForTimeout(300);
   await hira.screenshot({ path: shot('announcement-read-only') });
 
   await imran.getByRole('button', { name: 'Lock group' }).click();
@@ -82,5 +84,7 @@ test('capture documentation screenshots', async ({ browser, person, baseURL }) =
 
   const dark = await person(PEOPLE.hira, { viewport: DESKTOP, colorScheme: 'dark' });
   await openConversation(dark, 'BCS-7A Class');
+  await expect(dark.locator('.group\\/message').first()).toBeVisible();
+  await dark.waitForTimeout(300);
   await dark.screenshot({ path: shot('chat-dark') });
 });
