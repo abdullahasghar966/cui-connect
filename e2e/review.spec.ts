@@ -2,7 +2,7 @@
  * Visual review of every screen (light, dark, mobile). Skipped in normal E2E runs:
  *   $env:REVIEW_DIR='<folder>'; npx playwright test e2e/review.spec.ts
  */
-import { expect, openConversation, PEOPLE, test } from './fixtures';
+import { composer, expect, openConversation, PEOPLE, test } from './fixtures';
 
 const dir = process.env.REVIEW_DIR;
 test.skip(!dir, 'Set REVIEW_DIR to capture review screenshots');
@@ -30,7 +30,12 @@ test('review: desktop light', async ({ browser, person }) => {
   await hira.waitForTimeout(400);
   await hira.screenshot({ path: shot('03-channel') });
 
-  const row = hira.locator('.group\\/message', { hasText: 'Is the Socket.IO assignment due' });
+  // Authors can only delete their own messages for 15 minutes, so post a fresh one to get the menu.
+  const fresh = 'Could someone share the lab slides from today?';
+  await composer(hira).fill(fresh);
+  await composer(hira).press('Enter');
+  const row = hira.locator('.group\\/message', { hasText: fresh });
+  await expect(row).toBeVisible();
   await row.hover();
   await hira.waitForTimeout(150);
   await hira.screenshot({ path: shot('04-hover') });
