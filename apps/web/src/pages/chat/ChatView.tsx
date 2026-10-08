@@ -2,7 +2,6 @@ import {
   canLeave,
   canModerate,
   describePostPolicy,
-  GROUP_TYPE_LABELS,
   type GroupDTO,
   toPolicyGroup,
   toPolicyMembership,
@@ -16,9 +15,7 @@ import {
   Lock,
   LockOpen,
   Megaphone,
-  MessageCircle,
   SearchX,
-  ShieldCheck,
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -26,8 +23,7 @@ import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
 import { EmptyState, Spinner } from '@/components/feedback';
 import { GroupIcon } from '@/components/group-meta';
-import { Avatar, RoleBadge, roleLabel } from '@/components/people';
-import { Badge } from '@/components/ui/badge';
+import { Avatar, RoleBadge } from '@/components/people';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,31 +32,71 @@ import {
   DropdownMenuTrigger,
   Tooltip,
 } from '@/components/ui/menu';
-import { useCurrentUser, useGroup, useGroups } from '@/hooks/queries';
+import { useCurrentUser, useGroup, useGroups, useMembers } from '@/hooks/queries';
 import { patchGroup, removeGroup } from '@/lib/cache';
 import { ACK_TIMEOUT_MS, getSocket, withAck } from '@/lib/socket';
+import { cn } from '@/lib/utils';
 import { useRealtime } from '@/state/realtime';
 import { Composer } from './Composer';
 import { MembersPanel } from './MembersPanel';
 import { MessageList } from './MessageList';
 
-function PolicyBadge({ group }: { group: GroupDTO }) {
-  const text = describePostPolicy(group);
+/** Who may post here, shown like a channel topic under the name. */
+function PolicyLine({ group }: { group: GroupDTO }) {
   const restricted = group.settings.locked || group.settings.postPolicy !== 'all';
-  const Icon = group.settings.locked
-    ? Lock
-    : group.type === 'DIRECT'
-      ? ShieldCheck
-      : restricted
-        ? Megaphone
-        : MessageCircle;
+  const Icon = group.settings.locked ? Lock : restricted ? Megaphone : null;
   return (
-    <Tooltip content={group.description ?? text}>
-      <span>
-        <Badge tone={group.settings.locked ? 'warning' : restricted ? 'primary' : 'neutral'}>
-          <Icon aria-hidden /> {text}
-        </Badge>
+    <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
+      {Icon && <Icon className="size-3.5 shrink-0" aria-hidden />}
+      <span className={cn('shrink-0', group.settings.locked && 'font-semibold text-warning')}>
+        {describePostPolicy(group)}
       </span>
+      {group.description && (
+        <>
+          <span aria-hidden>·</span>
+          <span className="truncate">{group.description}</span>
+        </>
+      )}
+    </p>
+  );
+}
+
+function MembersButton({
+  group,
+  open,
+  onClick,
+}: {
+  group: GroupDTO;
+  open: boolean;
+  onClick: () => void;
+}) {
+  const { data: members } = useMembers(group.id);
+  const faces = members?.slice(0, 3) ?? [];
+  return (
+    <Tooltip content="View members">
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={open}
+        aria-label={`Members (${group.memberCount})`}
+        className={cn(
+          'flex h-8 items-center gap-1.5 rounded-md border border-border-strong pr-2.5 pl-1 transition-colors hover:bg-muted',
+          open && 'bg-muted',
+        )}
+      >
+        <span className="flex -space-x-1">
+          {faces.map((m) => (
+            <Avatar
+              key={m.user.id}
+              name={m.user.name}
+              size="xs"
+              className="rounded-[5px] ring-2 ring-surface"
+            />
+          ))}
+          {faces.length === 0 && <Users className="ml-1 size-4" aria-hidden />}
+        </span>
+        <span className="text-[13px] font-semibold tabular-nums">{group.memberCount}</span>
+      </button>
     </Tooltip>
   );
 }
@@ -106,39 +142,44 @@ function ChatHeader({
     else toast.error(res.message);
   };
 
-  const subtitle =
-    group.type === 'DIRECT' && group.peer
-      ? [
-          peerOnline ? 'Online' : roleLabel(group.peer),
-          group.peer.designation ?? group.peer.regNo ?? group.peer.departmentCode,
-        ]
-          .filter(Boolean)
-          .join(' · ')
-      : `${GROUP_TYPE_LABELS[group.type]} · ${group.memberCount} members`;
+  const isDirect = group.type === 'DIRECT' && !!group.peer;
 
   return (
-    <header className="flex items-center gap-3 border-b bg-surface px-3 py-2.5 sm:px-4">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
       <Link
         to="/chat"
-        className="-ml-1 inline-flex size-8 items-center justify-center rounded-lg hover:bg-muted md:hidden"
+        className="-ml-1.5 inline-flex size-8 items-center justify-center rounded-md hover:bg-muted md:hidden"
         aria-label="Back to conversations"
       >
         <ArrowLeft className="size-4" />
       </Link>
-      {group.type === 'DIRECT' && group.peer ? (
-        <Avatar name={group.peer.name} online={peerOnline} />
-      ) : (
-        <GroupIcon type={group.type} />
-      )}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h1 className="truncate text-[15px] font-semibold">{group.name}</h1>
+        <h1 className="flex min-w-0 items-center gap-1.5 text-[16.5px] leading-tight font-bold">
+          {isDirect && group.peer ? (
+            <Avatar name={group.peer.name} size="xs" online={peerOnline} />
+          ) : (
+            <GroupIcon
+              type={group.type}
+              settings={group.settings}
+              className="size-[17px] text-muted-foreground"
+            />
+          )}
+          <span className="truncate">{group.name}</span>
           {group.peer && <RoleBadge person={group.peer} showStudent />}
-        </div>
-        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
-      </div>
-      <div className="hidden lg:block">
-        <PolicyBadge group={group} />
+        </h1>
+        {isDirect && group.peer ? (
+          <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
+            {[
+              peerOnline ? 'Active now' : 'Away',
+              group.peer.designation ?? group.peer.regNo,
+              group.peer.departmentCode,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        ) : (
+          <PolicyLine group={group} />
+        )}
       </div>
       {lockable && (
         <Tooltip
@@ -149,8 +190,8 @@ function ChatHeader({
           }
         >
           <Button
-            variant="outline"
-            size="sm"
+            variant="secondary"
+            size="md"
             onClick={() => void toggleLock()}
             loading={busy}
             aria-label={group.settings.locked ? 'Unlock group' : 'Lock group'}
@@ -160,23 +201,11 @@ function ChatHeader({
           </Button>
         </Tooltip>
       )}
-      {group.type !== 'DIRECT' && (
-        <Tooltip content="Members">
-          <Button
-            variant={membersOpen ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={onToggleMembers}
-            aria-pressed={membersOpen}
-            aria-label={`Members (${group.memberCount})`}
-          >
-            <Users /> <span className="tabular-nums">{group.memberCount}</span>
-          </Button>
-        </Tooltip>
-      )}
+      {!isDirect && <MembersButton group={group} open={membersOpen} onClick={onToggleMembers} />}
       {leavable && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="More options">
+            <Button variant="ghost" size="icon" aria-label="More options">
               <Ellipsis />
             </Button>
           </DropdownMenuTrigger>
@@ -218,16 +247,13 @@ export function ChatView() {
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-1">
+    <div className="flex min-h-0 min-w-0 flex-1">
       <section className="flex min-w-0 flex-1 flex-col bg-background">
         <ChatHeader
           group={group}
           membersOpen={membersOpen}
           onToggleMembers={() => setMembersOpen((v) => !v)}
         />
-        <div className="border-b bg-surface-2 px-4 py-1.5 lg:hidden">
-          <PolicyBadge group={group} />
-        </div>
         <MessageList key={group.id} group={group} />
         <Composer key={`composer-${group.id}`} group={group} />
       </section>

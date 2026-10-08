@@ -22,21 +22,21 @@ export function DialogContent({
 }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" />
+      <DialogPrimitive.Overlay className="animate-in fixed inset-0 z-40 bg-black/50" />
       <DialogPrimitive.Content
         className={cn(
-          'animate-in fixed top-1/2 left-1/2 z-50 flex max-h-[88vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl border bg-surface shadow-2xl',
-          wide ? 'max-w-2xl' : 'max-w-md',
+          'dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border bg-surface shadow-[0_24px_64px_rgb(0_0_0/0.22)]',
+          wide ? 'max-w-2xl' : 'max-w-lg',
           className,
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b px-5 py-4">
-          <div>
-            <DialogPrimitive.Title className="text-base font-semibold">
+        <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-3">
+          <div className="min-w-0">
+            <DialogPrimitive.Title className="text-[19px] leading-tight font-bold">
               {title}
             </DialogPrimitive.Title>
             {description ? (
-              <DialogPrimitive.Description className="mt-1 text-sm text-muted-foreground">
+              <DialogPrimitive.Description className="mt-1.5 text-[13.5px] text-muted-foreground">
                 {description}
               </DialogPrimitive.Description>
             ) : (
@@ -44,13 +44,13 @@ export function DialogContent({
             )}
           </div>
           <DialogPrimitive.Close
-            className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="-mt-0.5 -mr-2 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label="Close"
           >
-            <X className="size-4" />
+            <X className="size-[18px]" />
           </DialogPrimitive.Close>
         </div>
-        <div className="scrollbar-thin overflow-y-auto px-5 py-4">{children}</div>
+        <div className="scrollbar-thin overflow-y-auto px-6 pb-6">{children}</div>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   );

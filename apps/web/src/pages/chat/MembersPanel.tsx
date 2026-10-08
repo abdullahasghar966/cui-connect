@@ -117,20 +117,20 @@ export function MembersPanel({ group, onClose }: { group: GroupDTO; onClose: () 
     return (
       <li
         key={member.user.id}
-        className="group/member flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-muted/60"
+        className="group/member flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-surface-2 has-[[data-state=open]]:bg-surface-2"
       >
         <Avatar name={member.user.name} size="sm" online={self || online.has(member.user.id)} />
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1.5 text-sm">
-            <span className="truncate font-medium">
+          <p className="flex items-center gap-1.5 text-[14px]">
+            <span className="truncate font-semibold">
               {member.user.name}
               {self && <span className="font-normal text-muted-foreground"> (you)</span>}
             </span>
             <RoleBadge person={member.user} />
           </p>
-          <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+          <p className="flex items-center gap-1.5 truncate text-[12.5px] text-muted-foreground">
             {member.role !== 'member' && (
-              <span className="inline-flex items-center gap-0.5 text-primary">
+              <span className="inline-flex items-center gap-0.5 font-medium text-primary dark:text-link">
                 <ShieldCheck className="size-3" aria-hidden />
                 {member.role === 'owner' ? 'Owner' : 'Moderator'}
               </span>
@@ -151,7 +151,7 @@ export function MembersPanel({ group, onClose }: { group: GroupDTO; onClose: () 
               <button
                 type="button"
                 aria-label={`Actions for ${member.user.name}`}
-                className="rounded-md p-1 text-muted-foreground opacity-0 group-hover/member:opacity-100 hover:bg-muted focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100"
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 group-hover/member:opacity-100 hover:bg-muted hover:text-foreground focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100"
               >
                 <Ellipsis className="size-4" />
               </button>
@@ -205,22 +205,22 @@ export function MembersPanel({ group, onClose }: { group: GroupDTO; onClose: () 
   };
 
   return (
-    <aside className="fixed inset-y-0 right-0 z-30 flex w-[min(20rem,100vw)] flex-col border-l bg-surface shadow-xl xl:static xl:z-auto xl:shadow-none">
-      <header className="flex items-center justify-between border-b px-4 py-3">
+    <aside className="fixed inset-y-0 right-0 z-30 flex w-[min(320px,100vw)] flex-col border-l bg-surface shadow-[0_0_40px_rgb(0_0_0/0.15)] xl:static xl:z-auto xl:shadow-none">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b px-4">
         <div>
-          <h2 className="text-sm font-semibold">Members</h2>
-          <p className="text-xs text-muted-foreground">
-            {group.memberCount} total · {onlineCount} online
+          <h2 className="text-[16px] leading-tight font-bold">Members</h2>
+          <p className="text-[12.5px] text-muted-foreground">
+            {group.memberCount} members · {onlineCount} active
           </p>
         </div>
-        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close members">
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close members">
           <X />
         </Button>
       </header>
       {group.description && (
-        <p className="border-b px-4 py-3 text-xs text-muted-foreground">{group.description}</p>
+        <p className="border-b px-4 py-3 text-[13px] text-muted-foreground">{group.description}</p>
       )}
-      <div className="scrollbar-thin flex-1 overflow-y-auto p-2">
+      <div className="scrollbar-thin flex-1 overflow-y-auto px-2 py-3">
         {isPending ? (
           <div className="flex justify-center py-6">
             <Spinner />
@@ -228,16 +228,16 @@ export function MembersPanel({ group, onClose }: { group: GroupDTO; onClose: () 
         ) : (
           <>
             {staff.length > 0 && (
-              <section>
-                <h3 className="px-2 pt-1 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                  Moderators · {staff.length}
+              <section className="mb-3">
+                <h3 className="px-2 pb-1 text-[12.5px] font-semibold text-muted-foreground">
+                  Moderators — {staff.length}
                 </h3>
                 <ul>{staff.map(renderMember)}</ul>
               </section>
             )}
-            <section className="mt-2">
-              <h3 className="px-2 pt-1 pb-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                Members · {regular.length}
+            <section>
+              <h3 className="px-2 pb-1 text-[12.5px] font-semibold text-muted-foreground">
+                Members — {regular.length}
               </h3>
               <ul>{regular.map(renderMember)}</ul>
             </section>

@@ -25,7 +25,7 @@ export async function signIn(page: Page, identifier: string) {
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/chat/);
-  await expect(page.getByText('Live', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('connection')).toHaveAttribute('data-state', 'connected');
 }
 
 type PersonFixture = (identifier: string, options?: BrowserContextOptions) => Promise<Page>;

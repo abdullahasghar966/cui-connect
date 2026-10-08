@@ -8,7 +8,7 @@ import type {
 import { cn } from '@/lib/utils';
 
 const fieldBase =
-  'w-full rounded-lg border bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/70 transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60';
+  'w-full rounded-md border border-border-strong bg-surface px-3 text-[14px] text-foreground placeholder:text-muted-foreground/80 transition-shadow focus:border-primary focus:outline-none focus:ring-[3px] focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60';
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(fieldBase, 'h-9', className)} {...props} />;
@@ -29,7 +29,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: callers pass htmlFor or nest the control
-    <label className={cn('text-xs font-medium text-muted-foreground', className)} {...props} />
+    <label className={cn('text-[13px] font-semibold text-foreground', className)} {...props} />
   );
 }
 
@@ -53,9 +53,9 @@ export function Field({
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
       {error ? (
-        <p className="text-xs text-danger">{error}</p>
+        <p className="text-[12.5px] text-danger">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+        <p className="text-[12.5px] text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   );
@@ -67,7 +67,7 @@ export function Checkbox({
   ...props
 }: InputHTMLAttributes<HTMLInputElement> & { label: ReactNode }) {
   return (
-    <label className={cn('inline-flex cursor-pointer items-center gap-2 text-sm', className)}>
+    <label className={cn('inline-flex cursor-pointer items-center gap-2 text-[13.5px]', className)}>
       <input type="checkbox" className="size-4 rounded accent-primary" {...props} />
       {label}
     </label>

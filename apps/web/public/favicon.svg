@@ -1,8 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>CUI Connect</title>
-  <rect width="64" height="64" rx="14" fill="#1d3a8a"/>
-  <path d="M18 22a6 6 0 0 1 6-6h16a6 6 0 0 1 6 6v12a6 6 0 0 1-6 6H30l-8 7v-7h-0a4 4 0 0 1-4-4V22z" fill="#fff"/>
-  <circle cx="26" cy="28" r="2.6" fill="#1d3a8a"/>
-  <circle cx="32" cy="28" r="2.6" fill="#1d3a8a"/>
-  <circle cx="38" cy="28" r="2.6" fill="#1d3a8a"/>
+  <rect width="64" height="64" rx="14" fill="#0E7B58"/>
+  <path d="M43 22.4A14.5 14.5 0 1 0 43 41.6" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="45" cy="32" r="4.2" fill="#fff"/>
 </svg>

@@ -1,10 +1,14 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* The platform UI font (Segoe UI on Windows, SF on macOS) */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -12,64 +16,97 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-soft: var(--primary-soft);
-  --color-accent: var(--accent);
+  --color-link: var(--link);
   --color-ring: var(--ring);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
-  --color-bubble-own: var(--bubble-own);
-  --color-bubble-own-foreground: var(--bubble-own-foreground);
+  --color-online: var(--online);
+  --color-new: var(--new);
+
+  /* The rail and sidebar stay dark in both themes */
+  --color-rail: var(--rail);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-badge: var(--sidebar-badge);
 }
 
-/* COMSATS navy palette */
 :root {
-  --background: #f5f7fb;
+  --background: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f9fafc;
-  --foreground: #0f172a;
-  --muted: #eef1f7;
-  --muted-foreground: #5b6476;
-  --border: #e2e6ef;
-  --primary: #1d3a8a;
+  --surface-2: #f7f7f8;
+  --foreground: #1d1f22;
+  --muted: #f0f1f2;
+  --muted-foreground: #62656a;
+  --border: #e2e3e5;
+  --border-strong: #c7c9cd;
+  --primary: #0e7b58;
+  --primary-hover: #0b694b;
   --primary-foreground: #ffffff;
-  --primary-soft: #e7edfb;
-  --accent: #eef2fd;
-  --ring: #3557c9;
-  --danger: #d4343a;
-  --danger-soft: #fdecec;
-  --success: #17915a;
-  --warning: #b86e00;
-  --warning-soft: #fdf3e2;
-  --bubble-own: #1d3a8a;
-  --bubble-own-foreground: #ffffff;
+  --primary-soft: #e7f3ee;
+  --link: #0b6e4f;
+  --ring: #0e7b58;
+  --danger: #c4322b;
+  --danger-soft: #fcecea;
+  --success: #12805a;
+  --warning: #8f5400;
+  --warning-soft: #fdf3e1;
+  --online: #2bac76;
+  --new: #d23b3b;
+
+  --rail: #121417;
+  --sidebar: #1b1d21;
+  --sidebar-foreground: #e8e9ea;
+  --sidebar-muted: #a6a9ad;
+  --sidebar-hover: rgb(255 255 255 / 0.07);
+  --sidebar-active: #0e7b58;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-badge: #1e9e6c;
   color-scheme: light;
 }
 
 .dark {
-  --background: #0a0f1d;
-  --surface: #111829;
-  --surface-2: #0e1424;
-  --foreground: #e6e9f2;
-  --muted: #19223a;
-  --muted-foreground: #97a1b7;
-  --border: #222c46;
-  --primary: #7b97ff;
-  --primary-foreground: #0a0f1d;
-  --primary-soft: #1a2448;
-  --accent: #172041;
-  --ring: #7b97ff;
-  --danger: #f06469;
-  --danger-soft: #3a1619;
-  --success: #3ccf8e;
-  --warning: #f0b14a;
-  --warning-soft: #3a2a10;
-  --bubble-own: #2f4fb8;
-  --bubble-own-foreground: #ffffff;
+  --background: #1a1d21;
+  --surface: #1f2226;
+  --surface-2: #23262a;
+  --foreground: #e3e4e6;
+  --muted: #2a2d32;
+  --muted-foreground: #a0a3a8;
+  --border: #32353a;
+  --border-strong: #464a50;
+  --primary: #12805c;
+  --primary-hover: #159169;
+  --primary-foreground: #ffffff;
+  --primary-soft: #17382d;
+  --link: #4fc79a;
+  --ring: #34b585;
+  --danger: #ef5d55;
+  --danger-soft: #3a1a19;
+  --success: #3cc28a;
+  --warning: #f0b04e;
+  --warning-soft: #392a13;
+  --online: #2bac76;
+  --new: #ef5d55;
+
+  --rail: #0e1012;
+  --sidebar: #15171a;
+  --sidebar-foreground: #e3e4e6;
+  --sidebar-muted: #9b9ea3;
+  --sidebar-hover: rgb(255 255 255 / 0.06);
+  --sidebar-active: #12805c;
+  --sidebar-border: rgb(255 255 255 / 0.07);
+  --sidebar-badge: #1e9e6c;
   color-scheme: dark;
 }
 
@@ -86,12 +123,17 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
   :focus-visible {
     outline: 2px solid var(--ring);
-    outline-offset: 2px;
+    outline-offset: 1px;
+  }
+  kbd {
+    font-family: var(--font-sans);
   }
 }
 
@@ -100,16 +142,30 @@
     scrollbar-width: thin;
     scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
   }
+  .scrollbar-dark {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+  }
 }
 
-@keyframes fade-in-up {
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+  }
+}
+
+/* Tailwind positions dialogs with the `translate` property, so only scale here. */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -118,16 +174,18 @@
   80%,
   100% {
     opacity: 0.25;
-    transform: translateY(0);
   }
   40% {
     opacity: 1;
-    transform: translateY(-2px);
   }
 }
 
 .animate-in {
-  animation: fade-in-up 160ms ease-out;
+  animation: fade-in 120ms ease-out;
+}
+
+.dialog-in {
+  animation: pop-in 140ms ease-out;
 }
 
 .typing-dot {
@@ -136,6 +194,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-in,
+  .dialog-in,
   .typing-dot {
     animation: none;
   }

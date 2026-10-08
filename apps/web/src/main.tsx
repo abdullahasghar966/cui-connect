@@ -23,7 +23,21 @@ const queryClient = new QueryClient({
 
 function ThemedToaster() {
   const theme = useTheme((s) => s.preference);
-  return <Toaster theme={theme} position="top-center" richColors closeButton />;
+  return (
+    <Toaster
+      theme={theme}
+      position="top-center"
+      closeButton
+      toastOptions={{
+        classNames: {
+          toast:
+            '!rounded-lg !border !border-border !bg-surface !text-foreground !shadow-[0_8px_28px_rgb(0_0_0/0.16)] !text-[13.5px]',
+          description: '!text-muted-foreground',
+          closeButton: '!border-border !bg-surface !text-muted-foreground',
+        },
+      }}
+    />
+  );
 }
 
 const root = document.getElementById('root');

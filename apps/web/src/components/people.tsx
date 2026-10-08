@@ -11,21 +11,41 @@ interface PersonLike {
 }
 
 const SIZES = {
-  xs: 'size-6 text-[10px]',
-  sm: 'size-8 text-xs',
-  md: 'size-9 text-[13px]',
-  lg: 'size-11 text-sm',
+  xs: 'size-5 rounded-[4px] text-[10.5px]',
+  sm: 'size-7 rounded-md text-[11px]',
+  md: 'size-9 rounded-md text-[13px]',
+  lg: 'size-10 rounded-lg text-[14px]',
+  xl: 'size-14 rounded-xl text-[19px]',
 } as const;
 
+const DOTS = {
+  xs: 'size-2 border-[1.5px]',
+  sm: 'size-2.5 border-2',
+  md: 'size-3 border-2',
+  lg: 'size-3 border-2',
+  xl: 'size-3.5 border-2',
+} as const;
+
+const RINGS = {
+  surface: 'border-surface',
+  sidebar: 'border-sidebar',
+  active: 'border-sidebar-active',
+  rail: 'border-rail',
+} as const;
+
+/** Initials on a muted, per-person colour (stable across sessions). */
 export function Avatar({
   name,
   size = 'md',
   online,
+  ring = 'surface',
   className,
 }: {
   name: string;
   size?: keyof typeof SIZES;
   online?: boolean;
+  /** Background the presence dot sits on, so its cut-out ring blends in. */
+  ring?: keyof typeof RINGS;
   className?: string;
 }) {
   const hue = hueFor(name);
@@ -34,23 +54,22 @@ export function Avatar({
       <span
         aria-hidden
         className={cn(
-          'inline-flex items-center justify-center rounded-full font-semibold select-none',
+          'inline-flex items-center justify-center font-bold text-white select-none',
           SIZES[size],
         )}
-        style={{
-          backgroundColor: `hsl(${hue} 70% 92%)`,
-          color: `hsl(${hue} 55% 32%)`,
-        }}
+        style={{ backgroundColor: `hsl(${hue} 30% 42%)` }}
       >
-        {initials(name)}
+        {/* Two letters don't fit legibly at 20px. */}
+        {size === 'xs' ? initials(name).slice(0, 1) : initials(name)}
       </span>
       {online !== undefined && (
         <span
-          role="img"
-          aria-label={online ? 'Online' : 'Offline'}
+          aria-hidden
           className={cn(
-            'absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-surface',
-            online ? 'bg-success' : 'bg-muted-foreground/40',
+            'absolute -right-0.5 -bottom-0.5 rounded-full',
+            DOTS[size],
+            RINGS[ring],
+            online ? 'bg-online' : ring === 'surface' ? 'bg-border-strong' : 'bg-sidebar-muted',
           )}
         />
       )}
@@ -71,18 +90,10 @@ export function roleLabel(person: PersonLike): string {
   }
 }
 
-/** Compact role marker shown next to names (plain students get none to reduce noise). */
+/** Quiet role tag next to names (plain students get none, to reduce noise). */
 export function RoleBadge({ person, showStudent }: { person: PersonLike; showStudent?: boolean }) {
   if (person.role === 'student' && !person.isCR && !showStudent) return null;
-  const tone =
-    person.role === 'admin'
-      ? 'danger'
-      : person.role === 'staff'
-        ? 'warning'
-        : person.role === 'faculty'
-          ? 'primary'
-          : person.isCR
-            ? 'success'
-            : 'neutral';
-  return <Badge tone={tone}>{roleLabel(person)}</Badge>;
+  return (
+    <Badge tone={person.role === 'faculty' ? 'primary' : 'neutral'}>{roleLabel(person)}</Badge>
+  );
 }

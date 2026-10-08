@@ -5,6 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Modifier key for shortcut hints: ⌘ on Apple devices, Ctrl everywhere else. */
+export const MOD_KEY =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl';
+
 const TITLES = /^(dr|mr|ms|mrs|prof|engr)\.?$/i;
 
 export function initials(name: string): string {

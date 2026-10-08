@@ -9,11 +9,11 @@ import {
 import { BellOff, Lock, SendHorizontal } from 'lucide-react';
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { useCurrentUser } from '@/hooks/queries';
 import { useSendMessage } from '@/hooks/useChatActions';
 import { getSocket } from '@/lib/socket';
 import { cn } from '@/lib/utils';
+import { TypingIndicator } from './TypingIndicator';
 
 const TYPING_REPEAT_MS = 2500;
 const TYPING_IDLE_MS = 3000;
@@ -107,11 +107,11 @@ export function Composer({ group }: { group: GroupDTO }) {
   if (!decision.allowed) {
     const Icon = decision.code === 'MUTED' ? BellOff : Lock;
     return (
-      <div className="border-t bg-surface-2 px-4 py-3">
+      <div className="shrink-0 px-5 pt-1 pb-5">
         <p
           className={cn(
-            'mx-auto flex max-w-4xl items-center gap-2 rounded-xl border border-dashed px-3 py-2.5 text-sm text-muted-foreground',
-            decision.code === 'MUTED' && 'border-warning/40 bg-warning-soft text-warning',
+            'flex items-center gap-2.5 rounded-lg border bg-surface-2 px-3.5 py-3 text-[13.5px] text-muted-foreground',
+            decision.code === 'MUTED' && 'border-warning/30 bg-warning-soft text-warning',
           )}
           data-testid="composer-locked"
         >
@@ -123,12 +123,16 @@ export function Composer({ group }: { group: GroupDTO }) {
   }
 
   const remaining = MESSAGE_MAX_LENGTH - text.length;
+  const hasText = !!text.trim();
   const placeholder =
     group.type === 'DIRECT' && group.peer ? `Message ${group.peer.name}` : `Message ${group.name}`;
 
   return (
-    <form onSubmit={submit} className="border-t bg-surface px-3 py-3 sm:px-4">
-      <div className="mx-auto flex max-w-4xl items-end gap-2 rounded-2xl border bg-surface-2 p-1.5 pl-3 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/15">
+    <div className="shrink-0 px-5 pt-1">
+      <form
+        onSubmit={submit}
+        className="rounded-lg border border-border-strong bg-surface transition-shadow focus-within:border-foreground/35 focus-within:shadow-[0_1px_8px_rgb(0_0_0/0.07)]"
+      >
         <textarea
           ref={textareaRef}
           value={text}
@@ -138,18 +142,41 @@ export function Composer({ group }: { group: GroupDTO }) {
           rows={1}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="max-h-44 min-h-9 flex-1 resize-none bg-transparent py-2 text-[14.5px] leading-snug outline-none placeholder:text-muted-foreground/70"
+          className="block max-h-48 min-h-[46px] w-full resize-none bg-transparent px-3.5 pt-3 pb-1 text-[15px] leading-snug outline-none placeholder:text-muted-foreground/80"
         />
-        <Button type="submit" size="icon" disabled={!text.trim()} aria-label="Send message">
-          <SendHorizontal />
-        </Button>
-      </div>
-      <div className="mx-auto mt-1 flex max-w-4xl justify-between px-1 text-[11px] text-muted-foreground">
-        <span className="hidden sm:inline">Enter to send · Shift + Enter for a new line</span>
-        {remaining < 500 && (
-          <span className={cn(remaining < 0 && 'text-danger')}>{remaining} characters left</span>
-        )}
-      </div>
-    </form>
+        <div className="flex items-center gap-2 px-2 pb-2">
+          <span className="hidden pl-1.5 text-[11.5px] text-muted-foreground sm:inline">
+            <span className="font-semibold">Enter</span> to send ·{' '}
+            <span className="font-semibold">Shift + Enter</span> for a new line
+          </span>
+          <span className="ml-auto flex items-center gap-2">
+            {remaining < 500 && (
+              <span
+                className={cn(
+                  'text-[11.5px] text-muted-foreground tabular-nums',
+                  remaining < 0 && 'text-danger',
+                )}
+              >
+                {remaining}
+              </span>
+            )}
+            <button
+              type="submit"
+              disabled={!hasText}
+              aria-label="Send message"
+              className={cn(
+                'flex size-8 items-center justify-center rounded-md transition-colors',
+                hasText
+                  ? 'bg-primary text-primary-foreground hover:bg-primary-hover'
+                  : 'text-muted-foreground/50',
+              )}
+            >
+              <SendHorizontal className="size-4" />
+            </button>
+          </span>
+        </div>
+      </form>
+      <TypingIndicator groupId={group.id} />
+    </div>
   );
 }

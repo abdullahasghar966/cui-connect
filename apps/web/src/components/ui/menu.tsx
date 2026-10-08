@@ -8,19 +8,22 @@ export const DropdownMenuTrigger = Menu.Trigger;
 export function DropdownMenuContent({
   children,
   align = 'end',
+  side = 'bottom',
   className,
 }: {
   children: ReactNode;
   align?: 'start' | 'center' | 'end';
+  side?: 'top' | 'right' | 'bottom' | 'left';
   className?: string;
 }) {
   return (
     <Menu.Portal>
       <Menu.Content
         align={align}
+        side={side}
         sideOffset={6}
         className={cn(
-          'animate-in z-50 min-w-48 rounded-xl border bg-surface p-1 text-sm shadow-xl',
+          'animate-in z-50 min-w-52 rounded-lg border bg-surface py-1.5 text-[14px] text-foreground shadow-[0_8px_28px_rgb(0_0_0/0.16)]',
           className,
         )}
       >
@@ -46,8 +49,10 @@ export function DropdownMenuItem({
       disabled={disabled}
       onSelect={onSelect}
       className={cn(
-        'flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-muted [&_svg]:size-4 [&_svg]:text-muted-foreground',
-        danger && 'text-danger [&_svg]:text-danger',
+        'mx-1.5 flex h-8 cursor-pointer items-center gap-2.5 rounded-md px-2.5 outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4 [&_svg]:text-muted-foreground',
+        danger
+          ? 'text-danger data-[highlighted]:bg-danger data-[highlighted]:text-white data-[highlighted]:[&_svg]:text-white [&_svg]:text-danger'
+          : 'data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground data-[highlighted]:[&_svg]:text-primary-foreground',
       )}
     >
       {children}
@@ -57,26 +62,35 @@ export function DropdownMenuItem({
 
 export function DropdownMenuLabel({ children }: { children: ReactNode }) {
   return (
-    <Menu.Label className="px-2.5 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+    <Menu.Label className="px-4 pt-1.5 pb-1 text-[12px] font-semibold text-muted-foreground">
       {children}
     </Menu.Label>
   );
 }
 
 export function DropdownMenuSeparator() {
-  return <Menu.Separator className="my-1 h-px bg-border" />;
+  return <Menu.Separator className="my-1.5 h-px bg-border" />;
 }
 
 export const TooltipProvider = TooltipPrimitive.Provider;
 
-export function Tooltip({ content, children }: { content: ReactNode; children: ReactNode }) {
+export function Tooltip({
+  content,
+  children,
+  side = 'top',
+}: {
+  content: ReactNode;
+  children: ReactNode;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+}) {
   return (
     <TooltipPrimitive.Root delayDuration={300}>
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
+          side={side}
           sideOffset={6}
-          className="animate-in z-50 max-w-64 rounded-lg bg-foreground px-2.5 py-1.5 text-xs text-background shadow-lg"
+          className="animate-in z-50 max-w-64 rounded-md bg-[#1d1f22] px-2 py-1 text-[12px] font-semibold text-white shadow-md dark:bg-[#e3e4e6] dark:text-[#1d1f22]"
         >
           {content}
         </TooltipPrimitive.Content>

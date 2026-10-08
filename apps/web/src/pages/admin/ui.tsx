@@ -13,8 +13,10 @@ export function PageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        <h1 className="text-[24px] leading-tight font-bold tracking-tight">{title}</h1>
+        {description && (
+          <p className="mt-1 max-w-2xl text-[14px] text-muted-foreground">{description}</p>
+        )}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
@@ -35,12 +37,14 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={cn('rounded-2xl border bg-surface shadow-xs', className)}>
+    <section className={cn('overflow-hidden rounded-lg border bg-surface', className)}>
       {(title || actions) && (
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
           <div>
-            {title && <h2 className="text-sm font-semibold">{title}</h2>}
-            {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+            {title && <h2 className="text-[15px] font-bold">{title}</h2>}
+            {description && (
+              <p className="mt-0.5 text-[13px] text-muted-foreground">{description}</p>
+            )}
           </div>
           {actions}
         </header>
@@ -53,9 +57,18 @@ export function Card({
 export function Table({ children }: { children: ReactNode }) {
   return (
     <div className="scrollbar-thin overflow-x-auto">
-      <table className="w-full text-left text-sm [&_td]:px-4 [&_td]:py-2.5 [&_th]:px-4 [&_th]:py-2 [&_th]:text-[11px] [&_th]:font-semibold [&_th]:tracking-wide [&_th]:text-muted-foreground [&_th]:uppercase [&_tbody_tr]:border-t [&_tbody_tr:hover]:bg-muted/40">
+      <table className="w-full text-left text-[13.5px] [&_tbody_tr]:border-t [&_tbody_tr:hover]:bg-surface-2 [&_td]:px-4 [&_td]:py-2.5 [&_th]:h-9 [&_th]:px-4 [&_th]:text-[12px] [&_th]:font-semibold [&_th]:text-muted-foreground [&_thead]:bg-surface-2">
         {children}
       </table>
+    </div>
+  );
+}
+
+/** A single bordered strip of key numbers (instead of a grid of separate cards). */
+export function StatStrip({ children }: { children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4 xl:grid-cols-8">
+      {children}
     </div>
   );
 }
@@ -72,13 +85,13 @@ export function Stat({
   live?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border bg-surface p-4 shadow-xs">
-      <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        {live && <span className="size-1.5 animate-pulse rounded-full bg-success" aria-hidden />}
+    <div className="bg-surface px-4 py-3">
+      <p className="flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+        {live && <span className="size-1.5 rounded-full bg-online" aria-hidden />}
         {label}
       </p>
-      <p className="mt-1.5 text-2xl font-semibold tabular-nums">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
+      <p className="mt-1 text-[22px] leading-tight font-bold tabular-nums">{value}</p>
+      {hint && <p className="mt-0.5 text-[12px] text-muted-foreground">{hint}</p>}
     </div>
   );
 }

@@ -47,7 +47,8 @@ test('an instructor locks a course and the student composer updates instantly', 
 
 test('the people directory only offers allowed direct messages', async ({ page }) => {
   await signIn(page, PEOPLE.hira);
-  await page.getByRole('button', { name: 'New message' }).click();
+  // The workspace sidebar has two "New message" entry points (header icon and list row).
+  await page.getByRole('button', { name: 'New message' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'New message' });
   await expect(dialog.getByText('Dr. Naveed Anwar')).toBeVisible(); // teaches her
   await expect(dialog.getByText('Sadia Rehman')).toBeVisible(); // Examination Office

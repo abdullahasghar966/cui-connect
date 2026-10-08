@@ -1,12 +1,17 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router';
+import { AppRail } from '@/components/AppRail';
 import { Spinner } from '@/components/feedback';
+import { QuickSwitcher, useSwitcherShortcut } from '@/components/QuickSwitcher';
 import { useMe } from '@/hooks/queries';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import { ChatHome } from '@/pages/chat/ChatHome';
 import { ChatLayout } from '@/pages/chat/ChatLayout';
 import { ChatView } from '@/pages/chat/ChatView';
+import { DiscoverDialog, NewMessageDialog } from '@/pages/chat/dialogs';
 import { LoginPage } from '@/pages/LoginPage';
+import { useRealtime } from '@/state/realtime';
+import { useUi } from '@/state/ui';
 
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const OverviewPage = lazy(() => import('@/pages/admin/OverviewPage'));
@@ -23,13 +28,39 @@ function FullScreenSpinner() {
   );
 }
 
+/** Dialogs that can be opened from anywhere (rail, sidebar, menus, shortcuts). */
+function GlobalDialogs() {
+  const newMessageOpen = useUi((s) => s.newMessageOpen);
+  const setNewMessageOpen = useUi((s) => s.setNewMessageOpen);
+  const discoverOpen = useUi((s) => s.discoverOpen);
+  const setDiscoverOpen = useUi((s) => s.setDiscoverOpen);
+  return (
+    <>
+      <QuickSwitcher />
+      <NewMessageDialog open={newMessageOpen} onOpenChange={setNewMessageOpen} />
+      <DiscoverDialog open={discoverOpen} onOpenChange={setDiscoverOpen} />
+    </>
+  );
+}
+
 /** Live session: keeps the Socket.IO connection and cache in sync for every signed-in page. */
 function AuthedShell() {
   useRealtimeSync();
+  useSwitcherShortcut();
+  const status = useRealtime((s) => s.status);
   return (
-    <Suspense fallback={<FullScreenSpinner />}>
-      <Outlet />
-    </Suspense>
+    <div className="flex h-full overflow-hidden">
+      <AppRail />
+      <div className="flex min-w-0 flex-1">
+        <Suspense fallback={<FullScreenSpinner />}>
+          <Outlet />
+        </Suspense>
+      </div>
+      <GlobalDialogs />
+      <span data-testid="connection" data-state={status} className="sr-only" aria-live="polite">
+        {status === 'connected' ? 'Connected' : 'Connecting to CUI Connect'}
+      </span>
+    </div>
   );
 }
 

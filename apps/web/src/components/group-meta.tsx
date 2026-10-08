@@ -1,63 +1,33 @@
-import type { GroupType } from '@cui/shared';
-import {
-  BookOpen,
-  Building2,
-  Coffee,
-  Hash,
-  Landmark,
-  type LucideIcon,
-  Megaphone,
-  MessageCircle,
-  Trophy,
-  Users,
-} from 'lucide-react';
+import type { GroupSettings, GroupType } from '@cui/shared';
+import { Hash, Lock, type LucideIcon, Megaphone, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const META: Record<GroupType, { icon: LucideIcon; tint: string }> = {
-  CAMPUS_ANNOUNCEMENT: {
-    icon: Megaphone,
-    tint: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-  },
-  DEPARTMENT_ANNOUNCEMENT: {
-    icon: Building2,
-    tint: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300',
-  },
-  FACULTY_LOUNGE: { icon: Coffee, tint: 'bg-orange-500/15 text-orange-700 dark:text-orange-300' },
-  SECTION: { icon: Users, tint: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
-  COURSE: { icon: BookOpen, tint: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
-  CR_COUNCIL: { icon: Landmark, tint: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
-  SOCIETY: { icon: Trophy, tint: 'bg-pink-500/15 text-pink-700 dark:text-pink-300' },
-  CUSTOM: { icon: Hash, tint: 'bg-slate-500/15 text-slate-700 dark:text-slate-300' },
-  DIRECT: { icon: MessageCircle, tint: 'bg-primary-soft text-primary' },
-};
+/** Groups that only selected people can see (shown with a lock, like private channels). */
+export function isPrivateGroup(type: GroupType, settings?: Pick<GroupSettings, 'joinPolicy'>) {
+  if (type === 'FACULTY_LOUNGE' || type === 'CR_COUNCIL') return true;
+  return type === 'CUSTOM' && settings?.joinPolicy !== 'open';
+}
 
+function glyphFor(type: GroupType, settings?: Pick<GroupSettings, 'joinPolicy'>): LucideIcon {
+  if (type === 'CAMPUS_ANNOUNCEMENT' || type === 'DEPARTMENT_ANNOUNCEMENT') return Megaphone;
+  if (type === 'DIRECT') return MessageCircle;
+  return isPrivateGroup(type, settings) ? Lock : Hash;
+}
+
+/** Monochrome channel glyph: # public, lock private, megaphone announcement. */
 export function GroupIcon({
   type,
-  size = 'md',
+  settings,
   className,
 }: {
   type: GroupType;
+  settings?: Pick<GroupSettings, 'joinPolicy'>;
+  /** Kept for API compatibility with older call sites. */
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }) {
-  const { icon: Icon, tint } = META[type];
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-xl',
-        size === 'sm'
-          ? 'size-7 [&_svg]:size-3.5'
-          : size === 'lg'
-            ? 'size-11 [&_svg]:size-5'
-            : 'size-9 [&_svg]:size-4',
-        tint,
-        className,
-      )}
-    >
-      <Icon />
-    </span>
-  );
+  const Icon = glyphFor(type, settings);
+  return <Icon aria-hidden strokeWidth={2.25} className={cn('size-4 shrink-0', className)} />;
 }
 
 export const SIDEBAR_SECTIONS: { title: string; types: GroupType[] }[] = [

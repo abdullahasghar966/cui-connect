@@ -103,22 +103,22 @@ export function NewMessageDialog({
           />
           {isFetching && <Spinner className="absolute top-1/2 right-2.5 -translate-y-1/2" />}
         </div>
-        <ul className="mt-3 max-h-[50vh] space-y-0.5 overflow-y-auto">
+        <ul className="-mx-2 mt-3 max-h-[50vh] overflow-y-auto">
           {data?.map((person) => (
             <li key={person.id}>
               <button
                 type="button"
                 onClick={() => void choose(person)}
                 disabled={opening !== null}
-                className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-muted disabled:opacity-60"
+                className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-surface-2 disabled:opacity-60"
               >
                 <Avatar name={person.name} online={online.has(person.id)} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
-                    <span className="truncate text-sm font-medium">{person.name}</span>
+                    <span className="truncate text-[14.5px] font-semibold">{person.name}</span>
                     <RoleBadge person={person} />
                   </span>
-                  <span className="block truncate text-xs text-muted-foreground">
+                  <span className="block truncate text-[12.5px] text-muted-foreground">
                     {describePerson(person)}
                   </span>
                 </span>
@@ -174,19 +174,21 @@ export function DiscoverDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        title="Discover societies"
+        title="Browse societies"
         description="Societies are open to every student and faculty member. Official groups are joined automatically from your section, courses and role."
       >
         {isPending ? (
           <Spinner />
         ) : data?.length ? (
-          <ul className="space-y-2">
+          <ul className="divide-y rounded-lg border">
             {data.map((group) => (
-              <li key={group.id} className="flex items-center gap-3 rounded-xl border p-3">
-                <GroupIcon type={group.type} />
+              <li key={group.id} className="flex items-center gap-3 px-3.5 py-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-surface-2 text-muted-foreground">
+                  <GroupIcon type={group.type} settings={group.settings} />
+                </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{group.name}</p>
-                  <p className="line-clamp-2 text-xs text-muted-foreground">
+                  <p className="truncate text-[14.5px] font-semibold">{group.name}</p>
+                  <p className="line-clamp-2 text-[12.5px] text-muted-foreground">
                     {group.description ?? GROUP_TYPE_LABELS[group.type]} · {group.memberCount}{' '}
                     members
                   </p>
