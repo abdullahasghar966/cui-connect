@@ -7,7 +7,7 @@
 > - the ordered list of remaining tasks;
 > - the conventions (including **push to GitHub after every completed task**).
 >
-> **Last updated:** Thursday 2026-10-08, about 20:45 Pakistan time.
+> **Last updated:** Thursday 2026-10-08, about 21:15 Pakistan time. **All remaining work is done.**
 > **Deadline:** **Friday 2026-10-09, morning.**
 > **Repository:** https://github.com/abdullahasghar966/cui-connect (public), branch `main`.
 
@@ -28,7 +28,8 @@ and push to GitHub (origin main). Explain anything I need to decide in simple te
 | Assignment features (users, groups, communication boundaries, realistic COMSATS model) | **Done and verified** |
 | Approved plan, phases 0–7 (backend, web app, admin console, E2E, docs) | **Done** |
 | QA pass + extras (enrollment manager, edit user, fixes) | **Done** (commit `b4c916e`) |
-| UI redesign ("make it look production-level": Slack-style workspace, Emerald accent) | **In progress.** Code is written and every automated gate passes. The visual review, screenshots and README text are still to do |
+| UI redesign ("make it look production-level": Slack-style workspace, Emerald accent) | **Done.** Visual review of all 27 screens (light, dark, mobile), fixes, new doc screenshots, README + ARCHITECTURE updated |
+| Final verification | **Done.** All gates green, `npm run build` + `npm start` smoke test as two users (localhost + 127.0.0.1): live message and live delete |
 | Lint (Biome) / typecheck (TS 7) | Green |
 | Unit + integration tests (Vitest) | **123 / 123 passing** (78 policy + 45 server integration) |
 | End-to-end tests (Playwright) | **9 / 9 passing**; 3 utility specs are skipped by design |
@@ -313,6 +314,8 @@ It replaces them with real workspace-app patterns.
 
 ## 9. Remaining work (do in order; commit and push after each)
 
+> **Status 2026-10-08 21:15: items 1–7 are done and pushed.** Item 8: `e2e/review.spec.ts` was kept as a dev tool (skipped unless `REVIEW_DIR` is set). Review fixes: toasts moved bottom-right above the composer, admin group names no longer wrap mid-name, users table rows keep an even height on mobile, Overview hint reads "Messages: N / min", and the screenshot spec waits for messages to load. `.claude/launch.json` gained a `cui-connect-prod` entry (`npm start`, port 4000).
+
 1. **Fix the review script step.** In `e2e/review.spec.ts`, "review: desktop light" waits for "Message options" on an old seeded message, but authors can only delete their own messages within 15 minutes. Have Hira **post a fresh message first** and open the menu on that row.
 2. **Finish the visual review.**
    - `npm run build`, then run the review spec (see §6) into a scratch folder.
@@ -418,6 +421,10 @@ It replaces them with real workspace-app patterns.
 | `9b6b92c` | Docs: README, ARCHITECTURE, screenshots |
 | `b4c916e` | QA pass fixes (touch-visible actions, a11y names, title reset, 12-hour mute time, audit wording, shell-quote override, wait-for-api), enrollment manager, edit user, 123 + 9 tests |
 | `7bab472` | UI redesign in progress (all gates green), E2E selector fix, PROJECT_CONTEXT.md |
+| `6996031` | Review spec opens the message menu on a fresh message |
+| `31a1ce0` | Visual review fixes: toasts, group names, users table, stat wording |
+| `2afdb33` | Regenerated documentation screenshots |
+| `9c6f1cc` | README "Workspace UI" section; ARCHITECTURE web-client data flow |
 
 These commit IDs are from after the first push to GitHub. Before that push, the author email was changed from the Gmail address to the GitHub no-reply address; names, dates and content are unchanged.
 
