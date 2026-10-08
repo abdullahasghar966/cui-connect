@@ -57,6 +57,15 @@ The university's structure (departments, sections, course offerings, offices) cr
 - Connection-state recovery after brief drops.
 - An `/admin` namespace for live stats and the audit feed.
 
+**Workspace UI**
+- A Slack-style layout: an app rail, a dark sidebar with collapsible sections (Announcements, Courses, Class & department, Societies & groups, Direct messages) and unread counts.
+- **Ctrl/⌘ + K** quick switcher to jump to any conversation from the keyboard.
+- An **Unreads** home page that lists conversations with new messages and a preview of the latest one.
+- Flat message rows with a hover toolbar, a red **"New"** divider at the first unread message, and an intro at the top of each conversation ("This is the beginning of …").
+- The channel header states who can post; when posting isn't allowed, the composer explains why.
+- Members panel with moderation (mute 15 min / 1 h / 1 day, change role, remove).
+- Emerald theme with light, dark and match-system appearance; works on phones.
+
 **Admin console**
 - Users: create, CSV bulk import, edit details, CR/HOD flags, password reset, deactivation.
   - Moving a student to another section swaps their class group live.

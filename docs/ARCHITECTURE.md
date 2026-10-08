@@ -49,6 +49,10 @@ flowchart LR
 - **The policy engine is a pure TypeScript module** in `packages/shared`:
   - The server evaluates it as the authority.
   - The browser imports the same file only to explain *why* something is disabled.
+- **The web client keeps one source of truth per kind of data:**
+  - `hooks/useRealtimeSync.ts` turns socket events into patches of the TanStack Query cache (`lib/cache.ts`), so the sidebar, unread counts, the Unreads home and open conversations all re-render from the same data;
+  - presence and typing are short-lived, so they live in a small Zustand store (`state/realtime.ts`);
+  - the workspace layout (app rail, sidebar sections, Ctrl/⌘+K quick switcher) only reads these stores. Actions such as sending, locking, muting or joining emit through `withAck` (`lib/socket.ts`), which turns a timed-out acknowledgement into the same `{ ok: false }` shape as a server refusal, so every caller handles one result type.
 
 ## 2. Socket.IO design
 
