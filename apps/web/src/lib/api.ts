@@ -120,6 +120,12 @@ export const api = {
     courses: () => request<CourseDTO[]>('/api/admin/courses'),
     createCourse: (input: CreateCourseInput) =>
       send<{ id: string }>('/api/admin/courses', 'POST', input),
+    courseStudents: (courseId: string) =>
+      request<PublicUserDTO[]>(`/api/admin/courses/${courseId}/students`),
+    enroll: (courseId: string, studentIds: string[]) =>
+      send<{ ok: true }>(`/api/admin/courses/${courseId}/enroll`, 'POST', { studentIds }),
+    unenroll: (courseId: string, studentId: string) =>
+      send<{ ok: true }>(`/api/admin/courses/${courseId}/students/${studentId}`, 'DELETE'),
     users: (params: { q?: string; role?: Role }) =>
       request<UserDTO[]>(`/api/admin/users${query(params)}`),
     createUser: (input: CreateUserInput) => send<UserDTO>('/api/admin/users', 'POST', input),

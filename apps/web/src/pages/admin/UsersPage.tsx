@@ -7,13 +7,17 @@ import {
   ROLE_LABELS,
   ROLES,
   type Role,
+  type UpdateUserInput,
   type UserDTO,
+  updateUserSchema,
 } from '@cui/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Ellipsis,
   FileUp,
   KeyRound,
+  Pencil,
+  Save,
   Search,
   ShieldCheck,
   UserCheck,
@@ -21,7 +25,7 @@ import {
   Users,
   UserX,
 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { EmptyState, Spinner } from '@/components/feedback';
 import { Avatar, RoleBadge } from '@/components/people';
@@ -347,6 +351,183 @@ function ImportDialog({
   );
 }
 
+/**
+ * Edits profile and placement. Changing a student's section or a staff member's department
+ * re-syncs their official groups on the server, and their sidebar updates live.
+ */
+function EditUserDialog({ user, onClose }: { user: UserDTO | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const departments = useQuery({
+    queryKey: ['admin', 'departments'],
+    queryFn: api.admin.departments,
+    enabled: !!user,
+  });
+  const sections = useQuery({
+    queryKey: ['admin', 'sections'],
+    queryFn: api.admin.sections,
+    enabled: !!user,
+  });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    designation: '',
+    departmentId: '',
+    sectionId: '',
+    office: '' as Office | '',
+  });
+  useEffect(() => {
+    if (!user) return;
+    setForm({
+      name: user.name,
+      email: user.email,
+      designation: user.designation ?? '',
+      departmentId: user.departmentId ?? '',
+      sectionId: user.sectionId ?? '',
+      office: user.office ?? '',
+    });
+  }, [user]);
+  const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
+
+  const save = useMutation({
+    mutationFn: (patch: UpdateUserInput) => api.admin.updateUser(user?.id ?? '', patch),
+    onSuccess: (updated) => {
+      toast.success(`${updated.name} updated. Their groups were re-synced.`);
+      void qc.invalidateQueries({ queryKey: ['admin'] });
+      onClose();
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!user) return;
+    const patch: UpdateUserInput = {};
+    if (form.name !== user.name) patch.name = form.name;
+    if (form.email !== user.email) patch.email = form.email;
+    if ((form.designation || null) !== user.designation)
+      patch.designation = form.designation || null;
+    if (user.role === 'student') {
+      if (form.sectionId !== (user.sectionId ?? '')) patch.sectionId = form.sectionId;
+    } else if (form.departmentId !== (user.departmentId ?? '')) {
+      patch.departmentId = form.departmentId || null;
+    }
+    if (user.role === 'staff' && form.office !== (user.office ?? '')) {
+      patch.office = form.office || null;
+    }
+    if (user.role === 'faculty' && !form.departmentId) {
+      toast.error('Faculty must belong to a department.');
+      return;
+    }
+    if (user.role === 'staff' && form.office === 'DEPARTMENT' && !form.departmentId) {
+      toast.error('Department office staff need a department.');
+      return;
+    }
+    if (!Object.keys(patch).length) {
+      onClose();
+      return;
+    }
+    const parsed = updateUserSchema.safeParse(patch);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      toast.error(issue ? `${issue.path.join('.') || 'form'}: ${issue.message}` : 'Check the form');
+      return;
+    }
+    save.mutate(parsed.data);
+  };
+
+  return (
+    <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        wide
+        title={`Edit ${user?.name ?? 'user'}`}
+        description={
+          user?.role === 'student'
+            ? 'Moving a student to another section swaps their class group immediately. Course enrollments stay as they are.'
+            : 'Changing the department moves them to that department’s notices and faculty lounge.'
+        }
+      >
+        <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
+          <Field label="Full name" htmlFor="edit-name">
+            <Input
+              id="edit-name"
+              value={form.name}
+              onChange={(e) => set({ name: e.target.value })}
+            />
+          </Field>
+          <Field label="Email" htmlFor="edit-email">
+            <Input
+              id="edit-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => set({ email: e.target.value })}
+            />
+          </Field>
+          <Field label="Designation" htmlFor="edit-designation">
+            <Input
+              id="edit-designation"
+              value={form.designation}
+              onChange={(e) => set({ designation: e.target.value })}
+            />
+          </Field>
+          {user?.role === 'student' ? (
+            <Field label="Section" htmlFor="edit-section">
+              <Select
+                id="edit-section"
+                value={form.sectionId}
+                onChange={(e) => set({ sectionId: e.target.value })}
+              >
+                {sections.data?.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.departmentCode})
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : (
+            <Field label="Department" htmlFor="edit-department">
+              <Select
+                id="edit-department"
+                value={form.departmentId}
+                onChange={(e) => set({ departmentId: e.target.value })}
+              >
+                {user?.role !== 'faculty' && <option value="">None (campus-wide)</option>}
+                {departments.data?.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.code} · {d.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          {user?.role === 'staff' && (
+            <Field label="Office" htmlFor="edit-office">
+              <Select
+                id="edit-office"
+                value={form.office}
+                onChange={(e) => set({ office: e.target.value as Office })}
+              >
+                {OFFICES.map((o) => (
+                  <option key={o} value={o}>
+                    {OFFICE_LABELS[o]}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={save.isPending}>
+              <Save /> Save changes
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ResetPasswordDialog({ user, onClose }: { user: UserDTO | null; onClose: () => void }) {
   const [password, setPassword] = useState('');
   const reset = useMutation({
@@ -400,10 +581,13 @@ export default function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [resetFor, setResetFor] = useState<UserDTO | null>(null);
+  const [editing, setEditing] = useState<UserDTO | null>(null);
   const search = useDebounced(q);
   const users = useQuery({
     queryKey: ['admin', 'users', search, role],
     queryFn: () => api.admin.users({ q: search, role: role || undefined }),
+    // Keep the current rows on screen while a new search loads (no spinner flash).
+    placeholderData: keepPreviousData,
   });
 
   const update = useMutation({
@@ -440,7 +624,11 @@ export default function UsersPage() {
         }
       />
       <Card
-        title={users.data ? `${users.data.length} people` : 'People'}
+        title={
+          users.data
+            ? `${users.data.length} ${users.data.length === 1 ? 'person' : 'people'}`
+            : 'People'
+        }
         actions={
           <div className="flex flex-wrap gap-2">
             <div className="relative">
@@ -538,6 +726,9 @@ export default function UsersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => setEditing(user)}>
+                          <Pencil /> Edit details
+                        </DropdownMenuItem>
                         {user.role === 'student' && (
                           <DropdownMenuItem
                             onSelect={() =>
@@ -587,6 +778,7 @@ export default function UsersPage() {
       <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <ResetPasswordDialog user={resetFor} onClose={() => setResetFor(null)} />
+      <EditUserDialog user={editing} onClose={() => setEditing(null)} />
     </>
   );
 }

@@ -15,6 +15,14 @@ import { reconcileUser, reconcileUsers } from './provisioning';
 
 type Actor = UserDoc | null;
 
+/** Readable names for changed fields in audit entries. */
+const FIELD_LABELS: Record<string, string> = {
+  departmentId: 'department',
+  sectionId: 'section',
+  isHOD: 'HOD',
+  isCR: 'CR',
+};
+
 /** Students inherit their department from their section; references must exist. */
 async function resolveOrg(input: {
   role: UserDoc['role'];
@@ -149,16 +157,26 @@ export async function updateUser(
   if (input.isHOD) await reconcileUsers(await demoteOtherHODs(updated.departmentId, updated._id));
   await reconcileUser(updated._id);
 
-  const changes = Object.keys(set).filter((k) => k !== 'passwordHash');
+  const actorName = actor?.name ?? 'System';
+  const deactivated = input.active === false && user.active;
+  const reactivated = input.active === true && !user.active;
+  const changes = [
+    ...new Set(
+      Object.keys(set)
+        .filter((k) => k !== 'passwordHash' && k !== 'active')
+        .map((k) => FIELD_LABELS[k] ?? k),
+    ),
+  ];
   if (input.password) changes.push('password');
   void recordAudit({
-    action: input.active === false ? 'user.deactivated' : 'user.updated',
+    action: deactivated ? 'user.deactivated' : reactivated ? 'user.reactivated' : 'user.updated',
     actor,
-    severity: input.active === false ? 'warning' : 'info',
-    summary:
-      input.active === false
-        ? `${actor?.name ?? 'System'} deactivated ${updated.name}`
-        : `${actor?.name ?? 'System'} updated ${updated.name} (${changes.join(', ')})`,
+    severity: deactivated ? 'warning' : 'info',
+    summary: deactivated
+      ? `${actorName} deactivated ${updated.name}`
+      : reactivated
+        ? `${actorName} reactivated ${updated.name}`
+        : `${actorName} updated ${updated.name} (${changes.join(', ') || 'no changes'})`,
     targetType: 'user',
     targetId: updated._id,
   });

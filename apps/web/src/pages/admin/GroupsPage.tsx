@@ -14,7 +14,7 @@ import {
   ROLES,
   type Role,
 } from '@cui/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Lock, Plus, Save, Search, Shapes, UserMinus, UserPlus } from 'lucide-react';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -414,6 +414,7 @@ export default function GroupsPage() {
   const groups = useQuery({
     queryKey: ['admin', 'groups', type],
     queryFn: () => api.admin.groups(type || undefined),
+    placeholderData: keepPreviousData,
   });
   const selected = groups.data?.find((g) => g.id === selectedId);
   const select = (id: string) => setParams({ focus: id }, { replace: true });

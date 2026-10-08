@@ -15,7 +15,7 @@
     "dev": "concurrently -k -n db,api,web -c gray,blue,green \"npm:dev:db\" \"npm:dev:api\" \"npm:dev:web\"",
     "dev:db": "npm run db -w @cui/server",
     "dev:api": "npm run dev -w @cui/server",
-    "dev:web": "npm run dev -w @cui/web",
+    "dev:web": "node scripts/wait-for-api.mjs && npm run dev -w @cui/web",
     "build": "npm run build -w @cui/web && npm run build -w @cui/server",
     "start": "npm run start -w @cui/server",
     "seed": "npm run seed -w @cui/server",
@@ -34,6 +34,9 @@
     "concurrently": "^10.0.5",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "shell-quote": "^1.12.0"
   },
   "allowScripts": {
     "esbuild@0.28.2": true,

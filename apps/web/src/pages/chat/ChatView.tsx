@@ -148,7 +148,13 @@ function ChatHeader({
               : 'Make announcement-only: only moderators can post'
           }
         >
-          <Button variant="outline" size="sm" onClick={() => void toggleLock()} loading={busy}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void toggleLock()}
+            loading={busy}
+            aria-label={group.settings.locked ? 'Unlock group' : 'Lock group'}
+          >
             {group.settings.locked ? <LockOpen /> : <Lock />}
             <span className="hidden sm:inline">{group.settings.locked ? 'Unlock' : 'Lock'}</span>
           </Button>
@@ -161,6 +167,7 @@ function ChatHeader({
             size="sm"
             onClick={onToggleMembers}
             aria-pressed={membersOpen}
+            aria-label={`Members (${group.memberCount})`}
           >
             <Users /> <span className="tabular-nums">{group.memberCount}</span>
           </Button>

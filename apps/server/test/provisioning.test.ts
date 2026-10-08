@@ -1,7 +1,7 @@
 import type { GroupDTO } from '@cui/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Department, Section } from '../src/models';
-import { ACCOUNTS, groupByName, startTestApp, type TestApp, userBy } from './helpers';
+import { ACCOUNTS, groupByName, nextEvent, startTestApp, type TestApp, userBy } from './helpers';
 
 let app: TestApp;
 let admin: string;
@@ -192,6 +192,80 @@ describe('official groups follow university structure', () => {
     expect(result.errors.map((e: { line: number }) => e.line)).toEqual([4, 5]);
     expect((await groupsOf('FA23-BCS-040', 'Welcome@2026')).map((g) => g.name)).toContain(
       'BCS-7B Class',
+    );
+  });
+});
+
+describe('course enrollment management', () => {
+  async function courseId(code: string, sectionName: string): Promise<string> {
+    const courses: { id: string; code: string; sectionName: string }[] = await (
+      await app.api(admin, '/api/admin/courses')
+    ).json();
+    const course = courses.find((c) => c.code === code && c.sectionName === sectionName);
+    if (!course) throw new Error(`No course ${code} for ${sectionName}`);
+    return course.id;
+  }
+
+  it('lists enrolled students, including a repeater from another section', async () => {
+    const id = await courseId('CSC441', 'BCS-7A');
+    const res = await app.api(admin, `/api/admin/courses/${id}/students`);
+    expect(res.status).toBe(200);
+    const students: { regNo: string; sectionName: string }[] = await res.json();
+    expect(students.map((s) => s.regNo)).toEqual(
+      expect.arrayContaining(['FA23-BCS-001', 'FA23-BCS-002', 'FA23-BCS-033']),
+    );
+    expect(students.find((s) => s.regNo === 'FA23-BCS-033')?.sectionName).toBe('BCS-7B');
+  });
+
+  it('keeps enrollment admin-only', async () => {
+    const id = await courseId('CSC441', 'BCS-7A');
+    const student = await app.login(ACCOUNTS.hira);
+    expect((await app.api(student, `/api/admin/courses/${id}/students`)).status).toBe(403);
+  });
+
+  it('enrolling and removing a student adds and removes the course group live', async () => {
+    const id = await courseId('CSC337', 'BCS-7A');
+    const course = await groupByName('Advanced Web Technologies · BCS-7A');
+    const mehwish = await userBy(ACCOUNTS.mehwish);
+    const socket = await app.connect(ACCOUNTS.mehwish);
+
+    const added = nextEvent(socket, 'group:added', (g) => g.id === String(course._id));
+    const enroll = await app.api(admin, `/api/admin/courses/${id}/enroll`, {
+      method: 'POST',
+      body: JSON.stringify({ studentIds: [String(mehwish._id)] }),
+    });
+    expect(enroll.status).toBe(200);
+    expect((await added).myRole).toBe('member');
+
+    const removed = nextEvent(socket, 'group:removed', (p) => p.groupId === String(course._id));
+    const drop = await app.api(admin, `/api/admin/courses/${id}/students/${mehwish._id}`, {
+      method: 'DELETE',
+    });
+    expect(drop.status).toBe(200);
+    await removed;
+    expect((await groupsOf(ACCOUNTS.mehwish)).map((g) => g.name)).not.toContain(
+      'Advanced Web Technologies · BCS-7A',
+    );
+    socket.disconnect();
+  });
+
+  it('records deactivation and reactivation in plain words', async () => {
+    const zainab = await userBy('FA23-BCS-004');
+    for (const active of [false, true]) {
+      const res = await app.api(admin, `/api/admin/users/${zainab._id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ active }),
+      });
+      expect(res.status).toBe(200);
+    }
+    const entries: { action: string; summary: string }[] = await (
+      await app.api(admin, '/api/admin/audit?limit=5')
+    ).json();
+    expect(entries.map((e) => e.action)).toEqual(
+      expect.arrayContaining(['user.deactivated', 'user.reactivated']),
+    );
+    expect(entries.find((e) => e.action === 'user.reactivated')?.summary).toMatch(
+      /reactivated Zainab Malik/,
     );
   });
 });

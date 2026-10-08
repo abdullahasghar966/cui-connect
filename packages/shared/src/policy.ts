@@ -170,7 +170,7 @@ export function canPost(
   if (!membership) return deny('NOT_MEMBER', 'Join this group to post.');
   if (isMuted(membership, now)) {
     const until = new Date(membership.mutedUntil as string | Date);
-    const time = until.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const time = until.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     return deny('MUTED', `A moderator muted you in this group until ${time}.`);
   }
   if (group.type === 'DIRECT') return ALLOW;

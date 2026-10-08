@@ -151,7 +151,7 @@ export function MembersPanel({ group, onClose }: { group: GroupDTO; onClose: () 
               <button
                 type="button"
                 aria-label={`Actions for ${member.user.name}`}
-                className="rounded-md p-1 text-muted-foreground opacity-0 group-hover/member:opacity-100 hover:bg-muted focus-visible:opacity-100 data-[state=open]:opacity-100"
+                className="rounded-md p-1 text-muted-foreground opacity-0 group-hover/member:opacity-100 hover:bg-muted focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100"
               >
                 <Ellipsis className="size-4" />
               </button>

@@ -2,36 +2,26 @@
  * Regenerates the README screenshots (docs/screenshots). Skipped in normal E2E runs:
  *   SCREENSHOTS=1 npx playwright test e2e/screenshots.spec.ts
  */
-import { type Browser, expect, test } from '@playwright/test';
 import { io } from 'socket.io-client';
-import { openConversation, PEOPLE, signIn } from './fixtures';
+import { expect, openConversation, PEOPLE, test } from './fixtures';
 
 test.skip(!process.env.SCREENSHOTS, 'Set SCREENSHOTS=1 to regenerate docs/screenshots');
 
 const shot = (name: string) => `docs/screenshots/${name}.png`;
+const DESKTOP = { width: 1440, height: 900 };
 
-async function person(
-  browser: Browser,
-  identifier: string,
-  colorScheme: 'light' | 'dark' = 'light',
-) {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme });
-  const page = await context.newPage();
-  await signIn(page, identifier);
-  return page;
-}
-
-test('capture documentation screenshots', async ({ browser, baseURL }) => {
+test('capture documentation screenshots', async ({ browser, person, baseURL }) => {
   test.setTimeout(120_000);
 
-  const loginContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const loginContext = await browser.newContext({ viewport: DESKTOP });
   const login = await loginContext.newPage();
   await login.goto('/login');
   await expect(login.getByText('Demo accounts')).toBeVisible();
   await login.screenshot({ path: shot('login') });
+  await loginContext.close();
 
-  const imran = await person(browser, PEOPLE.imran);
-  const hira = await person(browser, PEOPLE.hira);
+  const imran = await person(PEOPLE.imran, { viewport: DESKTOP, colorScheme: 'light' });
+  const hira = await person(PEOPLE.hira, { viewport: DESKTOP, colorScheme: 'light' });
   await openConversation(imran, 'Advanced Web Technologies · BCS-7A');
   await openConversation(hira, 'Advanced Web Technologies · BCS-7A');
   await imran
@@ -45,24 +35,21 @@ test('capture documentation screenshots', async ({ browser, baseURL }) => {
     .getByRole('textbox', { name: /^Message / })
     .fill('Thank you sir, I will have the demo ready.');
   await hira.getByRole('textbox', { name: /^Message / }).press('Enter');
-  await imran
-    .getByRole('button', { name: /^7$|Members/ })
-    .first()
-    .click();
+  await imran.getByRole('button', { name: /^Members/ }).click();
   await imran.waitForTimeout(400);
   await imran.screenshot({ path: shot('chat-instructor') });
 
   await openConversation(hira, 'CS Department Notices');
   await hira.screenshot({ path: shot('announcement-read-only') });
 
-  await imran.getByRole('button', { name: 'Lock' }).click();
+  await imran.getByRole('button', { name: 'Lock group' }).click();
   await openConversation(hira, 'Advanced Web Technologies · BCS-7A');
   await expect(hira.getByTestId('composer-locked')).toBeVisible();
   await hira.waitForTimeout(300);
   await hira.screenshot({ path: shot('course-locked') });
-  await imran.getByRole('button', { name: 'Unlock' }).click();
+  await imran.getByRole('button', { name: 'Unlock group' }).click();
 
-  const admin = await person(browser, PEOPLE.admin);
+  const admin = await person(PEOPLE.admin, { viewport: DESKTOP, colorScheme: 'light' });
   await admin.goto('/admin');
   await expect(admin.getByRole('heading', { name: 'Overview' })).toBeVisible();
   const session = (await hira.context().cookies()).find((c) => c.name === 'cui_session');
@@ -87,7 +74,13 @@ test('capture documentation screenshots', async ({ browser, baseURL }) => {
   await expect(admin.getByText('From university records').first()).toBeVisible();
   await admin.screenshot({ path: shot('admin-groups') });
 
-  const dark = await person(browser, PEOPLE.hira, 'dark');
+  await admin.goto('/admin/structure');
+  await admin.getByRole('button', { name: /students of CSC441 BCS-7A/ }).click();
+  await expect(admin.getByRole('dialog').getByText('Repeater', { exact: true })).toBeVisible();
+  await admin.waitForTimeout(400); // let the dialog finish fading in
+  await admin.screenshot({ path: shot('admin-enrollment') });
+
+  const dark = await person(PEOPLE.hira, { viewport: DESKTOP, colorScheme: 'dark' });
   await openConversation(dark, 'BCS-7A Class');
   await dark.screenshot({ path: shot('chat-dark') });
 });

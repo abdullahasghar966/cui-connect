@@ -12,6 +12,13 @@ export function ChatLayout() {
   useEffect(() => {
     document.title = unread ? `(${unread > 99 ? '99+' : unread}) CUI Connect` : 'CUI Connect';
   }, [unread]);
+  // Leaving the chat (sign-out, admin console) must not keep showing a stale unread count.
+  useEffect(
+    () => () => {
+      document.title = 'CUI Connect';
+    },
+    [],
+  );
 
   return (
     <div className="flex h-full overflow-hidden">

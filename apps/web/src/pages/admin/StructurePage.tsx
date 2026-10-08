@@ -1,13 +1,23 @@
-import { createCourseSchema, createDepartmentSchema, createSectionSchema } from '@cui/shared';
+import {
+  type CourseDTO,
+  createCourseSchema,
+  createDepartmentSchema,
+  createSectionSchema,
+  type PublicUserDTO,
+} from '@cui/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Plus, Search, UserMinus, UserPlus, Users } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { Spinner } from '@/components/feedback';
+import { Avatar } from '@/components/people';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, Input, Select } from '@/components/ui/form';
+import { useDebounced } from '@/hooks/useDebounced';
 import { ApiError, api } from '@/lib/api';
 import { Card, PageHeader, Table } from './ui';
 
@@ -284,10 +294,152 @@ function Sections() {
   );
 }
 
+/** Enroll students (including repeaters from other sections) or remove them from a course. */
+function EnrollmentDialog({ course, onClose }: { course: CourseDTO | null; onClose: () => void }) {
+  const qc = useQueryClient();
+  const courseId = course?.id ?? '';
+  const [q, setQ] = useState('');
+  const search = useDebounced(q);
+  const enrolled = useQuery({
+    queryKey: ['admin', 'course-students', courseId],
+    queryFn: () => api.admin.courseStudents(courseId),
+    enabled: !!course,
+  });
+  const candidates = useQuery({
+    queryKey: ['admin', 'users', 'student-picker', search],
+    queryFn: () => api.admin.users({ q: search, role: 'student' }),
+    enabled: !!course && search.length >= 2,
+  });
+  const refresh = () => void qc.invalidateQueries({ queryKey: ['admin'] });
+  const enroll = useMutation({
+    mutationFn: (student: PublicUserDTO) => api.admin.enroll(courseId, [student.id]),
+    onSuccess: (_data, student) => {
+      toast.success(`${student.name} enrolled. The course group appeared in their sidebar.`);
+      setQ('');
+      refresh();
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+  const unenroll = useMutation({
+    mutationFn: (student: PublicUserDTO) => api.admin.unenroll(courseId, student.id),
+    onSuccess: (_data, student) => {
+      toast.success(`${student.name} was removed from the course and its group.`);
+      refresh();
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+  const enrolledIds = new Set(enrolled.data?.map((s) => s.id));
+
+  return (
+    <Dialog
+      open={!!course}
+      onOpenChange={(open) => {
+        if (!open) {
+          setQ('');
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        wide
+        title={course ? `${course.code} ${course.title} · ${course.sectionName}` : 'Enrollment'}
+        description="Enrolled students are members of the course group. Add repeaters from other sections or remove students who dropped the course; their sidebars update instantly."
+      >
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Enroll a student: type a name or registration number"
+            aria-label="Find a student to enroll"
+            className="pl-8"
+          />
+        </div>
+        {search.length >= 2 && candidates.data && (
+          <ul className="mt-2 max-h-56 space-y-0.5 overflow-y-auto rounded-xl border p-1">
+            {candidates.data.slice(0, 10).map((student) => {
+              const already = enrolledIds.has(student.id);
+              return (
+                <li key={student.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
+                  <Avatar name={student.name} size="xs" />
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {student.name}{' '}
+                    <span className="text-muted-foreground">
+                      · {student.regNo} · {student.sectionName}
+                    </span>
+                  </span>
+                  <Button
+                    size="sm"
+                    variant={already ? 'ghost' : 'outline'}
+                    disabled={already || enroll.isPending}
+                    onClick={() => enroll.mutate(student)}
+                  >
+                    {already ? (
+                      'Enrolled'
+                    ) : (
+                      <>
+                        <UserPlus /> Enroll
+                      </>
+                    )}
+                  </Button>
+                </li>
+              );
+            })}
+            {candidates.data.length === 0 && (
+              <li className="px-2 py-1.5 text-sm text-muted-foreground">No matching students</li>
+            )}
+          </ul>
+        )}
+
+        <h3 className="mt-5 mb-2 text-sm font-semibold">
+          Enrolled · {enrolled.data?.length ?? course?.studentCount ?? 0}
+        </h3>
+        {enrolled.isPending ? (
+          <Spinner />
+        ) : enrolled.data?.length ? (
+          <ul className="divide-y rounded-xl border">
+            {enrolled.data.map((student) => (
+              <li key={student.id} className="flex items-center gap-2.5 px-3 py-2">
+                <Avatar name={student.name} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{student.name}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {student.regNo} · {student.sectionName}
+                  </span>
+                </span>
+                {student.sectionName !== course?.sectionName && (
+                  <Badge tone="warning">Repeater</Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`Remove ${student.name} from the course`}
+                  disabled={unenroll.isPending}
+                  onClick={() => unenroll.mutate(student)}
+                >
+                  <UserMinus />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Nobody is enrolled yet. Search above to add students.
+          </p>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Courses() {
   const courses = useQuery({ queryKey: ['admin', 'courses'], queryFn: api.admin.courses });
   const sections = useQuery({ queryKey: ['admin', 'sections'], queryFn: api.admin.sections });
   const faculty = useFaculty();
+  const [managing, setManaging] = useState<CourseDTO | null>(null);
   const [form, setForm] = useState({ code: '', title: '', sectionId: '', instructorId: '' });
   const create = useCreate(
     createCourseSchema,
@@ -331,7 +483,16 @@ function Courses() {
                 </td>
                 <td>{c.sectionName}</td>
                 <td>{c.instructor?.name ?? '—'}</td>
-                <td className="text-right tabular-nums">{c.studentCount}</td>
+                <td className="text-right">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setManaging(c)}
+                    aria-label={`Manage the ${c.studentCount} students of ${c.code} ${c.sectionName}`}
+                  >
+                    <Users /> <span className="tabular-nums">{c.studentCount}</span>
+                  </Button>
+                </td>
                 <td className="text-right">
                   {c.groupId && (
                     <Link
@@ -399,6 +560,10 @@ function Courses() {
           <Plus /> Add
         </Button>
       </form>
+      <EnrollmentDialog
+        course={managing ? (courses.data?.find((c) => c.id === managing.id) ?? managing) : null}
+        onClose={() => setManaging(null)}
+      />
     </Card>
   );
 }

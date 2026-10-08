@@ -39,6 +39,7 @@ import {
   createDepartment,
   createSection,
   enrollStudents,
+  listCourseStudents,
   listCourses,
   listDepartments,
   listSections,
@@ -104,6 +105,10 @@ adminRouter.get('/courses', async (_req, res) => {
 adminRouter.post('/courses', async (req, res) => {
   const course = await createCourse(currentUser(req), parse(createCourseSchema, req.body));
   res.status(201).json({ id: String(course._id) });
+});
+
+adminRouter.get('/courses/:courseId/students', async (req, res) => {
+  res.json(await listCourseStudents(param(req, 'courseId')));
 });
 
 adminRouter.post('/courses/:courseId/enroll', async (req, res) => {

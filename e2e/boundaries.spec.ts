@@ -1,6 +1,5 @@
-import { expect, test } from '@playwright/test';
 import { io } from 'socket.io-client';
-import { composer, conversation, openConversation, PEOPLE, personPage, signIn } from './fixtures';
+import { composer, conversation, expect, openConversation, PEOPLE, signIn, test } from './fixtures';
 
 const COURSE = 'Advanced Web Technologies · BCS-7A';
 
@@ -13,10 +12,10 @@ test('a student reads announcements but cannot post in them', async ({ page }) =
   await expect(composer(page)).toHaveCount(0);
 });
 
-test('messages arrive live for other members and never for other sections', async ({ browser }) => {
-  const imran = await personPage(browser, PEOPLE.imran);
-  const hira = await personPage(browser, PEOPLE.hira);
-  const usman = await personPage(browser, PEOPLE.usman); // BCS-7B: not in this course
+test('messages arrive live for other members and never for other sections', async ({ person }) => {
+  const imran = await person(PEOPLE.imran);
+  const hira = await person(PEOPLE.hira);
+  const usman = await person(PEOPLE.usman); // BCS-7B: not in this course
 
   await openConversation(imran, COURSE);
   await openConversation(hira, COURSE);
@@ -31,18 +30,18 @@ test('messages arrive live for other members and never for other sections', asyn
 });
 
 test('an instructor locks a course and the student composer updates instantly', async ({
-  browser,
+  person,
 }) => {
-  const imran = await personPage(browser, PEOPLE.imran);
-  const hira = await personPage(browser, PEOPLE.hira);
+  const imran = await person(PEOPLE.imran);
+  const hira = await person(PEOPLE.hira);
   await openConversation(imran, COURSE);
   await openConversation(hira, COURSE);
   await expect(composer(hira)).toBeVisible();
 
-  await imran.getByRole('button', { name: 'Lock' }).click();
+  await imran.getByRole('button', { name: 'Lock group' }).click();
   await expect(hira.getByTestId('composer-locked')).toContainText('locked');
 
-  await imran.getByRole('button', { name: 'Unlock' }).click();
+  await imran.getByRole('button', { name: 'Unlock group' }).click();
   await expect(composer(hira)).toBeVisible();
 });
 
@@ -65,10 +64,10 @@ test('the people directory only offers allowed direct messages', async ({ page }
 });
 
 test('an admin adds a student to a group and it appears in their sidebar live', async ({
-  browser,
+  person,
 }) => {
-  const admin = await personPage(browser, PEOPLE.admin);
-  const mehwish = await personPage(browser, PEOPLE.mehwish);
+  const admin = await person(PEOPLE.admin);
+  const mehwish = await person(PEOPLE.mehwish);
   await expect(conversation(mehwish, 'ACM CUI Chapter')).toHaveCount(0);
 
   const groups = await (await admin.request.get('/api/admin/groups?type=SOCIETY')).json();
@@ -83,17 +82,14 @@ test('an admin adds a student to a group and it appears in their sidebar live', 
   await expect(mehwish.getByText('You were added to ACM CUI Chapter')).toBeVisible();
 });
 
-test('the server blocks a crafted post and the admin sees it live', async ({
-  browser,
-  baseURL,
-}) => {
-  const admin = await personPage(browser, PEOPLE.admin);
+test('the server blocks a crafted post and the admin sees it live', async ({ person, baseURL }) => {
+  const admin = await person(PEOPLE.admin);
   await admin.goto('/admin');
   await expect(admin.getByRole('heading', { name: 'Overview' })).toBeVisible();
 
   // Bypass the UI entirely (the composer is disabled) with a raw Socket.IO client using
   // Hira's session cookie: the server, not the browser, enforces the boundary.
-  const hira = await personPage(browser, PEOPLE.hira);
+  const hira = await person(PEOPLE.hira);
   const session = (await hira.context().cookies()).find((c) => c.name === 'cui_session');
   const groups = await (await hira.request.get('/api/groups')).json();
   const campus = groups.find((g: { name: string }) => g.name === 'CUI Islamabad Official');

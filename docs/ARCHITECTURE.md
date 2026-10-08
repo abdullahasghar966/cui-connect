@@ -336,5 +336,5 @@ The app runs as one Node process, which comfortably serves a campus department. 
 | Level | Tooling | What it proves |
 |---|---|---|
 | Unit | Vitest | The policy matrix: every role × group type × action and every DM rule (78 cases) |
-| Integration | Vitest + in-memory MongoDB + several `socket.io-client`s + `fetch` | Real server behaviour: boundaries, room isolation, live membership sync, moderation, DM rules, rate limiting, validation, idempotency, presence, read receipts, revocation, the `/admin` namespace, provisioning and CSV import (41 tests) |
-| End-to-end | Playwright (Chromium), production build | Several people in separate browser contexts see each other's changes live, and the UI reflects server rules (6 tests) |
+| Integration | Vitest + in-memory MongoDB + several `socket.io-client`s + `fetch` | Real server behaviour: boundaries, room isolation, live membership sync, moderation, DM rules, rate limiting, validation, idempotency, presence, read receipts, revocation, the `/admin` namespace, provisioning, enrollment and CSV import (45 tests) |
+| End-to-end | Playwright (Chromium), production build | Several people in separate browser contexts see each other's changes live (messages, locks, enrollment, section moves), the UI reflects server rules, and history pages load on scroll (9 tests) |

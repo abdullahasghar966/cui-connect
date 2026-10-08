@@ -5,6 +5,7 @@ import type {
   CreateDepartmentInput,
   CreateSectionInput,
   DepartmentDTO,
+  PublicUserDTO,
   SectionDTO,
 } from '@cui/shared';
 import type { Types } from 'mongoose';
@@ -21,7 +22,7 @@ import {
   type UserDoc,
 } from '../models';
 import { recordAudit } from './audit';
-import { idOf, invalidateOrgLookup, toObjectId } from './mappers';
+import { getOrgLookup, idOf, invalidateOrgLookup, toObjectId, toPublicUserDTO } from './mappers';
 import {
   groupKeys,
   provisionCourse,
@@ -280,13 +281,27 @@ export async function unenrollStudent(
     { $pull: { studentIds: toObjectId(studentId) } },
   );
   await reconcileUser(studentId);
+  const student = await User.findById(studentId).select('name').lean<Pick<UserDoc, 'name'>>();
   void recordAudit({
     action: 'course.unenrolled',
     actor,
-    summary: `${actor?.name ?? 'System'} removed a student from ${course.code}`,
+    summary: `${actor?.name ?? 'System'} removed ${student?.name ?? 'a student'} from ${course.code}`,
     targetType: 'course',
     targetId: course._id,
   });
+}
+
+/** Students enrolled in a course offering, including repeaters from other sections. */
+export async function listCourseStudents(courseId: string): Promise<PublicUserDTO[]> {
+  const course = await CourseOffering.findById(courseId).lean<CourseOfferingDoc>();
+  if (!course) throw notFound('Course not found.');
+  const [students, org] = await Promise.all([
+    User.find({ _id: { $in: course.studentIds } })
+      .sort({ regNo: 1 })
+      .lean<UserDoc[]>(),
+    getOrgLookup(),
+  ]);
+  return students.map((s) => toPublicUserDTO(s, org));
 }
 
 /** Course group id for a course offering (used by tests and the admin UI). */

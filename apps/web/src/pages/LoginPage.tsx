@@ -191,6 +191,7 @@ export function LoginPage() {
                       type="button"
                       onClick={() => signInAs(account)}
                       disabled={login.isPending}
+                      aria-label={`Sign in as ${account.label} (${roleLabel({ name: account.label, role: account.role })})`}
                       className="flex w-full items-start gap-2.5 rounded-xl border bg-surface p-2.5 text-left transition-colors hover:border-primary/40 hover:bg-primary-soft/40 disabled:opacity-60"
                     >
                       <Avatar name={account.label} size="sm" />

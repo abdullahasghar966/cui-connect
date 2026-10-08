@@ -69,7 +69,7 @@ function MessageActions({ onDelete }: { onDelete: () => void }) {
         <button
           type="button"
           aria-label="Message options"
-          className="rounded-md p-1 text-muted-foreground opacity-0 transition-opacity group-hover/message:opacity-100 hover:bg-muted focus-visible:opacity-100 data-[state=open]:opacity-100"
+          className="rounded-md p-1 text-muted-foreground opacity-0 transition-opacity group-hover/message:opacity-100 hover:bg-muted focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100"
         >
           <Ellipsis className="size-4" />
         </button>

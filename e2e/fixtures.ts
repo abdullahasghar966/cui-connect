@@ -1,4 +1,12 @@
-import { type Browser, expect, type Page } from '@playwright/test';
+import {
+  type BrowserContext,
+  type BrowserContextOptions,
+  test as base,
+  expect,
+  type Page,
+} from '@playwright/test';
+
+export { expect };
 
 export const PASSWORD = 'Comsats@2026';
 
@@ -15,18 +23,30 @@ export async function signIn(page: Page, identifier: string) {
   await page.goto('/login');
   await page.getByLabel('Email or registration number').fill(identifier);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/chat/);
   await expect(page.getByText('Live', { exact: true })).toBeVisible();
 }
 
-/** A separate browser context = a separate cookie jar = a different person. */
-export async function personPage(browser: Browser, identifier: string): Promise<Page> {
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  await signIn(page, identifier);
-  return page;
-}
+type PersonFixture = (identifier: string, options?: BrowserContextOptions) => Promise<Page>;
+
+/**
+ * `person(id)` signs someone in inside their own browser context: a separate cookie jar is a
+ * different person. Every context is closed when the test ends.
+ */
+export const test = base.extend<{ person: PersonFixture }>({
+  person: async ({ browser }, use) => {
+    const contexts: BrowserContext[] = [];
+    await use(async (identifier, options = {}) => {
+      const context = await browser.newContext(options);
+      contexts.push(context);
+      const page = await context.newPage();
+      await signIn(page, identifier);
+      return page;
+    });
+    await Promise.all(contexts.map((context) => context.close()));
+  },
+});
 
 export function conversation(page: Page, name: string) {
   return page.getByRole('navigation', { name: 'Conversations' }).getByRole('link', {

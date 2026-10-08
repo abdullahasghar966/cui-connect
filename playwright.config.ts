@@ -33,6 +33,10 @@ export default defineConfig({
       LOG_LEVEL: 'warn',
       NODE_ENV: 'production',
       LOGIN_RATE_LIMIT: '1000',
+      // Lets the history test post a few pages of messages quickly; rate limiting itself is
+      // covered by the server integration tests.
+      MESSAGE_BURST: '500',
+      MESSAGE_RATE_PER_SEC: '500',
     },
   },
 });

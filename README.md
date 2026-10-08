@@ -58,8 +58,10 @@ The university's structure (departments, sections, course offerings, offices) cr
 - An `/admin` namespace for live stats and the audit feed.
 
 **Admin console**
-- Users: create, CSV bulk import, CR/HOD flags, password reset, deactivation.
-- University structure.
+- Users: create, CSV bulk import, edit details, CR/HOD flags, password reset, deactivation.
+  - Moving a student to another section swaps their class group live.
+- University structure: departments, sections with batch advisors, course offerings.
+  - Course enrollment manager: enroll repeaters from other sections or remove students; the course group appears or disappears in their sidebar instantly.
 - Group policy editor with members.
 - Live audit log.
 
@@ -70,6 +72,10 @@ The university's structure (departments, sections, course offerings, offices) cr
 | Admin overview: live stats and blocked attempts | Group policy editor |
 |---|---|
 | ![Admin overview](docs/screenshots/admin-overview.png) | ![Admin groups page](docs/screenshots/admin-groups.png) |
+
+| Course enrollment with a repeater | Dark mode |
+|---|---|
+| ![Enrollment manager](docs/screenshots/admin-enrollment.png) | ![Class group in dark mode](docs/screenshots/chat-dark.png) |
 
 ## Quick start
 
@@ -82,7 +88,7 @@ npm run dev
 
 Open **http://localhost:5173** and click any demo account.
 
-- `npm run dev` starts three processes: an embedded MongoDB, the API + Socket.IO server (port 4000) and the Vite dev server (port 5173).
+- `npm run dev` starts three processes: an embedded MongoDB, the API + Socket.IO server (port 4000) and the Vite dev server (port 5173). The web server waits until the API is ready.
 - The first start seeds the demo campus automatically.
 - To use your own MongoDB (local or Atlas), set `MONGODB_URI` in `.env`; see [Configuration](#configuration).
 
@@ -103,7 +109,7 @@ The password for every account is **`Comsats@2026`**. Students can sign in with 
 
 | Person | Sign in with | Try this |
 |---|---|---|
-| IT Services Admin | `admin@comsats.edu.pk` | Admin console: live audit feed, add a student to the faculty lounge (refused) |
+| IT Services Admin | `admin@comsats.edu.pk` | Admin console: live audit feed, enroll a repeater (Structure), add a student to the faculty lounge (refused) |
 | Director's Office (staff) | `director.office@comsats.edu.pk` | Post in *CUI Islamabad Official* |
 | Dr. Ayesha Siddiqui (HOD CS) | `ayesha.siddiqui@comsats.edu.pk` | Post CS notices; owns the CS faculty lounge and CR council |
 | Dr. Imran Haider (faculty) | `imran.haider@comsats.edu.pk` | Lock/unlock the AWT course; mute a student in BCS-7A |
@@ -185,8 +191,8 @@ The rules live in one pure, fully unit-tested module, [`packages/shared/src/poli
 ## Testing
 
 ```bash
-npm test        # 119 tests: policy matrix + Socket.IO integration
-npm run e2e     # 6 browser tests with several people at once
+npm test        # 123 tests: policy matrix + Socket.IO integration
+npm run e2e     # 9 browser tests with several people at once
 ```
 
 - **Policy unit tests:** every role × group type × action, all DM rules.
@@ -203,7 +209,9 @@ npm run e2e     # 6 browser tests with several people at once
   - only admins can join `/admin`.
 - **End-to-end tests:** run the production build in Chromium with separate browser contexts (different people). Examples:
   - an instructor locks a course and the student's composer switches to read-only instantly;
-  - an admin adds a student to a society and it appears in their sidebar live.
+  - an admin adds a student to a society and it appears in their sidebar live;
+  - an admin enrolls a repeater from another section, or moves a student to another section, and the student's sidebar changes live;
+  - scrolling up loads older messages page by page.
 
 ## Configuration
 
