@@ -13,6 +13,7 @@ The university's structure (departments, sections, course offerings, offices) cr
 - [Features](#features)
 - [Quick start](#quick-start)
 - [Demo accounts](#demo-accounts)
+- [Start from scratch](#start-from-scratch-your-own-campus)
 - [Communication boundaries](#communication-boundaries)
 - [Tech stack](#tech-stack)
 - [Project structure](#project-structure)
@@ -129,6 +130,27 @@ The password for every account is **`Comsats@2026`**. Students can sign in with 
 
 All 37 accounts are defined in [`apps/server/src/seed/data.ts`](apps/server/src/seed/data.ts). Run `npm run seed` to reset the demo data at any time.
 
+## Start from scratch (your own campus)
+
+Stop the app, then run:
+
+```bash
+npm run setup
+```
+
+It asks you to type `DELETE`, then for the administrator's name, email and password (the password is hidden as you type). It deletes **every** user, group and message and leaves an empty campus: the *CUI Islamabad Official* channel and your admin account. The login page stops listing demo accounts. Run `npm run seed` to go back to the demo campus.
+
+Sign in as the admin and build the campus in this order (each step needs the one before it):
+
+1. **Structure → Departments** (e.g. CS). Each gets a notices channel, a faculty lounge and a CR council.
+2. **Users → Add user: faculty and staff.** Faculty need a department (tick *HOD* for the head); staff need an office.
+3. **Structure → Sections** (e.g. BCS-7A) with a batch advisor. Each gets a class group.
+4. **Users → Add user: students** in their section (tick *CR* for class representatives), or **Import CSV**.
+5. **Structure → Courses** with a section and instructor. Everyone in the section is enrolled automatically; add repeaters with the enrollment manager.
+6. Optional: societies and custom groups under **Groups & rules**.
+
+For scripts: `SETUP_ADMIN_NAME`, `SETUP_ADMIN_EMAIL` and `SETUP_ADMIN_PASSWORD` in the environment plus `npm run setup -- --yes` skip the questions.
+
 ## Communication boundaries
 
 | Group | Who is a member | Who can post |
@@ -192,6 +214,7 @@ The rules live in one pure, fully unit-tested module, [`packages/shared/src/poli
 | `npm run build` | Builds the web app and bundles the server |
 | `npm start` | Runs the production server (UI + API + Socket.IO on port 4000) |
 | `npm run seed` | Resets the database and loads the demo campus |
+| `npm run setup` | Deletes everything and creates an empty campus with your own admin |
 | `npm test` | Unit tests (policy engine) + server integration tests |
 | `npm run e2e` | Builds, then runs the Playwright end-to-end tests |
 | `npm run typecheck` | TypeScript checks for all workspaces |

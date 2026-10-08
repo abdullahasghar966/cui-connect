@@ -9,6 +9,7 @@
     "build": "tsdown",
     "start": "node dist/index.mjs",
     "seed": "tsx src/seed/cli.ts",
+    "setup": "tsx src/seed/setup-cli.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {

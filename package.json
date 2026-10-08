@@ -19,6 +19,7 @@
     "build": "npm run build -w @cui/web && npm run build -w @cui/server",
     "start": "npm run start -w @cui/server",
     "seed": "npm run seed -w @cui/server",
+    "setup": "npm run setup -w @cui/server --",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "npm run build && playwright test",

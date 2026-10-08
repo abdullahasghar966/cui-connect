@@ -8,6 +8,7 @@ import { env } from '../../config/env';
 import { forbidden, notFound, parse, unauthorized } from '../../lib/errors';
 import { User, type UserDoc } from '../../models';
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../../seed/data';
+import { isDemoCampus } from '../../seed/setup';
 import { recordAudit } from '../../services/audit';
 import { getOrgLookup, toUserDTO } from '../../services/mappers';
 
@@ -64,8 +65,11 @@ authRouter.get('/me', requireAuth, async (req, res) => {
   res.json({ user: toUserDTO(currentUser(req), await getOrgLookup()) });
 });
 
-/** Demo accounts for the login screen (disable with DEMO_MODE=false). */
-authRouter.get('/demo-accounts', (_req, res) => {
-  if (!env.DEMO_MODE) throw notFound();
+/**
+ * Demo accounts for the login screen. Hidden with DEMO_MODE=false, and after `npm run setup`
+ * replaced the demo campus with a real one (those accounts no longer exist).
+ */
+authRouter.get('/demo-accounts', async (_req, res) => {
+  if (!env.DEMO_MODE || !(await isDemoCampus())) throw notFound();
   res.json({ password: DEMO_PASSWORD, accounts: DEMO_ACCOUNTS });
 });
