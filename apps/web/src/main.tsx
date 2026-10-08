@@ -26,7 +26,10 @@ function ThemedToaster() {
   return (
     <Toaster
       theme={theme}
-      position="top-center"
+      // Bottom-right, lifted above the composer, so toasts never cover the header actions.
+      position="bottom-right"
+      offset={{ bottom: 112, right: 24 }}
+      mobileOffset={{ bottom: 104 }}
       closeButton
       toastOptions={{
         classNames: {

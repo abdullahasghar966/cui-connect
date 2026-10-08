@@ -77,7 +77,7 @@ export default function OverviewPage() {
           <Stat
             label="Blocked / min"
             value={stats?.deniedLastMinute ?? 0}
-            hint={`${stats?.messagesLastMinute ?? 0} messages / min`}
+            hint={`Messages: ${stats?.messagesLastMinute ?? 0} / min`}
             live
           />
         </StatStrip>

@@ -702,8 +702,10 @@ export default function UsersPage() {
                       )}
                     </span>
                   </td>
-                  <td className="text-muted-foreground">{user.regNo ?? user.designation ?? '—'}</td>
-                  <td className="text-muted-foreground">
+                  <td className="whitespace-nowrap text-muted-foreground">
+                    {user.regNo ?? user.designation ?? '—'}
+                  </td>
+                  <td className="whitespace-nowrap text-muted-foreground">
                     {[user.departmentCode, user.sectionName].filter(Boolean).join(' · ') ||
                       'Campus-wide'}
                   </td>

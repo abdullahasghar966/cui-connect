@@ -479,7 +479,7 @@ export default function GroupsPage() {
                       >
                         <GroupIcon type={g.type} size="sm" />
                         <span>
-                          <span className="block font-medium">{g.name}</span>
+                          <span className="block font-medium whitespace-nowrap">{g.name}</span>
                           <span className="block text-xs text-muted-foreground">
                             {GROUP_TYPE_LABELS[g.type]}
                           </span>
