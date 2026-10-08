@@ -7,7 +7,7 @@
 > - the ordered list of remaining tasks;
 > - the conventions (including **push to GitHub after every completed task**).
 >
-> **Last updated:** Thursday 2026-10-08, afternoon (Pakistan time).
+> **Last updated:** Thursday 2026-10-08, about 20:45 Pakistan time.
 > **Deadline:** **Friday 2026-10-09, morning.**
 > **Repository:** https://github.com/abdullahasghar966/cui-connect (public), branch `main`.
 
@@ -27,7 +27,7 @@ and push to GitHub (origin main). Explain anything I need to decide in simple te
 |---|---|
 | Assignment features (users, groups, communication boundaries, realistic COMSATS model) | **Done and verified** |
 | Approved plan, phases 0–7 (backend, web app, admin console, E2E, docs) | **Done** |
-| QA pass + extras (enrollment manager, edit user, fixes) | **Done** (commit `8e438d2`) |
+| QA pass + extras (enrollment manager, edit user, fixes) | **Done** (commit `b4c916e`) |
 | UI redesign ("make it look production-level": Slack-style workspace, Emerald accent) | **In progress.** Code is written and every automated gate passes. The visual review, screenshots and README text are still to do |
 | Lint (Biome) / typecheck (TS 7) | Green |
 | Unit + integration tests (Vitest) | **123 / 123 passing** (78 policy + 45 server integration) |
@@ -51,7 +51,7 @@ and push to GitHub (origin main). Explain anything I need to decide in simple te
    - extra deliverables: **README + architecture docs only** (no Word report, no demo script).
 3. "i have time till friday morning keep this in mind too"
 4. Plan **approved**; the full text is in Appendix A.
-5. "ok it running uptill now. do the test for yourself too and make sure everything is working and continue building remainings and tell me what i need to do". This led to a full QA pass, fixes, the enrollment manager and the edit-user dialog (commit `8e438d2`).
+5. "ok it running uptill now. do the test for yourself too and make sure everything is working and continue building remainings and tell me what i need to do". This led to a full QA pass, fixes, the enrollment manager and the edit-user dialog (commit `b4c916e`).
 6. "it looks like AI SLOP. Change the theme and make it look real Production level project". The user chose layout **"Workspace (Slack-style)"** and colour **"Emerald"**. This redesign is the work in progress.
 7. "how many security layers are there in this project?" Answered: 12 layers (see §7).
 8. "give me everything in detail in one .md file … create public repo on github and push everything … Then automatically start pushing everything being completed one by one". This file, the repo, and the push-after-each-task rule.
@@ -374,9 +374,9 @@ It replaces them with real workspace-app patterns.
   2. Commit with the author flags and trailer below.
   3. Push to `origin main`.
   4. Tell the user what was pushed.
-- **Git author:**
+- **Git author.** Always use the **GitHub no-reply email**. The account has email privacy on, so GitHub rejects pushes that contain the Gmail address (`GH007`).
   ```
-  git -c user.name="Abdullah" -c user.email="abdullah.asghar.cs@gmail.com" commit -F <message-file>
+  git -c user.name="Abdullah" -c user.email="203540047+abdullahasghar966@users.noreply.github.com" commit -F <message-file>
   ```
   - Write the message to a scratch file with the Write tool, because PowerShell 5.1 breaks inline multi-line messages.
   - End every message with the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
@@ -411,13 +411,15 @@ It replaces them with real workspace-app patterns.
 
 | Commit | What |
 |---|---|
-| `b95fe2e` | Backend: policy engine, Socket.IO server, provisioning, embedded MongoDB, seed, 119 tests |
-| `435ca2d` | Web app: login, real-time chat, DMs, moderation UI |
-| `f63ce16` | Admin console: overview, users, structure, groups, live audit |
-| `24e2690` | Production build, Playwright E2E, plus fixes found by them (`/admin` namespace auto-connect, toast overlap, exact counts) |
-| `175ae18` | Docs: README, ARCHITECTURE, screenshots |
-| `8e438d2` | QA pass fixes (touch-visible actions, a11y names, title reset, 12-hour mute time, audit wording, shell-quote override, wait-for-api), enrollment manager, edit user, 123 + 9 tests |
-| *(this push)* | UI redesign in progress (all gates green), E2E selector fix, PROJECT_CONTEXT.md |
+| `45c8d3e` | Backend: policy engine, Socket.IO server, provisioning, embedded MongoDB, seed, 119 tests |
+| `e4dbd33` | Web app: login, real-time chat, DMs, moderation UI |
+| `1d7232c` | Admin console: overview, users, structure, groups, live audit |
+| `397c05f` | Production build, Playwright E2E, plus fixes found by them (`/admin` namespace auto-connect, toast overlap, exact counts) |
+| `9b6b92c` | Docs: README, ARCHITECTURE, screenshots |
+| `b4c916e` | QA pass fixes (touch-visible actions, a11y names, title reset, 12-hour mute time, audit wording, shell-quote override, wait-for-api), enrollment manager, edit user, 123 + 9 tests |
+| `7bab472` | UI redesign in progress (all gates green), E2E selector fix, PROJECT_CONTEXT.md |
+
+These commit IDs are from after the first push to GitHub. Before that push, the author email was changed from the Gmail address to the GitHub no-reply address; names, dates and content are unchanged.
 
 **Notable bugs found and fixed** (useful for the viva's "challenges" question):
 - The `/admin` namespace never connected in production: it shared the main Manager, which has `autoConnect: false`. Fixed with an explicit `connect()`.
@@ -435,7 +437,9 @@ It replaces them with real workspace-app patterns.
   - verified the redesign;
   - fixed the E2E selector;
   - wrote this file;
-  - created the GitHub repo and pushed.
+  - created the public GitHub repo;
+  - switched commit emails to the no-reply address (GitHub blocked the private Gmail);
+  - pushed.
 
 ---
 
