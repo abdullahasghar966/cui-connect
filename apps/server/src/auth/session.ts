@@ -46,11 +46,15 @@ export function readSessionCookie(cookieHeader: string | undefined): string | un
   return parseCookie(cookieHeader)[SESSION_COOKIE];
 }
 
-export function sessionCookieOptions(): CookieOptions {
+/**
+ * `secure` follows the request: a sign-in over HTTPS (directly, or through a local tunnel such
+ * as cloudflared, which forwards X-Forwarded-Proto from loopback) gets an HTTPS-only cookie.
+ */
+export function sessionCookieOptions(overHttps = false): CookieOptions {
   return {
     httpOnly: true,
     sameSite: 'lax',
-    secure: env.COOKIE_SECURE,
+    secure: env.COOKIE_SECURE || overHttps,
     path: '/',
     maxAge: durationToMs(env.JWT_TTL),
   };

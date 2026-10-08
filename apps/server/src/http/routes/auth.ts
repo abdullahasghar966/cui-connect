@@ -52,7 +52,7 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
   if (!user.active)
     throw forbidden('This account has been deactivated. Please contact IT Services.');
 
-  res.cookie(SESSION_COOKIE, await signSession(user), sessionCookieOptions());
+  res.cookie(SESSION_COOKIE, await signSession(user), sessionCookieOptions(req.secure));
   res.json({ user: toUserDTO(user, await getOrgLookup()) });
 });
 

@@ -111,6 +111,20 @@ npm start
 
 Then open http://localhost:4000.
 
+**People in other cities** (free, no hosting account): install Cloudflare's tunnel tool once, then share a public `https://` link to this computer.
+
+```bash
+winget install --id Cloudflare.cloudflared
+```
+```bash
+npm run build
+```
+```bash
+npm run share
+```
+
+`npm run share` starts the production server and a [Cloudflare quick tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) and prints a link like `https://random-words.trycloudflare.com`. Anyone with the link can open the sign-in page; each person signs in with their own account. The link works while the window stays open and the computer is online and awake, and it changes every time you run the command. Sessions opened through the tunnel get an HTTPS-only cookie automatically.
+
 **Two people at once:** each browser keeps one session, so open a second **private/incognito window**, or a different browser, to sign in as someone else. In production mode, `http://localhost:4000` and `http://127.0.0.1:4000` also count as separate sites.
 
 ## Demo accounts
@@ -213,6 +227,7 @@ The rules live in one pure, fully unit-tested module, [`packages/shared/src/poli
 | `npm run dev` | Embedded MongoDB + API (watch mode) + Vite dev server |
 | `npm run build` | Builds the web app and bundles the server |
 | `npm start` | Runs the production server (UI + API + Socket.IO on port 4000) |
+| `npm run share` | Production server + a public Cloudflare quick-tunnel link (needs `cloudflared`) |
 | `npm run seed` | Resets the database and loads the demo campus |
 | `npm run setup` | Deletes everything and creates an empty campus with your own admin |
 | `npm test` | Unit tests (policy engine) + server integration tests |

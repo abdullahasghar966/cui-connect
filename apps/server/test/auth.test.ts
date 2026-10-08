@@ -31,6 +31,17 @@ describe('authentication', () => {
     expect(cookie).toMatch(/SameSite=Lax/i);
   });
 
+  it('marks the cookie Secure only when the sign-in arrived over HTTPS (e.g. a local tunnel)', async () => {
+    const viaTunnel = await app.api(null, '/api/auth/login', {
+      method: 'POST',
+      headers: { 'x-forwarded-proto': 'https' },
+      body: JSON.stringify({ identifier: ACCOUNTS.hira, password: DEMO_PASSWORD }),
+    });
+    expect(viaTunnel.headers.get('set-cookie')).toMatch(/;\s*Secure/i);
+    const plain = await loginRequest(ACCOUNTS.hira, DEMO_PASSWORD);
+    expect(plain.headers.get('set-cookie')).not.toMatch(/;\s*Secure/i);
+  });
+
   it('signs in with a registration number, case-insensitively', async () => {
     const res = await loginRequest(ACCOUNTS.hira.toLowerCase(), DEMO_PASSWORD);
     expect(res.status).toBe(200);

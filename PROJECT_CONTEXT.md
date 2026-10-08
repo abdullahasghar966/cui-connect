@@ -29,6 +29,7 @@ and push to GitHub (origin main). Explain anything I need to decide in simple te
 | Approved plan, phases 0–7 (backend, web app, admin console, E2E, docs) | **Done** |
 | QA pass + extras (enrollment manager, edit user, fixes) | **Done** (commit `b4c916e`) |
 | UI redesign ("make it look production-level": Slack-style workspace, Emerald accent) | **Done.** Visual review of all 27 screens (light, dark, mobile), fixes, new doc screenshots, README + ARCHITECTURE updated |
+| Start from scratch + remote access (user request, 2026-10-08 night) | **Done.** `npm run setup` (empty campus + own admin; demo list hidden unless the DB holds the demo campus) and `npm run share` (production server + Cloudflare quick tunnel; cookie becomes Secure over HTTPS). cloudflared 2026.10.0 installed via winget. The auto-mode classifier blocks Claude from opening the tunnel itself: **the user runs `npm run share`**. The Claude Terminal panel fails to start on this machine (missing shell-integration file) |
 | Final verification | **Done.** All gates green, `npm run build` + `npm start` smoke test as two users (localhost + 127.0.0.1): live message and live delete |
 | Lint (Biome) / typecheck (TS 7) | Green |
 | Unit + integration tests (Vitest) | **123 / 123 passing** (78 policy + 45 server integration) |
