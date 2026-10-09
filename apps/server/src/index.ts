@@ -1,4 +1,5 @@
 import { env } from './config/env';
+import { explainMongoError, maskMongoUri } from './db/explain';
 import { resolveMongo } from './db/resolve';
 import { logger } from './lib/logger';
 import { startServer } from './server';
@@ -12,6 +13,13 @@ const server = await startServer({
   dbName: env.MONGO_DB_NAME,
   autoSeed: env.AUTO_SEED,
   resetSeed: env.SEED_ON_START === 'reset',
+}).catch((err: unknown) => {
+  if (mongo.mode !== 'external') throw err;
+  logger.fatal(
+    { err: (err as Error).message, uri: maskMongoUri(mongo.uri) },
+    `Cannot connect to MongoDB. ${explainMongoError(err)}`,
+  );
+  process.exit(1);
 });
 logger.info(`CUI Connect API + Socket.IO listening on ${server.url}`);
 
