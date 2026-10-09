@@ -4,6 +4,8 @@
 
 *Lab Assignment 1 (CLO-5) · Advanced Web Technologies*
 
+**Live:** https://cui-connect.onrender.com · **[User guide](docs/USER_GUIDE.md)**
+
 The university's structure (departments, sections, course offerings, offices) creates the groups. A server-side policy engine enforces **communication boundaries**: who can post in which group, who can join it, who can moderate it, and who can message whom directly. Every boundary is checked on the server for every Socket.IO event and REST call, and the UI explains each rule to the user.
 
 ![Instructor view of a course group with the members panel](docs/screenshots/chat-instructor.png)
@@ -22,6 +24,7 @@ The university's structure (departments, sections, course offerings, offices) cr
 - [Testing](#testing)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
+- [User guide: every feature, step by step →](docs/USER_GUIDE.md)
 - [Architecture & Socket.IO design →](docs/ARCHITECTURE.md)
 
 ## Features
