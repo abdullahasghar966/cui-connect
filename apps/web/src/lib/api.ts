@@ -4,6 +4,7 @@ import type {
   AdminOverviewDTO,
   ApiErrorBody,
   AuditDTO,
+  ChangePasswordInput,
   CourseDTO,
   CreateCourseInput,
   CreateDepartmentInput,
@@ -12,6 +13,7 @@ import type {
   CreateUserInput,
   CsvImportResultDTO,
   DepartmentDTO,
+  FirstAdminInput,
   GroupDTO,
   GroupType,
   LoginInput,
@@ -91,6 +93,10 @@ export const api = {
   me: () => request<{ user: UserDTO }>('/api/auth/me'),
   demoAccounts: () =>
     request<{ password: string; accounts: DemoAccount[] }>('/api/auth/demo-accounts'),
+  setupStatus: () => request<{ needed: boolean; codeRequired: boolean }>('/api/auth/setup'),
+  setup: (input: FirstAdminInput) => send<{ user: UserDTO }>('/api/auth/setup', 'POST', input),
+  changePassword: (input: ChangePasswordInput) =>
+    send<{ ok: true }>('/api/auth/password', 'POST', input),
 
   groups: () => request<GroupDTO[]>('/api/groups'),
   discover: () => request<AdminGroupDTO[]>('/api/groups/discover'),

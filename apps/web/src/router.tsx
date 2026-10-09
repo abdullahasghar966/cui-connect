@@ -10,6 +10,7 @@ import { ChatLayout } from '@/pages/chat/ChatLayout';
 import { ChatView } from '@/pages/chat/ChatView';
 import { DiscoverDialog, NewMessageDialog } from '@/pages/chat/dialogs';
 import { LoginPage } from '@/pages/LoginPage';
+import { SetupPage } from '@/pages/SetupPage';
 import { useRealtime } from '@/state/realtime';
 import { useUi } from '@/state/ui';
 
@@ -80,6 +81,7 @@ function RequireAdmin() {
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  { path: '/setup', element: <SetupPage /> },
   {
     element: <RequireAuth />,
     children: [

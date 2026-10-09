@@ -13,6 +13,7 @@ The university's structure (departments, sections, course offerings, offices) cr
 - [Features](#features)
 - [Quick start](#quick-start)
 - [Demo accounts](#demo-accounts)
+- [Deploy (one permanent link)](#deploy-one-permanent-link)
 - [Start from scratch](#start-from-scratch-your-own-campus)
 - [Communication boundaries](#communication-boundaries)
 - [Tech stack](#tech-stack)
@@ -144,6 +145,16 @@ The password for every account is **`Comsats@2026`**. Students can sign in with 
 
 All 37 accounts are defined in [`apps/server/src/seed/data.ts`](apps/server/src/seed/data.ts). Run `npm run seed` to reset the demo data at any time.
 
+## Deploy (one permanent link)
+
+The app is one Node.js process (UI + API + Socket.IO), so it needs a host that keeps a server running. [`render.yaml`](render.yaml) deploys it to **Render** (free) with a free **MongoDB Atlas** database. Vercel's functions are a poor fit: on the free plan connections end after 5 minutes, and live messages don't reach people connected to a different instance.
+
+1. **MongoDB Atlas:** create a free cluster, a database user, allow access from anywhere (`0.0.0.0/0`, as Render's free tier has no fixed IP), and copy the connection string.
+2. **Render:** *New → Blueprint*, pick this GitHub repository, then fill in the two values it asks for: `MONGODB_URI` (the Atlas string) and `SETUP_CODE` (any secret phrase).
+3. Open the `https://….onrender.com` link. The **Set up CUI Connect** page asks for the setup code and creates your administrator; the admin console then shows a five-step checklist (departments → faculty and staff → sections → students → courses).
+
+Everyone signs in with the account the admin creates for them and can change their password from the account menu. The free service sleeps after 15 minutes without visitors; the next visit wakes it in about a minute. The site starts empty: no demo data and no demo accounts.
+
 ## Start from scratch (your own campus)
 
 Stop the app, then run:
@@ -272,6 +283,8 @@ Everything works without a `.env` file. To customise, copy `.env.example` to `.e
 | `AUTO_SEED` | `true` | Seed demo data when the database is empty |
 | `DEMO_MODE` | `true` | Show demo accounts on the login screen |
 | `COOKIE_SECURE` | `false` | Set `true` behind HTTPS |
+| `SETUP_CODE` | *(empty)* | Code the first-run setup page asks for before creating the first admin |
+| `TRUST_PROXY` | `loopback` | Proxy hops to trust for client IPs (`1` behind a host's load balancer) |
 
 ## Troubleshooting
 

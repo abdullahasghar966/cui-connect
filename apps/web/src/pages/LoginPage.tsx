@@ -23,6 +23,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const demo = useQuery({ queryKey: ['demo-accounts'], queryFn: api.demoAccounts, retry: false });
+  const setupStatus = useQuery({ queryKey: ['setup-status'], queryFn: api.setupStatus });
 
   const login = useMutation({
     mutationFn: api.login,
@@ -35,6 +36,7 @@ export function LoginPage() {
   });
 
   if (me) return <Navigate to="/chat" replace />;
+  if (setupStatus.data?.needed) return <Navigate to="/setup" replace />;
 
   const submit = (event: FormEvent) => {
     event.preventDefault();

@@ -11,17 +11,15 @@ export interface SetupInput {
   password: string;
 }
 
+const parseAdmin = (input: SetupInput) => createUserSchema.parse({ ...input, role: 'admin' });
+
 /**
- * Wipes every collection and leaves an empty campus: the official campus channel and one
- * IT Services admin, who then builds the real structure from the admin console.
+ * Creates the official campus channel and the first IT Services admin, who then builds the real
+ * structure from the admin console. Used by the first-run setup page and `npm run setup`.
  */
-export async function setupFreshCampus(input: SetupInput): Promise<UserDoc> {
-  const admin = createUserSchema.parse({ ...input, role: 'admin' });
-
-  await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
-  invalidateOrgLookup();
+export async function createFirstAdmin(input: SetupInput): Promise<UserDoc> {
+  const admin = parseAdmin(input);
   await ensureCampusGroup();
-
   const user = (
     await User.create({
       name: admin.name,
@@ -38,6 +36,19 @@ export async function setupFreshCampus(input: SetupInput): Promise<UserDoc> {
     summary: `Fresh campus set up with administrator ${user.name}`,
   });
   return user;
+}
+
+/** `npm run setup`: wipes every collection, then creates the first admin. */
+export async function setupFreshCampus(input: SetupInput): Promise<UserDoc> {
+  parseAdmin(input); // validate before deleting anything
+  await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
+  invalidateOrgLookup();
+  return createFirstAdmin(input);
+}
+
+/** True while nobody can sign in yet: the first-run setup page is shown. */
+export async function needsFirstAdmin(): Promise<boolean> {
+  return !(await User.exists({}));
 }
 
 /** True when the database holds the demo campus (it was seeded and not set up fresh since). */

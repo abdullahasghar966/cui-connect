@@ -28,6 +28,21 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Enter your password').max(200),
 });
 
+/** First-run setup: creates the first administrator from the browser. */
+export const firstAdminSchema = z.object({
+  name: z.string().trim().min(2, 'Name is too short').max(80),
+  email: emailSchema,
+  password: passwordSchema,
+  setupCode: z.string().max(200).optional(),
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Enter your current password').max(200),
+  newPassword: passwordSchema,
+  /** The caller's own socket stays connected; every other session is signed out. */
+  keepSocketId: z.string().max(64).optional(),
+});
+
 const userFields = {
   name: z.string().trim().min(2, 'Name is too short').max(80),
   email: emailSchema,
@@ -196,6 +211,8 @@ export const muteMemberSchema = z.object({
 export const openDmSchema = z.object({ userId: objectIdSchema });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+export type FirstAdminInput = z.infer<typeof firstAdminSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CsvImportInput = z.infer<typeof csvImportSchema>;

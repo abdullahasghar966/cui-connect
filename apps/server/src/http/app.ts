@@ -38,7 +38,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', 'loopback');
+  app.set('trust proxy', env.TRUST_PROXY);
 
   app.use(
     helmet({

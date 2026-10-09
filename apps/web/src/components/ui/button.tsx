@@ -3,7 +3,8 @@ import { LoaderCircle } from 'lucide-react';
 import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
-const buttonVariants = cva(
+/** Also used to style links that look like buttons. */
+export const buttonVariants = cva(
   'inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {

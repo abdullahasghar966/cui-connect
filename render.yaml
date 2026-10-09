@@ -1,0 +1,40 @@
+# Render Blueprint: one web service runs the UI, the REST API and Socket.IO on a single port.
+# Render asks for the two `sync: false` values when the Blueprint is created.
+services:
+  - type: web
+    name: cui-connect
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      # Render routes traffic to port 10000 by default.
+      - key: API_PORT
+        value: "10000"
+      # MongoDB Atlas connection string (the free disk is wiped whenever the service sleeps).
+      - key: MONGODB_URI
+        sync: false
+      # Any secret phrase: the first-run setup page asks for it before creating the admin.
+      - key: SETUP_CODE
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: "true"
+      # One load balancer in front of the app: rate limits see each visitor's real IP.
+      - key: TRUST_PROXY
+        value: "1"
+      # A real campus: no demo data, no demo accounts on the login page.
+      - key: AUTO_SEED
+        value: "false"
+      - key: DEMO_MODE
+        value: "false"
+      # The embedded MongoDB binary is only for local development; don't download it here.
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"

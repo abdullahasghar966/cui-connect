@@ -30,6 +30,21 @@ const schema = z.object({
     .regex(/^\d+[smhd]$/, 'Use a duration like 30m, 12h or 7d')
     .default('12h'),
   COOKIE_SECURE: z.stringbool().default(false),
+  /**
+   * Express `trust proxy`: `loopback` locally (cloudflared), a hop count such as `1` behind a
+   * hosting provider's load balancer, so rate limits see each visitor's real IP.
+   */
+  TRUST_PROXY: z
+    .string()
+    .trim()
+    .default('loopback')
+    .transform((v) => (/^\d+$/.test(v) ? Number(v) : v)),
+  /** When set, the first-run setup page asks for this code before creating the first admin. */
+  SETUP_CODE: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => v || undefined),
   AUTO_SEED: z.stringbool().default(true),
   DEMO_MODE: z.stringbool().default(true),
   SEED_ON_START: z.enum(['reset', 'none']).default('none'),

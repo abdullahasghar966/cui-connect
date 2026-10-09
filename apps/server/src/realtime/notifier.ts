@@ -75,10 +75,12 @@ export function notifyMembershipRemoved(userId: string, groupId: string, reason:
   io.in(userRoom(userId)).socketsLeave(groupRoom(groupId));
 }
 
-export function revokeUserSessions(userId: string, reason: string): void {
+/** Signs the user out everywhere, except the socket `keepSocketId` (the tab making the change). */
+export function revokeUserSessions(userId: string, reason: string, keepSocketId?: string): void {
   if (!io) return;
-  io.to(userRoom(userId)).emit('session:revoked', { reason });
-  io.in(userRoom(userId)).disconnectSockets(false);
+  const except = keepSocketId ? [keepSocketId] : [];
+  io.to(userRoom(userId)).except(except).emit('session:revoked', { reason });
+  io.in(userRoom(userId)).except(except).disconnectSockets(false);
 }
 
 export function publishAudit(entry: AuditDTO): void {

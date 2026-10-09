@@ -1,4 +1,5 @@
 import {
+  type AdminOverviewDTO,
   type AuditDTO,
   defaultGroupSettings,
   describePostPolicy,
@@ -6,14 +7,15 @@ import {
   type GroupType,
 } from '@cui/shared';
 import { useQuery } from '@tanstack/react-query';
-import { ShieldAlert } from 'lucide-react';
+import { Check, ShieldAlert } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { Spinner } from '@/components/feedback';
 import { GroupIcon } from '@/components/group-meta';
+import { buttonVariants } from '@/components/ui/button';
 import { useAdminFeed } from '@/hooks/useAdminFeed';
 import { api } from '@/lib/api';
-import { formatTime } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
 import { Card, PageHeader, Stat, StatStrip, Table } from './ui';
 
 /** Who is in each kind of group: the other half of the boundary model. */
@@ -38,6 +40,100 @@ const DM_RULES: [string, string][] = [
   ['Anyone', 'May reply in a conversation the other person started.'],
 ];
 
+/** The order a new campus is built in: each step needs the one before it. */
+function SetupChecklist({ overview }: { overview: AdminOverviewDTO }) {
+  const { users, groups } = overview;
+  const steps = [
+    {
+      done: (groups.DEPARTMENT_ANNOUNCEMENT ?? 0) > 0,
+      title: 'Add a department',
+      detail: 'Each one gets a notices channel, a faculty lounge and a CR council.',
+      to: '/admin/structure',
+      action: 'Structure',
+    },
+    {
+      done: users.faculty > 0,
+      title: 'Add faculty and staff',
+      detail: 'Faculty belong to a department (tick HOD for the head); staff belong to an office.',
+      to: '/admin/users',
+      action: 'Users',
+    },
+    {
+      done: (groups.SECTION ?? 0) > 0,
+      title: 'Add a section with its batch advisor',
+      detail: 'For example BCS-7A. Each section gets a class group.',
+      to: '/admin/structure',
+      action: 'Structure',
+    },
+    {
+      done: users.student > 0,
+      title: 'Add students',
+      detail: 'One by one, or many at once with Import CSV. Tick CR for class representatives.',
+      to: '/admin/users',
+      action: 'Users',
+    },
+    {
+      done: (groups.COURSE ?? 0) > 0,
+      title: 'Add courses',
+      detail: 'Pick the section and instructor; the section’s students are enrolled automatically.',
+      to: '/admin/structure',
+      action: 'Structure',
+    },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  if (doneCount === steps.length) return null;
+  const nextIndex = steps.findIndex((s) => !s.done);
+
+  return (
+    <Card
+      title="Set up your campus"
+      description={`${doneCount} of ${steps.length} done. Each step needs the one before it.`}
+      className="mb-6"
+    >
+      <ol className="divide-y">
+        {steps.map((step, i) => (
+          <li key={step.title} className="flex items-center gap-3 px-4 py-3">
+            <span
+              className={cn(
+                'flex size-6 shrink-0 items-center justify-center rounded-full text-[12px] font-bold',
+                step.done
+                  ? 'bg-primary text-primary-foreground'
+                  : i === nextIndex
+                    ? 'border-2 border-primary text-primary'
+                    : 'border border-border-strong text-muted-foreground',
+              )}
+            >
+              {step.done ? <Check className="size-3.5" aria-label="Done" /> : i + 1}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span
+                className={cn(
+                  'block text-[14px] font-semibold',
+                  step.done && 'text-muted-foreground line-through',
+                )}
+              >
+                {step.title}
+              </span>
+              <span className="block text-[13px] text-muted-foreground">{step.detail}</span>
+            </span>
+            {!step.done && (
+              <Link
+                to={step.to}
+                className={buttonVariants({
+                  size: 'sm',
+                  variant: i === nextIndex ? 'primary' : 'outline',
+                })}
+              >
+                {step.action}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
 export default function OverviewPage() {
   const overview = useQuery({ queryKey: ['admin', 'overview'], queryFn: api.admin.overview });
   const [blocked, setBlocked] = useState<AuditDTO[]>([]);
@@ -59,6 +155,7 @@ export default function OverviewPage() {
         title="Overview"
         description="Who is on CUI Connect right now, and the communication rules it enforces."
       />
+      {overview.data && <SetupChecklist overview={overview.data} />}
       {overview.isPending ? (
         <Spinner />
       ) : (

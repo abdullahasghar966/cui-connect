@@ -1,6 +1,17 @@
 import { OFFICE_LABELS, type UserDTO } from '@cui/shared';
-import { Check, ChevronsUpDown, LayoutDashboard, LogOut, Monitor, Moon, Sun } from 'lucide-react';
+import {
+  Check,
+  ChevronsUpDown,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  Monitor,
+  Moon,
+  Sun,
+} from 'lucide-react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
 import { Avatar } from '@/components/people';
 import {
   DropdownMenu,
@@ -52,6 +63,7 @@ export function UserMenu({ variant }: { variant: 'rail' | 'sidebar' }) {
   const { preference, setPreference } = useTheme();
   const status = useRealtime((s) => s.status);
   const connected = status === 'connected';
+  const [passwordOpen, setPasswordOpen] = useState(false);
 
   return (
     <DropdownMenu>
@@ -113,10 +125,14 @@ export function UserMenu({ variant }: { variant: 'rail' | 'sidebar' }) {
             <LayoutDashboard /> Admin console
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem onSelect={() => setPasswordOpen(true)}>
+          <KeyRound /> Change password
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void signOut()} danger>
           <LogOut /> Sign out of CUI Connect
         </DropdownMenuItem>
       </DropdownMenuContent>
+      <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
     </DropdownMenu>
   );
 }

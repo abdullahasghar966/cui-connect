@@ -25,13 +25,14 @@ export interface TestApp {
   close: () => Promise<void>;
 }
 
-export async function startTestApp(): Promise<TestApp> {
+/** Starts a server on its own database: the demo campus, or empty with `{ seed: false }`. */
+export async function startTestApp({ seed = true } = {}): Promise<TestApp> {
   const dbName = `test_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const server = await startServer({
     port: 0,
     mongoUri: inject('mongoUri'),
     dbName,
-    resetSeed: true,
+    resetSeed: seed,
   });
   const sockets: ClientSocket[] = [];
 

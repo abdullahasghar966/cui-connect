@@ -12,6 +12,23 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start"],
       "port": 4000
+    },
+    {
+      "name": "cui-connect-fresh",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 4600,
+      "env": {
+        "API_PORT": "4600",
+        "EMBEDDED_MONGO_PORT": "27059",
+        "EMBEDDED_MONGO_DIR": ".data/mongo-fresh",
+        "MONGO_DB_NAME": "cui_connect_fresh",
+        "NODE_ENV": "production",
+        "AUTO_SEED": "false",
+        "DEMO_MODE": "false",
+        "SETUP_CODE": "rehearsal-code",
+        "TRUST_PROXY": "1"
+      }
     }
   ]
 }
