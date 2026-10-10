@@ -8,6 +8,7 @@ import type {
   LiveStatsDTO,
   MemberUpdateEvent,
   MessageDTO,
+  NotificationDTO,
 } from '@cui/shared';
 import { buildGroupDTO } from '../services/groups';
 import { type AdminNamespace, groupRoom, type IoServer, userRoom } from './types';
@@ -27,6 +28,10 @@ export function detachRealtime(): void {
 
 export function broadcastMessage(message: MessageDTO): void {
   io?.to(groupRoom(message.groupId)).emit('message:new', message);
+}
+
+export function pushNotification(userId: string, notification: NotificationDTO): void {
+  io?.to(userRoom(userId)).emit('notification:new', notification);
 }
 
 export function broadcastMessageDeleted(groupId: string, messageId: string): void {

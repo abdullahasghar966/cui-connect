@@ -8,6 +8,7 @@ import { createRealtime } from './realtime/io';
 import { resetPresence } from './realtime/presence';
 import type { IoServer } from './realtime/types';
 import { seedDatabase } from './seed/seed';
+import { ensureAcademicDefaults } from './services/academic-setup';
 
 export interface StartOptions {
   port: number;
@@ -38,6 +39,7 @@ export async function startServer(options: StartOptions): Promise<RunningServer>
     const summary = await seedDatabase();
     logger.info(summary, 'Empty database: demo data seeded');
   }
+  await ensureAcademicDefaults();
 
   const httpServer = createServer(createApp());
   const realtime = createRealtime(httpServer);

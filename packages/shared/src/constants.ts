@@ -3,7 +3,14 @@ export const ROLES = ['admin', 'faculty', 'staff', 'student'] as const;
 export type Role = (typeof ROLES)[number];
 
 /** Administrative offices a staff member can belong to. */
-export const OFFICES = ['DIRECTOR', 'EXAM', 'STUDENT_AFFAIRS', 'ADMISSIONS', 'DEPARTMENT'] as const;
+export const OFFICES = [
+  'DIRECTOR',
+  'EXAM',
+  'STUDENT_AFFAIRS',
+  'ADMISSIONS',
+  'DEPARTMENT',
+  'ACCOUNTS',
+] as const;
 export type Office = (typeof OFFICES)[number];
 
 export const GROUP_TYPES = [
@@ -69,6 +76,35 @@ export const OFFICE_LABELS: Record<Office, string> = {
   STUDENT_AFFAIRS: 'Student Affairs',
   ADMISSIONS: 'Admissions Office',
   DEPARTMENT: 'Department Office',
+  ACCOUNTS: 'Accounts Office',
+};
+
+/** What a notification is about; people can mute each kind in their settings. */
+export const NOTIFICATION_TYPES = [
+  'timetable',
+  'results',
+  'exams',
+  'attendance',
+  'coursework',
+  'mentions',
+  'requests',
+  'events',
+  'bookings',
+  'system',
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
+  timetable: 'Timetable changes',
+  results: 'Marks and results',
+  exams: 'Exams and seating',
+  attendance: 'Attendance',
+  coursework: 'Assignments, materials and quizzes',
+  mentions: 'Mentions in chats',
+  requests: 'Applications and requests',
+  events: 'Events',
+  bookings: 'Office-hour bookings',
+  system: 'Announcements from IT',
 };
 
 export const GROUP_TYPE_LABELS: Record<GroupType, string> = {

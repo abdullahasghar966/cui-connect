@@ -1,14 +1,5 @@
 import { OFFICE_LABELS, type UserDTO } from '@cui/shared';
-import {
-  Check,
-  ChevronsUpDown,
-  KeyRound,
-  LayoutDashboard,
-  LogOut,
-  Monitor,
-  Moon,
-  Sun,
-} from 'lucide-react';
+import { Check, KeyRound, LayoutDashboard, LogOut, Monitor, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
@@ -55,8 +46,8 @@ const STATUS_TEXT: Record<ConnectionStatus, string> = {
   offline: 'Offline',
 };
 
-/** Account menu: shown as the avatar at the bottom of the rail, or as a row on mobile. */
-export function UserMenu({ variant }: { variant: 'rail' | 'sidebar' }) {
+/** Account menu: the avatar at the bottom of the rail, or the "You" tab on phones. */
+export function UserMenu({ variant }: { variant: 'rail' | 'tab' }) {
   const me = useCurrentUser();
   const navigate = useNavigate();
   const signOut = useSignOut();
@@ -79,24 +70,15 @@ export function UserMenu({ variant }: { variant: 'rail' | 'sidebar' }) {
         ) : (
           <button
             type="button"
-            className="flex w-full items-center gap-2.5 border-t border-sidebar-border px-3 py-2.5 text-left hover:bg-sidebar-hover"
+            aria-label="Account menu"
+            className="flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[11px] font-semibold text-muted-foreground"
           >
-            <Avatar name={me.name} size="sm" online={connected} ring="sidebar" />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[14px] font-semibold text-white">{me.name}</span>
-              <span className="block truncate text-[12px] text-sidebar-muted">
-                {describeUser(me)}
-              </span>
-            </span>
-            <ChevronsUpDown className="size-4 text-sidebar-muted" aria-hidden />
+            <Avatar name={me.name} size="xs" online={connected} />
+            You
           </button>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        side={variant === 'rail' ? 'right' : 'top'}
-        align={variant === 'rail' ? 'end' : 'start'}
-        className="w-64"
-      >
+      <DropdownMenuContent side={variant === 'rail' ? 'right' : 'top'} align="end" className="w-64">
         <div className="flex items-center gap-2.5 px-3.5 pt-1.5 pb-2.5">
           <Avatar name={me.name} size="lg" />
           <div className="min-w-0">

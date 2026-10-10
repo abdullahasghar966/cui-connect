@@ -9,6 +9,7 @@ import {
   type PublicUserDTO,
 } from '@cui/shared';
 import { badRequest, forbidden, isDuplicateKeyError, notFound } from '../lib/errors';
+import { escapeRegex } from '../lib/text';
 import {
   CourseOffering,
   Group,
@@ -34,8 +35,6 @@ const SHARED_GROUP_TYPES: GroupType[] = [
   'CUSTOM',
   'FACULTY_LOUNGE',
 ];
-
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function facultyStudentPair(a: UserDoc, b: UserDoc): [UserDoc, UserDoc] | null {
   if (a.role === 'faculty' && b.role === 'student') return [a, b];

@@ -22,6 +22,7 @@ import {
   type UserDoc,
 } from '../models';
 import { recordAudit } from './audit';
+import { ensureCatalogEntry } from './catalog';
 import { getOrgLookup, idOf, invalidateOrgLookup, toObjectId, toPublicUserDTO } from './mappers';
 import {
   groupKeys,
@@ -31,6 +32,7 @@ import {
   reconcileUser,
   reconcileUsers,
 } from './provisioning';
+import { currentTerm } from './terms';
 
 async function requireFaculty(id: string | null | undefined, label: string) {
   if (!id) return null;
@@ -165,9 +167,11 @@ export async function setBatchAdvisor(
   });
 }
 
+/** Course offerings of the current term. */
 export async function listCourses(): Promise<CourseDTO[]> {
+  const term = await currentTerm();
   const [courses, sections, groups] = await Promise.all([
-    CourseOffering.find().sort({ code: 1 }).lean<CourseOfferingDoc[]>(),
+    CourseOffering.find({ termId: term._id }).sort({ code: 1 }).lean<CourseOfferingDoc[]>(),
     Section.find().lean<SectionDoc[]>(),
     Group.find({ type: 'COURSE' }).select('_id courseId').lean(),
   ]);
@@ -218,6 +222,7 @@ export async function createCourse(
           .lean()
       ).map((s) => s._id);
 
+  const term = await currentTerm();
   let course: CourseOfferingDoc;
   try {
     course = (
@@ -227,14 +232,16 @@ export async function createCourse(
         sectionId: section._id,
         instructorId: instructor?._id,
         studentIds,
+        termId: term._id,
       })
     ).toObject<CourseOfferingDoc>();
   } catch (err) {
     if (isDuplicateKeyError(err)) {
-      throw conflict(`${input.code} is already offered to ${section.name}.`);
+      throw conflict(`${input.code} is already offered to ${section.name} this term.`);
     }
     throw err;
   }
+  await ensureCatalogEntry(course.code, course.title, section.departmentId);
   await provisionCourse(course, section);
   await reconcileUsers([course.instructorId, ...course.studentIds]);
   void recordAudit({

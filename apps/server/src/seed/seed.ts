@@ -26,6 +26,8 @@ import {
   provisionSection,
   reconcileUser,
 } from '../services/provisioning';
+import { invalidateTermCache } from '../services/terms';
+import { seedAcademicStructure } from './academic';
 import {
   COURSES,
   DEMO_PASSWORD,
@@ -55,6 +57,7 @@ function must<T>(value: T | undefined | null, what: string): T {
 export async function seedDatabase(): Promise<SeedSummary> {
   await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
   invalidateOrgLookup();
+  invalidateTermCache();
 
   // Departments, and the groups every department gets.
   const depts = new Map<DeptCode, DepartmentDoc>();
@@ -65,6 +68,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   }
   await ensureCampusGroup();
   const deptId = (code: DeptCode) => must(depts.get(code), `department ${code}`)._id;
+  const academic = await seedAcademicStructure(deptId);
 
   // One argon2id hash shared by every demo account (they share the demo password).
   const passwordHash = await hashPassword(DEMO_PASSWORD);
@@ -157,6 +161,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
         sectionId: section._id,
         instructorId: person(c.instructor)._id,
         studentIds: enrolled,
+        termId: academic.currentTerm._id,
       })
     ).toObject<CourseOfferingDoc>();
     courses.set(c.key, course);

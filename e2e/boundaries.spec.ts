@@ -1,5 +1,14 @@
 import { io } from 'socket.io-client';
-import { composer, conversation, expect, openConversation, PEOPLE, signIn, test } from './fixtures';
+import {
+  composer,
+  conversation,
+  expect,
+  goToChats,
+  openConversation,
+  PEOPLE,
+  signIn,
+  test,
+} from './fixtures';
 
 const COURSE = 'Advanced Web Technologies · BCS-7A';
 
@@ -19,6 +28,7 @@ test('messages arrive live for other members and never for other sections', asyn
 
   await openConversation(imran, COURSE);
   await openConversation(hira, COURSE);
+  await goToChats(usman);
   await expect(conversation(usman, COURSE)).toHaveCount(0);
 
   const text = `Quiz moved to Thursday (${Date.now()})`;
@@ -47,6 +57,7 @@ test('an instructor locks a course and the student composer updates instantly', 
 
 test('the people directory only offers allowed direct messages', async ({ page }) => {
   await signIn(page, PEOPLE.hira);
+  await goToChats(page);
   // The workspace sidebar has two "New message" entry points (header icon and list row).
   await page.getByRole('button', { name: 'New message' }).first().click();
   const dialog = page.getByRole('dialog', { name: 'New message' });
@@ -69,6 +80,7 @@ test('an admin adds a student to a group and it appears in their sidebar live', 
 }) => {
   const admin = await person(PEOPLE.admin);
   const mehwish = await person(PEOPLE.mehwish);
+  await goToChats(mehwish);
   await expect(conversation(mehwish, 'ACM CUI Chapter')).toHaveCount(0);
 
   const groups = await (await admin.request.get('/api/admin/groups?type=SOCIETY')).json();

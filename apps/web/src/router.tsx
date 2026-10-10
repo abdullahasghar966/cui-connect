@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router';
 import { AppRail } from '@/components/AppRail';
 import { Spinner } from '@/components/feedback';
+import { MobileTabBar } from '@/components/MobileTabBar';
 import { QuickSwitcher, useSwitcherShortcut } from '@/components/QuickSwitcher';
 import { useMe } from '@/hooks/queries';
 import { useRealtimeSync } from '@/hooks/useRealtimeSync';
@@ -20,6 +21,9 @@ const UsersPage = lazy(() => import('@/pages/admin/UsersPage'));
 const StructurePage = lazy(() => import('@/pages/admin/StructurePage'));
 const GroupsPage = lazy(() => import('@/pages/admin/GroupsPage'));
 const AuditPage = lazy(() => import('@/pages/admin/AuditPage'));
+const AcademicSetupPage = lazy(() => import('@/pages/admin/AcademicSetupPage'));
+const HomePage = lazy(() => import('@/pages/home/HomePage'));
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 
 function FullScreenSpinner() {
   return (
@@ -52,10 +56,13 @@ function AuthedShell() {
   return (
     <div className="flex h-full overflow-hidden">
       <AppRail />
-      <div className="flex min-w-0 flex-1">
-        <Suspense fallback={<FullScreenSpinner />}>
-          <Outlet />
-        </Suspense>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <Suspense fallback={<FullScreenSpinner />}>
+            <Outlet />
+          </Suspense>
+        </div>
+        <MobileTabBar />
       </div>
       <GlobalDialogs />
       <span data-testid="connection" data-state={status} className="sr-only" aria-live="polite">
@@ -69,13 +76,15 @@ function RequireAuth() {
   const { data: me, isPending } = useMe();
   const location = useLocation();
   if (isPending) return <FullScreenSpinner />;
-  if (!me) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!me) {
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
+  }
   return <AuthedShell />;
 }
 
 function RequireAdmin() {
   const { data: me } = useMe();
-  if (me?.role !== 'admin') return <Navigate to="/chat" replace />;
+  if (me?.role !== 'admin') return <Navigate to="/home" replace />;
   return <AdminLayout />;
 }
 
@@ -85,7 +94,9 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
     children: [
-      { path: '/', element: <Navigate to="/chat" replace /> },
+      { path: '/', element: <Navigate to="/home" replace /> },
+      { path: '/home', element: <HomePage /> },
+      { path: '/notifications', element: <NotificationsPage /> },
       {
         path: '/chat',
         element: <ChatLayout />,
@@ -103,9 +114,10 @@ export const router = createBrowserRouter([
           { path: 'structure', element: <StructurePage /> },
           { path: 'groups', element: <GroupsPage /> },
           { path: 'audit', element: <AuditPage /> },
+          { path: 'academic', element: <AcademicSetupPage /> },
         ],
       },
     ],
   },
-  { path: '*', element: <Navigate to="/chat" replace /> },
+  { path: '*', element: <Navigate to="/home" replace /> },
 ]);

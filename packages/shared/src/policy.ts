@@ -64,7 +64,11 @@ export type DenyCode =
   | 'AUTO_MANAGED'
   | 'NOT_MODERATOR'
   | 'DM_RESTRICTED'
-  | 'SELF';
+  | 'SELF'
+  // University records (see access.ts)
+  | 'NOT_ALLOWED'
+  | 'NOT_ENROLLED'
+  | 'OFFICE_ONLY';
 
 export type Decision = { allowed: true } | { allowed: false; code: DenyCode; reason: string };
 

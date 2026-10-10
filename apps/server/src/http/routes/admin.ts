@@ -4,6 +4,7 @@ import {
   createDepartmentSchema,
   createGroupSchema,
   createSectionSchema,
+  createTermSchema,
   createUserSchema,
   csvImportSchema,
   defaultGroupSettings,
@@ -20,12 +21,16 @@ import { type Request, Router } from 'express';
 import { z } from 'zod';
 import { currentUser } from '../../auth/middleware';
 import { parse } from '../../lib/errors';
+import { escapeRegex } from '../../lib/text';
 import {
   AuditLog,
   type AuditLogDoc,
+  CatalogCourse,
   Group,
   type GroupDoc,
   Message,
+  Program,
+  Room,
   User,
   type UserDoc,
 } from '../../models';
@@ -34,6 +39,7 @@ import { recordAudit } from '../../services/audit';
 import { countMembers, toAdminGroupDTO } from '../../services/groups';
 import { getOrgLookup, toAuditDTO, toUserDTO } from '../../services/mappers';
 import { addMember } from '../../services/moderation';
+import { deleteRoom, saveRoom } from '../../services/rooms';
 import {
   createCourse,
   createDepartment,
@@ -46,12 +52,12 @@ import {
   setBatchAdvisor,
   unenrollStudent,
 } from '../../services/structure';
+import { createTerm, currentTerm, setCurrentTerm } from '../../services/terms';
 import { createUser, importUsersCsv, updateUser } from '../../services/users';
 
 export const adminRouter = Router();
 
 const param = (req: Request, name: string) => parse(objectIdSchema, req.params[name]);
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 adminRouter.get('/overview', async (_req, res) => {
   const [userCounts, groupCounts, messages] = await Promise.all([
@@ -63,13 +69,43 @@ adminRouter.get('/overview', async (_req, res) => {
   ]);
   const users = Object.fromEntries(ROLES.map((r) => [r, 0])) as Record<Role, number>;
   for (const row of userCounts) users[row._id] = row.n;
+  const [term, rooms, catalog, programs] = await Promise.all([
+    currentTerm(),
+    Room.countDocuments(),
+    CatalogCourse.countDocuments(),
+    Program.countDocuments(),
+  ]);
   const overview: AdminOverviewDTO = {
     users,
     groups: Object.fromEntries(groupCounts.map((g) => [g._id, g.n])),
     messages,
     online: onlineUserIds().length,
+    academics: { currentTerm: term.name, rooms, catalog, programs },
   };
   res.json(overview);
+});
+
+// ---- Campus setup: terms and rooms ----
+
+adminRouter.post('/terms', async (req, res) => {
+  res.status(201).json(await createTerm(currentUser(req), parse(createTermSchema, req.body)));
+});
+
+adminRouter.post('/terms/:termId/current', async (req, res) => {
+  res.json(await setCurrentTerm(currentUser(req), param(req, 'termId')));
+});
+
+adminRouter.post('/rooms', async (req, res) => {
+  res.status(201).json(await saveRoom(currentUser(req), null, req.body));
+});
+
+adminRouter.put('/rooms/:roomId', async (req, res) => {
+  res.json(await saveRoom(currentUser(req), param(req, 'roomId'), req.body));
+});
+
+adminRouter.delete('/rooms/:roomId', async (req, res) => {
+  await deleteRoom(currentUser(req), param(req, 'roomId'));
+  res.json({ ok: true });
 });
 
 // ---- Structure ----

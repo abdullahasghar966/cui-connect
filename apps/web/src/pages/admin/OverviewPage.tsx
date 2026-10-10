@@ -43,7 +43,7 @@ const DM_RULES: [string, string][] = [
 /** The order a new campus is built in: each step needs the one before it. */
 function SetupChecklist({ overview }: { overview: AdminOverviewDTO }) {
   const { users, groups } = overview;
-  const steps = [
+  const steps: ChecklistStep[] = [
     {
       done: (groups.DEPARTMENT_ANNOUNCEMENT ?? 0) > 0,
       title: 'Add a department',
@@ -80,13 +80,61 @@ function SetupChecklist({ overview }: { overview: AdminOverviewDTO }) {
       action: 'Structure',
     },
   ];
+  return <Checklist title="Set up your campus" steps={steps} />;
+}
+
+/** University setup: the foundation for timetables, attendance, marks and exams. */
+function AcademicChecklist({ overview }: { overview: AdminOverviewDTO }) {
+  const { academics } = overview;
+  const steps: ChecklistStep[] = [
+    {
+      done: true,
+      title: `Current term: ${academics.currentTerm}`,
+      detail: 'Created automatically from today. Add the next term when it is announced.',
+      to: '/admin/academic?tab=terms',
+      action: 'Terms',
+    },
+    {
+      done: academics.rooms > 0,
+      title: 'Add rooms',
+      detail: 'Classrooms and labs for the timetable; halls with seating for exams.',
+      to: '/admin/academic?tab=rooms',
+      action: 'Rooms',
+    },
+    {
+      done: academics.catalog > 0,
+      title: 'Fill in the course catalog',
+      detail: 'Credit hours, prerequisites and learning outcomes. Offered courses add themselves.',
+      to: '/admin/academic?tab=catalog',
+      action: 'Catalog',
+    },
+    {
+      done: academics.programs > 0,
+      title: 'Add degree programmes',
+      detail: 'Courses per semester, used for each student’s degree progress.',
+      to: '/admin/academic?tab=programs',
+      action: 'Programmes',
+    },
+  ];
+  return <Checklist title="Set up academics" steps={steps} />;
+}
+
+interface ChecklistStep {
+  done: boolean;
+  title: string;
+  detail: string;
+  to: string;
+  action: string;
+}
+
+function Checklist({ title, steps }: { title: string; steps: ChecklistStep[] }) {
   const doneCount = steps.filter((s) => s.done).length;
   if (doneCount === steps.length) return null;
   const nextIndex = steps.findIndex((s) => !s.done);
 
   return (
     <Card
-      title="Set up your campus"
+      title={title}
       description={`${doneCount} of ${steps.length} done. Each step needs the one before it.`}
       className="mb-6"
     >
@@ -156,6 +204,7 @@ export default function OverviewPage() {
         description="Who is on CUI Connect right now, and the communication rules it enforces."
       />
       {overview.data && <SetupChecklist overview={overview.data} />}
+      {overview.data && <AcademicChecklist overview={overview.data} />}
       {overview.isPending ? (
         <Spinner />
       ) : (

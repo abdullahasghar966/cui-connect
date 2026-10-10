@@ -14,7 +14,6 @@ import { Link, useNavigate } from 'react-router';
 import { Kbd } from '@/components/feedback';
 import { GroupIcon, SIDEBAR_SECTIONS } from '@/components/group-meta';
 import { Avatar } from '@/components/people';
-import { UserMenu } from '@/components/UserMenu';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -268,10 +267,6 @@ export function Sidebar({
           })
         )}
       </nav>
-
-      <div className="md:hidden">
-        <UserMenu variant="sidebar" />
-      </div>
     </aside>
   );
 }

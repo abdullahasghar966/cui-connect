@@ -1,10 +1,11 @@
-import { conversation, expect, PEOPLE, test } from './fixtures';
+import { conversation, expect, goToChats, PEOPLE, test } from './fixtures';
 
 test('an admin enrolls a student from another section and the course appears live', async ({
   person,
 }) => {
   const admin = await person(PEOPLE.admin);
   const mehwish = await person(PEOPLE.mehwish); // BEE-7A student
+  await goToChats(mehwish);
   await expect(conversation(mehwish, 'Advanced Web Technologies · BCS-7A')).toHaveCount(0);
 
   await admin.goto('/admin/structure');
@@ -27,6 +28,7 @@ test('an admin enrolls a student from another section and the course appears liv
 test('moving a student to another section swaps their class group live', async ({ person }) => {
   const admin = await person(PEOPLE.admin);
   const maryam = await person('FA23-BCS-006'); // BCS-7A
+  await goToChats(maryam);
   await expect(conversation(maryam, 'BCS-7A Class')).toBeVisible();
 
   await admin.goto('/admin/users');

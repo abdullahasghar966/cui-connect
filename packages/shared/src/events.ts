@@ -1,4 +1,5 @@
 /** Typed Socket.IO contracts shared by the server and the web client. */
+import type { NotificationDTO } from './academic-dto';
 import type { ErrorCode, MemberRole, Role } from './constants';
 import type { AuditDTO, GroupDTO, LiveStatsDTO, MemberDTO, MessageDTO } from './dto';
 import type { GroupSettings } from './policy';
@@ -67,6 +68,7 @@ export interface ServerToClientEvents {
   'group:updated': (payload: GroupUpdateEvent) => void;
   'member:updated': (payload: MemberUpdateEvent) => void;
   'session:revoked': (payload: { reason: string }) => void;
+  'notification:new': (notification: NotificationDTO) => void;
 }
 
 // biome-ignore lint/complexity/noBannedTypes: Socket.IO expects an (empty) event map here.

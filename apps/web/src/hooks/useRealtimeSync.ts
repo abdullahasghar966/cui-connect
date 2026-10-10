@@ -8,6 +8,7 @@ import type {
   MemberDTO,
   MemberUpdateEvent,
   MessageDTO,
+  NotificationDTO,
   TypingEvent,
 } from '@cui/shared';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,6 +28,7 @@ import { ACK_TIMEOUT_MS, closeSocket, getSocket, withAck } from '@/lib/socket';
 import { formatRemaining } from '@/lib/utils';
 import { useRealtime } from '@/state/realtime';
 import { useCurrentUser } from './queries';
+import { addNotification } from './useNotifications';
 
 export function useRealtimeSync(): void {
   const me = useCurrentUser();
@@ -59,6 +61,7 @@ export function useRealtimeSync(): void {
       if (hadConnection && !socket.recovered) {
         void qc.invalidateQueries({ queryKey: keys.groups });
         void qc.invalidateQueries({ queryKey: ['messages'] });
+        void qc.invalidateQueries({ queryKey: keys.notifications });
       }
       hadConnection = true;
     };
@@ -184,6 +187,15 @@ export function useRealtimeSync(): void {
 
     const onSessionRevoked = ({ reason }: { reason: string }) => endSession(reason);
 
+    const onNotification = (notification: NotificationDTO) => {
+      addNotification(qc, notification);
+      const { link } = notification;
+      toast(notification.title, {
+        description: notification.body ?? undefined,
+        action: link ? { label: 'Open', onClick: () => navigate(link) } : undefined,
+      });
+    };
+
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('connect_error', onConnectError);
@@ -197,6 +209,7 @@ export function useRealtimeSync(): void {
     socket.on('group:updated', onGroupUpdated);
     socket.on('member:updated', onMemberUpdated);
     socket.on('session:revoked', onSessionRevoked);
+    socket.on('notification:new', onNotification);
 
     if (socket.connected) onConnect();
     else {
@@ -221,6 +234,7 @@ export function useRealtimeSync(): void {
       socket.off('group:updated', onGroupUpdated);
       socket.off('member:updated', onMemberUpdated);
       socket.off('session:revoked', onSessionRevoked);
+      socket.off('notification:new', onNotification);
     };
   }, [me.id, qc, navigate]);
 }

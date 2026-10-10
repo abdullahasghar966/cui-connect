@@ -9,9 +9,11 @@ import { env } from '../config/env';
 import { WEB_DIST_DIR } from '../config/paths';
 import { AppError, notFound } from '../lib/errors';
 import { logger } from '../lib/logger';
+import { academicsRouter } from './routes/academics';
 import { adminRouter } from './routes/admin';
 import { apiRouter } from './routes/api';
 import { authRouter } from './routes/auth';
+import { notificationsRouter } from './routes/notifications';
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof AppError) {
@@ -60,6 +62,8 @@ export function createApp() {
   });
   app.use('/api/auth', authRouter);
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
+  app.use('/api/academics', requireAuth, academicsRouter);
+  app.use('/api/notifications', requireAuth, notificationsRouter);
   app.use('/api', requireAuth, apiRouter);
   app.use('/api', () => {
     throw notFound('No such API endpoint.');

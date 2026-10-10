@@ -4,12 +4,15 @@ import type {
   AdminOverviewDTO,
   ApiErrorBody,
   AuditDTO,
+  CatalogCourseDTO,
+  CatalogCourseInput,
   ChangePasswordInput,
   CourseDTO,
   CreateCourseInput,
   CreateDepartmentInput,
   CreateGroupInput,
   CreateSectionInput,
+  CreateTermInput,
   CreateUserInput,
   CsvImportResultDTO,
   DepartmentDTO,
@@ -17,12 +20,19 @@ import type {
   GroupDTO,
   GroupType,
   LoginInput,
+  MarkNotificationsInput,
   MemberDTO,
   MemberRole,
   MessagesPage,
+  NotificationsPage,
+  ProgramDTO,
+  ProgramInput,
   PublicUserDTO,
   Role,
+  RoomDTO,
+  RoomInput,
   SectionDTO,
+  TermDTO,
   UpdateGroupInput,
   UpdateUserInput,
   UserDTO,
@@ -113,8 +123,39 @@ export const api = {
     request<MessagesPage>(`/api/groups/${groupId}/messages${query(params)}`),
   directory: (q: string) => request<PublicUserDTO[]>(`/api/directory${query({ q })}`),
 
+  notifications: (before?: string) =>
+    request<NotificationsPage>(`/api/notifications${query({ before, limit: 30 })}`),
+  markNotifications: (input: MarkNotificationsInput) =>
+    send<{ unread: number }>('/api/notifications/read', 'POST', input),
+
+  academics: {
+    terms: () => request<TermDTO[]>('/api/academics/terms'),
+    rooms: () => request<RoomDTO[]>('/api/academics/rooms'),
+    catalog: (params: { q?: string; departmentId?: string } = {}) =>
+      request<CatalogCourseDTO[]>(`/api/academics/catalog${query(params)}`),
+    course: (code: string) =>
+      request<CatalogCourseDTO>(`/api/academics/catalog/${encodeURIComponent(code)}`),
+    saveCourse: (code: string, input: CatalogCourseInput) =>
+      send<CatalogCourseDTO>(`/api/academics/catalog/${encodeURIComponent(code)}`, 'PUT', input),
+    deleteCourse: (code: string) =>
+      send<{ ok: true }>(`/api/academics/catalog/${encodeURIComponent(code)}`, 'DELETE'),
+    importCatalog: (csv: string) =>
+      send<CsvImportResultDTO>('/api/academics/catalog/import', 'POST', { csv }),
+    programs: () => request<ProgramDTO[]>('/api/academics/programs'),
+    saveProgram: (code: string, input: ProgramInput) =>
+      send<ProgramDTO>(`/api/academics/programs/${encodeURIComponent(code)}`, 'PUT', input),
+    deleteProgram: (code: string) =>
+      send<{ ok: true }>(`/api/academics/programs/${encodeURIComponent(code)}`, 'DELETE'),
+  },
+
   admin: {
     overview: () => request<AdminOverviewDTO>('/api/admin/overview'),
+    createTerm: (input: CreateTermInput) => send<TermDTO>('/api/admin/terms', 'POST', input),
+    setCurrentTerm: (termId: string) => send<TermDTO>(`/api/admin/terms/${termId}/current`, 'POST'),
+    createRoom: (input: RoomInput) => send<RoomDTO>('/api/admin/rooms', 'POST', input),
+    updateRoom: (roomId: string, input: RoomInput) =>
+      send<RoomDTO>(`/api/admin/rooms/${roomId}`, 'PUT', input),
+    deleteRoom: (roomId: string) => send<{ ok: true }>(`/api/admin/rooms/${roomId}`, 'DELETE'),
     departments: () => request<DepartmentDTO[]>('/api/admin/departments'),
     createDepartment: (input: CreateDepartmentInput) =>
       send<{ id: string }>('/api/admin/departments', 'POST', input),

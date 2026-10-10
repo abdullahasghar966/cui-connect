@@ -38,6 +38,33 @@ and push to GitHub (origin main). Explain anything I need to decide in simple te
 | `npm audit` | 0 vulnerabilities |
 | GitHub | Public repo `abdullahasghar966/cui-connect`. All work up to this file is pushed |
 
+## 1a. University features build (started 2026-10-11)
+
+The user asked to grow CUI Connect into a university system. The approved plan is at `C:\Users\Abdullah\.claude\plans\elegant-shimmying-rossum.md`. The user pre-approved every plan while away ("auto approval"), and each finished feature is pushed to GitHub, which auto-deploys Render.
+
+**Design in one paragraph:**
+- Shared pure calculators in `packages/shared/src/academics.ts` (campus time Asia/Karachi, terms, grades/GPA, attendance, clash finder, seat allocator).
+- Record permissions in `access.ts`, which returns the same `Decision` type as `policy.ts`.
+- Server models per collection; services per area; routes `/api/academics/*`, `/api/notifications`, with admin setup under `/api/admin/{terms,rooms}`.
+- `notify()` (`services/notifications.ts`) saves and pushes `notification:new` to `user:<id>`.
+- Web: Home (`/home`, the landing page), `AreaLayout` (shared by Admin and the new areas), `NotificationBell` + `/notifications`, `MobileTabBar`.
+- `components/page.tsx` holds `PageHeader`/`Card`/`Table`/`Tabs`; `hooks/useSubmit.ts` holds `useSubmit`/`useAction`.
+
+**Checklist** (tick and push one by one):
+- [x] **A. Foundations:**
+  - terms (auto current term), rooms, course catalog (+ CSV import, backfill for old offerings), degree programmes;
+  - notification centre (bell, page, live push, dedupe keys);
+  - Home page, rail and phone tab bar;
+  - admin "Academic setup" page and checklist;
+  - the Accounts Office.
+- [ ] B1 Timetable (slots, clash checks, one-off changes, next class)
+- [ ] B2 Catalog search and course pages
+- [ ] B3 Attendance (rotating QR, roll call, %, shortage)
+- [ ] B4 Marks, GPA/CGPA, result notifications
+- [ ] B5 Exams: date sheet and seating
+- [ ] B6 Polls in chats
+- [ ] C1 Room finder · C2 teacher directory + global/message search · C4 what-do-I-need, transcript, degree progress · C5 calendars + reminders · C6 assignments, materials, live quizzes · C7 mentions, pins, reactions, replies, anonymous questions, office hours, push · C8 requests, fees, registration, evaluation, complaints · C9 events, directory/map, jobs, lost & found, transport · C10 profile, ID card, notification settings
+
 ## 2. The assignment and the user's instructions
 
 **Assignment** (Lab Assignment 1, CLO-5, Advanced Web Technologies, source file `Lab Assignment 1.docx`):

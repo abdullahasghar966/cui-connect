@@ -149,6 +149,8 @@ export interface AdminOverviewDTO {
   groups: Partial<Record<GroupType, number>>;
   messages: number;
   online: number;
+  /** University setup progress for the admin checklist. */
+  academics: { currentTerm: string; rooms: number; catalog: number; programs: number };
 }
 
 export interface LiveStatsDTO {

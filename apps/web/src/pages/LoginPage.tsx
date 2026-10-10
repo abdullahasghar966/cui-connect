@@ -30,12 +30,12 @@ export function LoginPage() {
     onSuccess: ({ user }) => {
       qc.setQueryData(keys.me, user);
       const from = (location.state as { from?: string } | null)?.from;
-      navigate(from && from !== '/login' ? from : '/chat', { replace: true });
+      navigate(from && from !== '/login' ? from : '/home', { replace: true });
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : 'Sign-in failed.'),
   });
 
-  if (me) return <Navigate to="/chat" replace />;
+  if (me) return <Navigate to="/home" replace />;
   if (setupStatus.data?.needed) return <Navigate to="/setup" replace />;
 
   const submit = (event: FormEvent) => {

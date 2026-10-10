@@ -4,6 +4,7 @@ import { ALL_MODELS, AuditLog, User, type UserDoc } from '../models';
 import { recordAudit } from '../services/audit';
 import { invalidateOrgLookup } from '../services/mappers';
 import { ensureCampusGroup, reconcileUser } from '../services/provisioning';
+import { invalidateTermCache } from '../services/terms';
 
 export interface SetupInput {
   name: string;
@@ -43,6 +44,7 @@ export async function setupFreshCampus(input: SetupInput): Promise<UserDoc> {
   parseAdmin(input); // validate before deleting anything
   await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
   invalidateOrgLookup();
+  invalidateTermCache();
   return createFirstAdmin(input);
 }
 
