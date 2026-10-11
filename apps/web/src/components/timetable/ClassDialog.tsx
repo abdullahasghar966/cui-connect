@@ -6,6 +6,7 @@ import {
   formatTimeRange,
 } from '@cui/shared';
 import {
+  BookOpen,
   CalendarClock,
   CalendarX2,
   Clock,
@@ -242,6 +243,13 @@ export function ClassDialog({
 
         {mode === 'view' && (
           <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <Link
+              to={`/academics/courses/${slot.code}`}
+              onClick={close}
+              className={buttonVariants({ variant: 'ghost' })}
+            >
+              <BookOpen /> Course page
+            </Link>
             {slot.groupId && (
               <Link
                 to={`/chat/${slot.groupId}`}

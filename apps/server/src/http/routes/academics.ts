@@ -14,11 +14,13 @@ import { currentUser } from '../../auth/middleware';
 import { forbidden, parse } from '../../lib/errors';
 import { CourseOffering, User, type UserDoc } from '../../models';
 import {
+  courseDetail,
   deleteCatalogCourse,
   deleteProgram,
   getCatalogCourse,
   importCatalogCsv,
   listCatalog,
+  listDepartmentRefs,
   listPrograms,
   saveCatalogCourse,
   saveProgram,
@@ -62,6 +64,15 @@ academicsRouter.get('/catalog/:code', async (req, res) => {
   const term = await currentTerm();
   const offered = await CourseOffering.countDocuments({ code: course.code, termId: term._id });
   res.json(toCatalogDTO(course, await getOrgLookup(), offered));
+});
+
+/** The course page: catalog entry, prerequisites, degree plans and this term's sections. */
+academicsRouter.get('/courses/:code', async (req, res) => {
+  res.json(await courseDetail(currentUser(req), code(req)));
+});
+
+academicsRouter.get('/departments', async (_req, res) => {
+  res.json(await listDepartmentRefs());
 });
 
 academicsRouter.put('/catalog/:code', async (req, res) => {

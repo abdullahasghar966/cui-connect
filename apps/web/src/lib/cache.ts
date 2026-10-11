@@ -18,8 +18,11 @@ export const keys = {
   notifications: ['notifications'] as const,
   terms: ['academics', 'terms'] as const,
   rooms: ['academics', 'rooms'] as const,
-  catalog: (q: string, departmentId = '') => ['academics', 'catalog', q, departmentId] as const,
+  catalog: (q: string, departmentId = '', offered = false) =>
+    ['academics', 'catalog', q, departmentId, offered] as const,
   course: (code: string) => ['academics', 'course', code] as const,
+  courseDetail: (code: string) => ['academics', 'courses', code] as const,
+  departments: ['academics', 'departments'] as const,
   programs: ['academics', 'programs'] as const,
   sections: ['academics', 'sections'] as const,
   teachers: ['academics', 'teachers'] as const,

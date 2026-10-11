@@ -46,6 +46,64 @@ describe('terms, rooms and the catalog', () => {
     expect((await app.api(cookie, '/api/academics/catalog?q=.*')).status).toBe(200);
   });
 
+  it('course page: sections with schedules, prerequisites, plans; chat only for members', async () => {
+    const hira = await app.login(ACCOUNTS.hira);
+    const awt = await (await app.api(hira, '/api/academics/courses/csc337')).json();
+    expect(awt.course).toMatchObject({ code: 'CSC337', offeredSections: 2 });
+    expect(awt.term.code).toBe('FA26');
+    expect(awt.prerequisites).toEqual([{ code: 'CSC336', title: 'Web Technologies' }]);
+    expect(awt.programs).toContainEqual({
+      code: 'BCS',
+      name: 'BS Computer Science',
+      semester: 7,
+    });
+    // Hira's own section comes first, with its chat; the other section's chat stays hidden.
+    expect(awt.sections.map((s: { sectionName: string }) => s.sectionName)).toEqual([
+      'BCS-7A',
+      'BCS-7B',
+    ]);
+    const [mine, other] = awt.sections;
+    expect(mine).toMatchObject({ mine: true, customGrading: false });
+    expect(mine.groupId).toBeTruthy();
+    expect(mine.grading.terminal).toBe(50);
+    expect(mine.schedule.length).toBeGreaterThan(0);
+    expect(mine.schedule[0].room?.name).toBeTruthy();
+    expect(other).toMatchObject({ mine: false, groupId: null });
+
+    // An EE teacher can read the page but isn't in either course chat.
+    const sana = await app.login(ACCOUNTS.sana);
+    const asSana = await (await app.api(sana, '/api/academics/courses/CSC337')).json();
+    expect(asSana.sections.every((s: { groupId: string | null }) => s.groupId === null)).toBe(true);
+
+    const web = await (await app.api(hira, '/api/academics/courses/CSC336')).json();
+    expect(web.leadsTo).toContainEqual({ code: 'CSC337', title: 'Advanced Web Technologies' });
+    expect((await app.api(hira, '/api/academics/courses/XYZ999')).status).toBe(404);
+    expect((await app.api(hira, '/api/academics/courses/not-a-code')).status).toBe(400);
+  });
+
+  it('filters the catalog to courses offered this term and lists departments', async () => {
+    const cookie = await app.login(ACCOUNTS.hira);
+    const all: { offeredSections: number }[] = await (
+      await app.api(cookie, '/api/academics/catalog')
+    ).json();
+    const offered: { offeredSections: number }[] = await (
+      await app.api(cookie, '/api/academics/catalog?offered=1')
+    ).json();
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.length).toBeLessThan(all.length);
+    expect(offered.every((c) => c.offeredSections > 0)).toBe(true);
+
+    const departments: { code: string }[] = await (
+      await app.api(cookie, '/api/academics/departments')
+    ).json();
+    expect(departments.map((d) => d.code)).toEqual(expect.arrayContaining(['CS', 'EE']));
+    const cs = departments.find((d) => d.code === 'CS') as { code: string; id: string };
+    const csOnly: { departmentCode: string }[] = await (
+      await app.api(cookie, `/api/academics/catalog?departmentId=${cs.id}`)
+    ).json();
+    expect(csOnly.every((c) => c.departmentCode === 'CS')).toBe(true);
+  });
+
   it('only IT, the HOD and the department office edit a department catalog', async () => {
     const course = {
       title: 'Advanced Web Technologies',

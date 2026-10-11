@@ -27,6 +27,8 @@ const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const AcademicsLayout = lazy(() => import('@/pages/academics/AcademicsLayout'));
 const TimetablePage = lazy(() => import('@/pages/academics/TimetablePage'));
 const TimetableEditorPage = lazy(() => import('@/pages/academics/TimetableEditorPage'));
+const CoursesPage = lazy(() => import('@/pages/academics/CoursesPage'));
+const CoursePage = lazy(() => import('@/pages/academics/CoursePage'));
 
 function FullScreenSpinner() {
   return (
@@ -107,6 +109,8 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/academics/timetable" replace /> },
           { path: 'timetable', element: <TimetablePage /> },
           { path: 'timetable/edit', element: <TimetableEditorPage /> },
+          { path: 'courses', element: <CoursesPage /> },
+          { path: 'courses/:code', element: <CoursePage /> },
         ],
       },
       {

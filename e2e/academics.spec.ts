@@ -36,6 +36,34 @@ test('a teacher cancels a class and the student sees it live', async ({ person }
   await expect(hira.getByRole('button', { name: /^CSC337 .*cancelled$/ })).toHaveCount(0);
 });
 
+test('a student finds a course in the catalog and opens its chat', async ({ person }) => {
+  const hira = await person(PEOPLE.hira);
+  await hira.goto('/academics/courses');
+  await hira.getByLabel('Search courses').fill('web tech');
+  const results = hira.getByRole('list', { name: 'Courses' });
+  await expect(results.getByRole('link')).toHaveCount(2);
+  await results.getByRole('link', { name: /CSC337/ }).click();
+
+  await expect(
+    hira.getByRole('heading', { level: 1, name: 'Advanced Web Technologies' }),
+  ).toBeVisible();
+  await expect(hira.getByText('3(2,1) credit hours')).toBeVisible();
+  const sections = hira.getByRole('list', { name: 'Sections' }).locator(':scope > li');
+  await expect(sections).toHaveCount(2);
+  await expect(sections.first()).toContainText('Your section');
+  // Prerequisites link to their own course page.
+  await expect(hira.getByRole('link', { name: /CSC336 Web Technologies/ })).toBeVisible();
+
+  await sections.first().getByRole('link', { name: 'Open chat' }).click();
+  await expect(
+    hira.getByRole('heading', { level: 1, name: /Advanced Web Technologies/ }),
+  ).toBeVisible();
+  await expect(hira).toHaveURL(/\/chat\//);
+  // The other section's chat is not offered.
+  await hira.goBack();
+  await expect(sections.nth(1).getByRole('link', { name: 'Open chat' })).toHaveCount(0);
+});
+
 test('IT sets up rooms and the course catalog', async ({ person }) => {
   const admin = await person(PEOPLE.admin);
   await admin.goto('/admin/academic?tab=rooms');

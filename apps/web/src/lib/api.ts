@@ -10,6 +10,7 @@ import type {
   ClassChangeInput,
   ClassSlotDTO,
   ClassSlotInput,
+  CourseDetailDTO,
   CourseDTO,
   CreateCourseInput,
   CreateDepartmentInput,
@@ -19,6 +20,7 @@ import type {
   CreateUserInput,
   CsvImportResultDTO,
   DepartmentDTO,
+  DepartmentRefDTO,
   FirstAdminInput,
   GroupDTO,
   GroupType,
@@ -139,10 +141,13 @@ export const api = {
   academics: {
     terms: () => request<TermDTO[]>('/api/academics/terms'),
     rooms: () => request<RoomDTO[]>('/api/academics/rooms'),
-    catalog: (params: { q?: string; departmentId?: string } = {}) =>
+    catalog: (params: { q?: string; departmentId?: string; offered?: '1' } = {}) =>
       request<CatalogCourseDTO[]>(`/api/academics/catalog${query(params)}`),
     course: (code: string) =>
       request<CatalogCourseDTO>(`/api/academics/catalog/${encodeURIComponent(code)}`),
+    courseDetail: (code: string) =>
+      request<CourseDetailDTO>(`/api/academics/courses/${encodeURIComponent(code)}`),
+    departments: () => request<DepartmentRefDTO[]>('/api/academics/departments'),
     saveCourse: (code: string, input: CatalogCourseInput) =>
       send<CatalogCourseDTO>(`/api/academics/catalog/${encodeURIComponent(code)}`, 'PUT', input),
     deleteCourse: (code: string) =>

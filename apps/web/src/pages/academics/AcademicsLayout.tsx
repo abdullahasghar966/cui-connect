@@ -1,4 +1,4 @@
-import { CalendarCog, CalendarDays } from 'lucide-react';
+import { BookOpen, CalendarCog, CalendarDays } from 'lucide-react';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
 import { useCurrentUser } from '@/hooks/queries';
 import { canEditTimetable } from './TimetablePage';
@@ -8,6 +8,7 @@ export default function AcademicsLayout() {
   const me = useCurrentUser();
   const sections: AreaSection[] = [
     { to: '/academics/timetable', label: 'Timetable', icon: CalendarDays, end: true },
+    { to: '/academics/courses', label: 'Courses', icon: BookOpen },
   ];
   if (canEditTimetable(me)) {
     sections.push({

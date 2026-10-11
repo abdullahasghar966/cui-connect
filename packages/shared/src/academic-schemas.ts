@@ -79,6 +79,11 @@ export const catalogCsvSchema = z.object({ csv: z.string().min(1).max(200_000) }
 export const catalogQuerySchema = z.object({
   q: z.string().trim().max(80).default(''),
   departmentId: objectIdSchema.optional(),
+  /** `1`: only courses that some section takes this term. */
+  offered: z
+    .enum(['0', '1'])
+    .optional()
+    .transform((value) => value === '1'),
 });
 
 export const programSchema = z.object({

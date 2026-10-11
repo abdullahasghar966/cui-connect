@@ -1,5 +1,5 @@
 /** Wire formats of the university features (terms, rooms, catalog, programs, notifications…). */
-import type { ClassKind, RoomKind } from './academics';
+import type { ClassKind, GradingWeights, RoomKind } from './academics';
 import type { NotificationType } from './constants';
 
 export interface TermDTO {
@@ -36,6 +36,49 @@ export interface CatalogCourseDTO {
   outline: { week: number; topic: string }[];
   /** Sections offering it in the current term. */
   offeredSections: number;
+}
+
+export interface DepartmentRefDTO {
+  id: string;
+  code: string;
+  name: string;
+}
+
+/** One section taking a course this term, as listed on the course page. */
+export interface CourseSectionDTO {
+  offeringId: string;
+  sectionId: string;
+  sectionName: string | null;
+  instructor: { id: string; name: string } | null;
+  enrolled: number;
+  /** Seats at registration (null = no limit). */
+  capacity: number | null;
+  schedule: {
+    day: number;
+    start: string;
+    end: string;
+    kind: ClassKind;
+    room: RoomRefDTO | null;
+  }[];
+  /** This section's grading weights (its own, or the campus default). */
+  grading: GradingWeights;
+  customGrading: boolean;
+  /** The course chat, only for its members. */
+  groupId: string | null;
+  /** The viewer teaches or is enrolled in this section. */
+  mine: boolean;
+}
+
+export interface CourseDetailDTO {
+  course: CatalogCourseDTO;
+  term: { code: string; name: string };
+  /** Prerequisites with titles (null when a code isn't in the catalog). */
+  prerequisites: { code: string; title: string | null }[];
+  /** Courses that list this one as a prerequisite. */
+  leadsTo: { code: string; title: string }[];
+  /** Degree plans that include it, and in which semester. */
+  programs: { code: string; name: string; semester: number }[];
+  sections: CourseSectionDTO[];
 }
 
 export interface ProgramDTO {

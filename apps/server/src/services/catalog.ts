@@ -2,9 +2,13 @@
 import {
   type CatalogCourseDTO,
   type CatalogCourseInput,
+  type CourseDetailDTO,
+  type CourseSectionDTO,
   type CsvImportResultDTO,
   canManageCatalog,
   catalogCourseSchema,
+  DEFAULT_GRADING,
+  type DepartmentRefDTO,
   type ProgramDTO,
   type ProgramInput,
   programSchema,
@@ -15,17 +19,25 @@ import { containsText } from '../lib/text';
 import {
   CatalogCourse,
   type CatalogCourseDoc,
+  ClassSlot,
+  type ClassSlotDoc,
   CourseOffering,
   type CourseOfferingDoc,
   Department,
+  Group,
+  type GroupDoc,
+  Membership,
   Program,
   type ProgramDoc,
+  Room,
+  type RoomDoc,
   Section,
   type SectionDoc,
+  User,
   type UserDoc,
 } from '../models';
 import { recordAudit } from './audit';
-import { getOrgLookup, type Id, idOf, type OrgLookup, toPolicyUser } from './mappers';
+import { getOrgLookup, type Id, idOf, type OrgLookup, sameId, toPolicyUser } from './mappers';
 import { currentTerm } from './terms';
 
 export function toCatalogDTO(
@@ -62,6 +74,7 @@ async function offeredCounts(): Promise<Map<string, number>> {
 export async function listCatalog(query: {
   q: string;
   departmentId?: string;
+  offered?: boolean;
 }): Promise<CatalogCourseDTO[]> {
   const filter: Record<string, unknown> = {};
   if (query.departmentId) filter.departmentId = query.departmentId;
@@ -69,10 +82,11 @@ export async function listCatalog(query: {
     const rx = containsText(query.q);
     filter.$or = [{ code: rx }, { title: rx }];
   }
-  const [courses, org, counts] = await Promise.all([
+  const counts = await offeredCounts();
+  if (query.offered) filter.code = { $in: [...counts.keys()] };
+  const [courses, org] = await Promise.all([
     CatalogCourse.find(filter).sort({ code: 1 }).limit(300).lean<CatalogCourseDoc[]>(),
     getOrgLookup(),
-    offeredCounts(),
   ]);
   return courses.map((c) => toCatalogDTO(c, org, counts.get(c.code) ?? 0));
 }
@@ -280,6 +294,111 @@ export async function saveProgram(
     targetId: saved._id,
   });
   return toProgramDTO(saved, await getOrgLookup());
+}
+
+// ---- Course page ----
+
+/** Everything the course page shows: the catalog entry plus who offers it this term, and when. */
+export async function courseDetail(viewer: UserDoc, code: string): Promise<CourseDetailDTO> {
+  const course = await getCatalogCourse(code);
+  const term = await currentTerm();
+  const [offerings, related, programs, org] = await Promise.all([
+    CourseOffering.find({ code: course.code, termId: term._id }).lean<CourseOfferingDoc[]>(),
+    CatalogCourse.find({
+      $or: [{ code: { $in: course.prerequisites } }, { prerequisites: course.code }],
+    })
+      .select('code title prerequisites')
+      .lean<Pick<CatalogCourseDoc, 'code' | 'title' | 'prerequisites'>[]>(),
+    Program.find({ 'plan.courses': course.code }).lean<ProgramDoc[]>(),
+    getOrgLookup(),
+  ]);
+  const offeringIds = offerings.map((o) => o._id);
+  const [slots, rooms, instructors, groups] = await Promise.all([
+    ClassSlot.find({ offeringId: { $in: offeringIds } }).lean<ClassSlotDoc[]>(),
+    Room.find().select('name block').lean<RoomDoc[]>(),
+    User.find({ _id: { $in: offerings.map((o) => o.instructorId) } })
+      .select('name')
+      .lean<Pick<UserDoc, '_id' | 'name'>[]>(),
+    Group.find({ type: 'COURSE', courseId: { $in: offeringIds } })
+      .select('_id courseId')
+      .lean<Pick<GroupDoc, '_id' | 'courseId'>[]>(),
+  ]);
+  const memberships = await Membership.find({
+    userId: viewer._id,
+    groupId: { $in: groups.map((g) => g._id) },
+  })
+    .select('groupId')
+    .lean();
+  const memberOf = new Set(memberships.map((m) => String(m.groupId)));
+  const roomById = new Map(rooms.map((r) => [String(r._id), r]));
+  const nameById = new Map(instructors.map((u) => [String(u._id), u.name]));
+  const groupByOffering = new Map(groups.map((g) => [String(g.courseId), String(g._id)]));
+  const titleOf = new Map(related.map((c) => [c.code, c.title]));
+  const roomRef = (id: Id | null) => {
+    const room = id ? roomById.get(String(id)) : undefined;
+    return room ? { id: String(room._id), name: room.name, block: room.block } : null;
+  };
+
+  const sections: CourseSectionDTO[] = offerings
+    .map((o) => {
+      const groupId = groupByOffering.get(String(o._id)) ?? null;
+      const instructorId = idOf(o.instructorId);
+      return {
+        offeringId: String(o._id),
+        sectionId: String(o.sectionId),
+        sectionName: org.sections.get(String(o.sectionId))?.name ?? null,
+        instructor: instructorId
+          ? { id: instructorId, name: nameById.get(instructorId) ?? 'Unknown' }
+          : null,
+        enrolled: o.studentIds.length,
+        capacity: o.capacity,
+        schedule: slots
+          .filter((s) => sameId(s.offeringId, o._id))
+          .sort((a, b) => a.day - b.day || a.start.localeCompare(b.start))
+          .map((s) => ({
+            day: s.day,
+            start: s.start,
+            end: s.end,
+            kind: s.kind,
+            room: roomRef(s.roomId),
+          })),
+        grading: o.grading ?? DEFAULT_GRADING,
+        customGrading: !!o.grading,
+        groupId: groupId && memberOf.has(groupId) ? groupId : null,
+        mine:
+          sameId(o.instructorId, viewer._id) || o.studentIds.some((id) => sameId(id, viewer._id)),
+      };
+    })
+    .sort(
+      (a, b) =>
+        Number(b.mine) - Number(a.mine) || (a.sectionName ?? '').localeCompare(b.sectionName ?? ''),
+    );
+
+  return {
+    course: toCatalogDTO(course, org, offerings.length),
+    term: { code: term.code, name: term.name },
+    prerequisites: course.prerequisites.map((p) => ({ code: p, title: titleOf.get(p) ?? null })),
+    leadsTo: related
+      .filter((c) => c.prerequisites.includes(course.code))
+      .map((c) => ({ code: c.code, title: c.title }))
+      .sort((a, b) => a.code.localeCompare(b.code)),
+    programs: programs
+      .flatMap((p) =>
+        p.plan
+          .filter((step) => step.courses.includes(course.code))
+          .map((step) => ({ code: p.code, name: p.name, semester: step.semester })),
+      )
+      .sort((a, b) => a.code.localeCompare(b.code) || a.semester - b.semester),
+    sections,
+  };
+}
+
+/** Departments for filters and pickers (public on campus). */
+export async function listDepartmentRefs(): Promise<DepartmentRefDTO[]> {
+  const org = await getOrgLookup();
+  return [...org.departments.values()]
+    .map((d) => ({ id: String(d._id), code: d.code, name: d.name }))
+    .sort((a, b) => a.code.localeCompare(b.code));
 }
 
 export async function deleteProgram(actor: UserDoc, code: string): Promise<void> {
