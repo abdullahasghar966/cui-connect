@@ -69,6 +69,8 @@ export interface ServerToClientEvents {
   'member:updated': (payload: MemberUpdateEvent) => void;
   'session:revoked': (payload: { reason: string }) => void;
   'notification:new': (notification: NotificationDTO) => void;
+  /** A class of these course offerings was added, changed, cancelled or moved. */
+  'timetable:changed': (payload: { offeringIds: string[] }) => void;
 }
 
 // biome-ignore lint/complexity/noBannedTypes: Socket.IO expects an (empty) event map here.

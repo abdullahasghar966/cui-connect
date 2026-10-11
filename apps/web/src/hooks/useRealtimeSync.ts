@@ -187,6 +187,10 @@ export function useRealtimeSync(): void {
 
     const onSessionRevoked = ({ reason }: { reason: string }) => endSession(reason);
 
+    const onTimetableChanged = () => {
+      void qc.invalidateQueries({ queryKey: keys.timetable });
+    };
+
     const onNotification = (notification: NotificationDTO) => {
       addNotification(qc, notification);
       const { link } = notification;
@@ -210,6 +214,7 @@ export function useRealtimeSync(): void {
     socket.on('member:updated', onMemberUpdated);
     socket.on('session:revoked', onSessionRevoked);
     socket.on('notification:new', onNotification);
+    socket.on('timetable:changed', onTimetableChanged);
 
     if (socket.connected) onConnect();
     else {
@@ -235,6 +240,7 @@ export function useRealtimeSync(): void {
       socket.off('member:updated', onMemberUpdated);
       socket.off('session:revoked', onSessionRevoked);
       socket.off('notification:new', onNotification);
+      socket.off('timetable:changed', onTimetableChanged);
     };
   }, [me.id, qc, navigate]);
 }

@@ -1,13 +1,5 @@
 import { campusClock } from '@cui/shared';
-import {
-  ArrowRight,
-  Bell,
-  LayoutDashboard,
-  type LucideIcon,
-  MessagesSquare,
-  PartyPopper,
-} from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Bell, LayoutDashboard, MessagesSquare, PartyPopper } from 'lucide-react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/feedback';
 import { GroupIcon } from '@/components/group-meta';
@@ -16,6 +8,8 @@ import { describeUser } from '@/components/UserMenu';
 import { useCurrentTerm, useStudentSemester } from '@/hooks/academics';
 import { useCurrentUser, useGroups } from '@/hooks/queries';
 import { formatListTime } from '@/lib/utils';
+import { HomeCard } from './HomeCard';
+import { TodayCard } from './TodayCard';
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
   weekday: 'long',
@@ -31,40 +25,10 @@ function greeting(): string {
   return 'Good evening';
 }
 
-/** First name for the greeting, skipping titles like "Dr." */
-function firstName(name: string): string {
+/** First name for greetings and previews, skipping titles like "Dr." */
+export function firstName(name: string): string {
   const words = name.split(/\s+/).filter((w) => !/^(dr|mr|ms|mrs|prof|engr)\.?$/i.test(w));
   return words[0] ?? name;
-}
-
-export function HomeCard({
-  title,
-  icon: Icon,
-  action,
-  children,
-}: {
-  title: string;
-  icon: LucideIcon;
-  action?: { to: string; label: string };
-  children: ReactNode;
-}) {
-  return (
-    <section className="flex min-w-0 flex-col overflow-hidden rounded-xl border bg-surface">
-      <header className="flex items-center gap-2 border-b px-4 py-3">
-        <Icon className="size-4 text-primary" aria-hidden />
-        <h2 className="text-[15px] font-bold">{title}</h2>
-        {action && (
-          <Link
-            to={action.to}
-            className="ml-auto inline-flex items-center gap-1 text-[13px] font-semibold text-link hover:underline"
-          >
-            {action.label} <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
-        )}
-      </header>
-      <div className="min-h-0 flex-1">{children}</div>
-    </section>
-  );
 }
 
 function UnreadChats() {
@@ -124,6 +88,7 @@ export default function HomePage() {
   ]
     .filter(Boolean)
     .join(' · ');
+  const hasClasses = me.role === 'student' || me.role === 'faculty';
 
   return (
     <main className="scrollbar-thin min-w-0 flex-1 overflow-y-auto bg-background">
@@ -136,6 +101,7 @@ export default function HomePage() {
         </header>
 
         <div className="grid items-start gap-5 lg:grid-cols-2">
+          {hasClasses && <TodayCard />}
           <HomeCard
             title="Unread chats"
             icon={MessagesSquare}

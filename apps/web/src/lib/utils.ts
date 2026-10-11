@@ -24,6 +24,24 @@ export function hueFor(seed: string): number {
   return Math.abs(hash) % 360;
 }
 
+/** Clearly different hues, handed to courses in this order. */
+const COURSE_HUES = [215, 35, 160, 285, 350, 190, 55, 250, 120, 320, 15, 235];
+
+/**
+ * One distinct colour per course on a screen. Codes are sorted first, so a timetable keeps its
+ * colours from week to week (hashing alone gave CSC491 and CSC498 nearly the same green).
+ */
+export function courseHues(codes: Iterable<string>): (code: string) => number {
+  const sorted = [...new Set(codes)].sort();
+  const hues = new Map(
+    sorted.map((code, i) => [
+      code,
+      (COURSE_HUES[i % COURSE_HUES.length] ?? 0) + Math.floor(i / COURSE_HUES.length) * 12,
+    ]),
+  );
+  return (code) => hues.get(code) ?? hueFor(code);
+}
+
 const timeFormat = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
 const weekdayFormat = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
 const shortDateFormat = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });

@@ -4,6 +4,7 @@ import { roomSchema } from '@cui/shared';
 import { conflict, isDuplicateKeyError, notFound, parse } from '../lib/errors';
 import { Room, type RoomDoc, type UserDoc } from '../models';
 import { recordAudit } from './audit';
+import { roomInUse } from './timetable';
 
 export function toRoomDTO(room: RoomDoc): RoomDTO {
   return {
@@ -55,6 +56,9 @@ export async function saveRoom(
 export async function deleteRoom(actor: UserDoc, roomId: string): Promise<void> {
   const room = await Room.findById(roomId).lean<RoomDoc>();
   if (!room) throw notFound('Room not found.');
+  if (await roomInUse(roomId)) {
+    throw conflict(`${room.name} still has classes in the timetable. Move them first.`);
+  }
   await Room.deleteOne({ _id: room._id });
   void recordAudit({
     action: 'room.deleted',

@@ -1,5 +1,7 @@
 import { AuditLog } from './AuditLog';
 import { CatalogCourse } from './CatalogCourse';
+import { ClassChange } from './ClassChange';
+import { ClassSlot } from './ClassSlot';
 import { CourseOffering } from './CourseOffering';
 import { Department } from './Department';
 import { Group } from './Group';
@@ -14,6 +16,8 @@ import { User } from './User';
 
 export * from './AuditLog';
 export * from './CatalogCourse';
+export * from './ClassChange';
+export * from './ClassSlot';
 export * from './CourseOffering';
 export * from './Department';
 export * from './Group';
@@ -40,6 +44,8 @@ export const ALL_MODELS = [
   CatalogCourse,
   Program,
   Notification,
+  ClassSlot,
+  ClassChange,
 ] as const;
 
 /** Models whose index definitions changed since launch: stale indexes are dropped and rebuilt. */

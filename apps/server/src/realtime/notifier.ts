@@ -34,6 +34,11 @@ export function pushNotification(userId: string, notification: NotificationDTO):
   io?.to(userRoom(userId)).emit('notification:new', notification);
 }
 
+/** Timetables are public on campus, so every open timetable view refreshes. */
+export function broadcastTimetableChanged(offeringIds: string[]): void {
+  io?.emit('timetable:changed', { offeringIds });
+}
+
 export function broadcastMessageDeleted(groupId: string, messageId: string): void {
   io?.to(groupRoom(groupId)).emit('message:deleted', { groupId, messageId });
 }
