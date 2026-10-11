@@ -1,6 +1,13 @@
 /** Zod schemas for the university features, shared by the REST API and the web forms. */
 import { z } from 'zod';
-import { DATE_PATTERN, ROOM_KINDS, TERM_PATTERN } from './academics';
+import {
+  CLASS_KINDS,
+  DATE_PATTERN,
+  ROOM_KINDS,
+  TERM_PATTERN,
+  TIME_PATTERN,
+  toMinutes,
+} from './academics';
 import { objectIdSchema } from './schemas';
 
 export const courseCodeSchema = z
@@ -94,6 +101,66 @@ export const programSchema = z.object({
     .default([]),
 });
 
+// ---- Timetable ----
+
+export const timeSchema = z.string().regex(TIME_PATTERN, 'Use a 24-hour time like 08:30');
+
+const minutesBetween = (start: string, end: string) => toMinutes(end) - toMinutes(start);
+
+export const classSlotSchema = z
+  .object({
+    offeringId: objectIdSchema,
+    day: z.number().int().min(1).max(6),
+    start: timeSchema,
+    end: timeSchema,
+    roomId: objectIdSchema.nullable(),
+    kind: z.enum(CLASS_KINDS).default('lecture'),
+  })
+  .refine((s) => minutesBetween(s.start, s.end) >= 30, {
+    message: 'A class must last at least 30 minutes and end after it starts',
+    path: ['end'],
+  })
+  .refine((s) => minutesBetween(s.start, s.end) <= 240, {
+    message: 'A class can last at most 4 hours',
+    path: ['end'],
+  })
+  .refine((s) => toMinutes(s.start) >= 7 * 60 && toMinutes(s.end) <= 20 * 60, {
+    message: 'Classes run between 7:00 AM and 8:00 PM',
+    path: ['start'],
+  });
+
+export const classChangeSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('cancelled'),
+    date: dateSchema,
+    note: z.string().trim().max(200).optional(),
+  }),
+  z
+    .object({
+      kind: z.literal('moved'),
+      date: dateSchema,
+      newDate: dateSchema,
+      newStart: timeSchema,
+      newEnd: timeSchema,
+      newRoomId: objectIdSchema.nullable(),
+      note: z.string().trim().max(200).optional(),
+    })
+    .refine((c) => minutesBetween(c.newStart, c.newEnd) >= 30, {
+      message: 'The class must end at least 30 minutes after it starts',
+      path: ['newEnd'],
+    }),
+]);
+
+export const TIMETABLE_VIEWS = ['me', 'section', 'teacher', 'room'] as const;
+export type TimetableView = (typeof TIMETABLE_VIEWS)[number];
+
+export const timetableQuerySchema = z.object({
+  view: z.enum(TIMETABLE_VIEWS).default('me'),
+  id: objectIdSchema.optional(),
+  /** Any date in the week to show (defaults to this week). */
+  week: dateSchema.optional(),
+});
+
 export const notificationsQuerySchema = z.object({
   before: objectIdSchema.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(30),
@@ -109,3 +176,5 @@ export type RoomInput = z.input<typeof roomSchema>;
 export type CatalogCourseInput = z.input<typeof catalogCourseSchema>;
 export type ProgramInput = z.input<typeof programSchema>;
 export type MarkNotificationsInput = z.infer<typeof markNotificationsSchema>;
+export type ClassSlotInput = z.input<typeof classSlotSchema>;
+export type ClassChangeInput = z.infer<typeof classChangeSchema>;

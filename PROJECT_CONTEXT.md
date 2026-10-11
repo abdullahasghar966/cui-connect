@@ -7,16 +7,21 @@
 > - the ordered list of remaining tasks;
 > - the conventions (including **push to GitHub after every completed task**).
 >
-> **Last updated:** Thursday 2026-10-08, about 21:15 Pakistan time. **All remaining work is done.**
-> **Deadline:** **Friday 2026-10-09, morning.**
+> **Last updated:** Sunday 2026-10-11, about 02:30 Pakistan time.
+> **Current work:** the **university features build** (§1a). Stage A is pushed. **B1 Timetable is written but not committed** (uncommitted files in this folder; see §1a.3).
+> The assignment deadline (Fri 2026-10-09) has passed; this is now an extension project.
 > **Repository:** https://github.com/abdullahasghar966/cui-connect (public), branch `main`.
+> **Live site:** https://cui-connect.onrender.com. It **auto-deploys on every push to `main`**, so never push failing code.
 
 **Prompt to paste into a new session** (from this project folder):
 
 ```
-Read PROJECT_CONTEXT.md first. Continue with "Remaining work" in order, using the
-build → test → verify loop. After each completed task: run the gates, commit,
-and push to GitHub (origin main). Explain anything I need to decide in simple terms.
+Read PROJECT_CONTEXT.md first, especially §1a (university features build). Finish B1 Timetable
+from the exact state in §1a.3 (it is written but uncommitted: verify, fix, then commit and push).
+Then continue the checklist in §1a.2 in order (B2 → B6, then C1 → C10), using the
+build → test → verify loop. After each feature: run all gates (lint, typecheck, npm test,
+npm run e2e, npm audit), commit, push to origin main, and tick it off in §1a.2.
+Plans for these features are pre-approved; explain anything I need to decide in simple terms.
 ```
 
 ---
@@ -33,37 +38,263 @@ and push to GitHub (origin main). Explain anything I need to decide in simple te
 | GUI first run + deployment (user request 2026-10-09: "everything through GUI", one link) | **Code done** (`a8a6d4a`): browser setup page guarded by `SETUP_CODE`, 5-step admin checklist, self-service change password, `TRUST_PROXY`, `render.yaml` (Render free, Singapore + MongoDB Atlas). Vercel rejected: free-plan WebSockets end after 5 min and don't broadcast across instances. **Deployed 2026-10-09: https://cui-connect.onrender.com** (Render free, Singapore; Atlas M0, AWS Mumbai). The first deploy crashed on a wrong `MONGODB_URI`; startup now explains Mongo connection errors in plain words (`b19b9e9`). Verified from outside: health OK, setup closed, demo accounts 404, HSTS on. The user created the admin through the setup page. `docs/USER_GUIDE.md` covers every feature plus a 10-step viva demo |
 | Final verification | **Done.** All gates green, `npm run build` + `npm start` smoke test as two users (localhost + 127.0.0.1): live message and live delete |
 | Lint (Biome) / typecheck (TS 7) | Green |
-| Unit + integration tests (Vitest) | **123 / 123 passing** (78 policy + 45 server integration) |
-| End-to-end tests (Playwright) | **9 / 9 passing**; 3 utility specs are skipped by design |
+| Unit + integration tests (Vitest) | **162 passing at Stage A** (`8144dd8`). The uncommitted B1 work adds 8 timetable tests, all passing |
+| End-to-end tests (Playwright) | **11 passing at Stage A**; 3 utility specs are skipped by design. The uncommitted B1 work adds 2 tests that haven't been run yet |
+| University features | Stage A pushed; B1 written but not committed. See §1a |
 | `npm audit` | 0 vulnerabilities |
 | GitHub | Public repo `abdullahasghar966/cui-connect`. All work up to this file is pushed |
 
 ## 1a. University features build (started 2026-10-11)
 
-The user asked to grow CUI Connect into a university system. The approved plan is at `C:\Users\Abdullah\.claude\plans\elegant-shimmying-rossum.md`. The user pre-approved every plan while away ("auto approval"), and each finished feature is pushed to GitHub, which auto-deploys Render.
+### 1a.1 What the user asked and agreed
+- **The request (2026-10-11):**
+  - "start adding the mentioned features. Then, start adding remaining features of 1 till 10".
+  - The "mentioned" features are the five I recommended (timetable, catalog/search, live QR attendance, marks + GPA, exam date sheet + seating), plus the notification centre and polls.
+  - "1 till 10" is the 10-area feature menu.
+- **The approved plan:** `C:\Users\Abdullah\.claude\plans\elegant-shimmying-rossum.md`. Read it for the full feature list and the reasoning behind it.
+- **Standing permissions:**
+  - "whatever new plan you give for new features, it's an auto approval … just make sure it is the best of the best and work perfectly fine".
+  - "push commits to github continuously and automatically whenever each new feature is built".
+- **Decisions in the plan** (defaults the user accepted):
+  1. **Files** (submissions, materials, photos) go in MongoDB **GridFS** in the existing Atlas database, 5 MB per file. No new accounts.
+  2. **QR attendance:** token = HMAC(session secret, 10-second window). It's accepted for the current and previous window (about 20 s). The student must be signed in and enrolled. The teacher sees names appear live and can untick anyone. Honest limit: a code can still be forwarded instantly.
+  3. **Grading defaults** (COMSATS-style, editable per course):
+     - Weights: Quizzes 15, Assignments 10, Sessional I 10, Sessional II 15, Terminal 50.
+     - Grade scale: A≥85 (4.00), A−≥80 (3.66), B+≥75 (3.33), B≥71 (3.00), B−≥68 (2.66), C+≥64 (2.33), C≥61 (2.00), C−≥58 (1.66), D+≥54 (1.33), D≥50 (1.00), F.
+     - Minimum attendance: 80% (an amber warning within 5% of it).
+  4. **Who manages what:**
+     - New **Accounts Office** (`OFFICES` includes `ACCOUNTS`) handles fees.
+     - **Student Affairs** handles jobs, complaints, lost & found and approving events.
+     - **Admin** handles rooms, terms and transport.
+     - The **timetable** belongs to admin or that department's Department Office.
+     - **Exams** belong to the Examination Office.
+     - The **academic calendar** belongs to the Director's Office.
+  5. **Time zone:** Asia/Karachi (fixed +05:00) for "today", "next class" and reminders. The server runs on UTC.
+  6. **Landing page:** Home (`/home`) after sign-in, instead of Chats.
+  7. **Data:**
+     - The live site starts empty for the new features; it's the user's real campus.
+     - Local runs and tests get a full sample campus.
+     - Admin pages offer CSV import for the catalog (timetable CSV is optional, not done).
+     - **Still to ask the user after Stage B:** do they want a second free Render "demo" site with sample data?
+  8. **New packages planned:**
+     - `qrcode.react` (QR codes, B3 and the ID card);
+     - `web-push` (C7).
+     - Nothing else.
 
-**Design in one paragraph:**
-- Shared pure calculators in `packages/shared/src/academics.ts` (campus time Asia/Karachi, terms, grades/GPA, attendance, clash finder, seat allocator).
-- Record permissions in `access.ts`, which returns the same `Decision` type as `policy.ts`.
-- Server models per collection; services per area; routes `/api/academics/*`, `/api/notifications`, with admin setup under `/api/admin/{terms,rooms}`.
-- `notify()` (`services/notifications.ts`) saves and pushes `notification:new` to `user:<id>`.
-- Web: Home (`/home`, the landing page), `AreaLayout` (shared by Admin and the new areas), `NotificationBell` + `/notifications`, `MobileTabBar`.
-- `components/page.tsx` holds `PageHeader`/`Card`/`Table`/`Tabs`; `hooks/useSubmit.ts` holds `useSubmit`/`useAction`.
-
-**Checklist** (tick and push one by one):
-- [x] **A. Foundations:**
-  - terms (auto current term), rooms, course catalog (+ CSV import, backfill for old offerings), degree programmes;
-  - notification centre (bell, page, live push, dedupe keys);
-  - Home page, rail and phone tab bar;
-  - admin "Academic setup" page and checklist;
-  - the Accounts Office.
-- [ ] B1 Timetable (slots, clash checks, one-off changes, next class)
+### 1a.2 Checklist (tick and push one by one)
+- [x] **A. Foundations.** Commit `8144dd8`, pushed and deployed; the live site is healthy.
+- [ ] **B1 Timetable.** Code written, NOT committed. Exact state in §1a.3.
 - [ ] B2 Catalog search and course pages
 - [ ] B3 Attendance (rotating QR, roll call, %, shortage)
 - [ ] B4 Marks, GPA/CGPA, result notifications
 - [ ] B5 Exams: date sheet and seating
 - [ ] B6 Polls in chats
-- [ ] C1 Room finder · C2 teacher directory + global/message search · C4 what-do-I-need, transcript, degree progress · C5 calendars + reminders · C6 assignments, materials, live quizzes · C7 mentions, pins, reactions, replies, anonymous questions, office hours, push · C8 requests, fees, registration, evaluation, complaints · C9 events, directory/map, jobs, lost & found, transport · C10 profile, ID card, notification settings
+- [ ] C1 Room finder
+- [ ] C2 Teacher directory, global search (Ctrl+K), message search
+- [ ] C3 (attendance is fully covered in B3, nothing extra)
+- [ ] C4 "What do I need" calculator, transcript, degree progress
+- [ ] C5 Academic calendar, My calendar, reminders
+- [ ] C6 Assignments + submissions (GridFS), course materials, live quizzes
+- [ ] C7 @mentions, pinned messages, reactions, replies, anonymous questions, office-hour booking, web push
+- [ ] C8 Requests/applications, fee status, course registration, teacher evaluation, complaints
+- [ ] C9 Events + RSVP, campus directory/map, jobs board, lost & found, transport
+- [ ] C10 Profile + photo, digital ID card with public verification, notification settings
+- [ ] After Stage B: ask the user about the demo site (decision 7); update `USER_GUIDE.md`, `ARCHITECTURE.md` and `README.md` for the new features.
+
+### 1a.3 B1 Timetable: exact state at handoff
+**Written (all uncommitted):**
+- **Shared** (`packages/shared/src`):
+  - `academic-schemas.ts`: `timeSchema`, `classSlotSchema` (30 min to 4 h, 07:00–20:00), `classChangeSchema` (a `cancelled` or `moved` union), `TIMETABLE_VIEWS`, `timetableQuerySchema`.
+  - `academic-dto.ts`: `SectionRefDTO`, `RoomRefDTO`, `ClassSlotDTO`, `OccurrenceStatus` (`scheduled`, `cancelled`, `moved-out`, `moved-in`), `ClassOccurrenceDTO`, `TimetableWeekDTO`, `TodayDTO`, `SlotCheckDTO`.
+  - `events.ts`: `timetable:changed {offeringIds}`.
+  - `academics.ts`: `formatShortDate('2026-10-12')` → `Mon 12 Oct`.
+- **Server** (`apps/server/src`):
+  - Models `ClassSlot` (offeringId, termId, plus sectionId and instructorId copied from the offering, roomId, day 1–6, start, end, kind) and `ClassChange` (slotId+date unique; cancelled or moved with newDate/newStart/newEnd/newRoomId and a note). Both are registered in `models/index.ts`.
+  - `services/timetable.ts`:
+    - `timetableWeek` (views me / section / teacher / room);
+    - `todayFor` (now, next, today);
+    - `checkSlot` and `saveSlot` (clash check; room, teacher and section clashes are blocking, a 409 with reasons; repeaters, room capacity and lab-in-classroom are warnings);
+    - `deleteSlot`, `listSectionSlots`;
+    - `changeClass` (cancel or move one date: past dates are refused, the date must match the weekday, moves are clash-checked against that day);
+    - `restoreClass`, `roomInUse`.
+  - Notifications use type `timetable`. Weekly edits are deduplicated to one per course per day (key `timetable:<offering>:<date>`). The person making the change isn't notified.
+  - `realtime/notifier.ts`: `broadcastTimetableChanged` uses `io.emit` (timetables are public on campus).
+  - `services/rooms.ts`: rooms with classes can't be deleted (409).
+  - `http/routes/academics.ts` adds:
+    - `GET /sections`, `/teachers`, `/offerings?sectionId=`;
+    - `GET /timetable?view&id&week`, `/timetable/today`, `/timetable/sections/:id/slots`;
+    - `POST /timetable/check`, `POST /timetable/slots`, `PUT` and `DELETE /timetable/slots/:id`;
+    - `POST /timetable/slots/:id/changes`, `DELETE /timetable/slots/:id/changes/:date`.
+  - `seed/academic.ts`: `seedTimetable()` is a greedy, clash-free placer: 2 lectures on different days, plus a 3-hour lab for courses with lab credits; FYP gets 1 meeting. It's called from `seed.ts` after the courses.
+- **Tests:** `apps/server/test/timetable.test.ts` (8 tests, **passing**):
+  - the seeded timetable has no clashes;
+  - views and permissions;
+  - the department office can edit only its own department;
+  - clash refusal, and the repeater warning;
+  - a room in use can't be deleted;
+  - cancel with a live notification only to enrolled students;
+  - move and restore;
+  - "now and next".
+- **Web** (`apps/web/src`):
+  - `lib/api.ts` (`academics.sections`, `teachers`, `offerings`, `timetable`, `today`, `sectionSlots`, `checkSlot`, `saveSlot`, `deleteSlot`, `changeClass`, `restoreClass`) and `lib/cache.ts` (keys `sections`, `teachers`, `timetable` = `['academics','timetable']`, `today`).
+  - `components/timetable/WeekGrid.tsx`: a generic time grid with lanes for overlaps, a colour per course (`hueFor`), status badges and a now line.
+  - `components/timetable/ClassDialog.tsx`: details, "Open course chat", and for the instructor: Cancel (with reason), Move (date, time, room), Undo.
+  - `pages/academics/AcademicsLayout.tsx`: an `AreaLayout` with Timetable, plus Timetable editor for admin and the department office.
+  - `pages/academics/TimetablePage.tsx`:
+    - tabs Mine / Section / Teacher / Room, a picker, and week navigation (URL params `view`, `id`, `week`);
+    - the grid on desktop and a day list on phones;
+    - it also exports `useCampusClock` and `canEditTimetable`.
+  - `pages/academics/TimetableEditorPage.tsx`: a section picker, each course's hours per week, and an "Add class" dialog with a live clash check (debounced `/timetable/check`).
+  - `pages/home/HomeCard.tsx` (extracted), `pages/home/TodayCard.tsx` (Now, Next class with a countdown, today's list), and `pages/home/HomePage.tsx` (Today card for students and faculty).
+  - `router.tsx`: `/academics` → `/academics/timetable`, plus `/academics/timetable/edit`.
+  - `lib/nav.ts`: an Academics item for everyone.
+  - `hooks/useRealtimeSync.ts`: `timetable:changed` invalidates `keys.timetable`.
+- **E2E:** `e2e/academics.spec.ts` has two new tests that have **not been run yet**: "Home shows the next class", and "a teacher cancels a class and the student sees it live" (it uses the Next week button, cancels the first CSC337 block, checks Hira's live update and bell, then clicks Undo change).
+- **Temporary file:** `e2e/tmp-visual.spec.ts` is a screenshot helper. **Delete it before committing.**
+
+**Last gate results:**
+- `npm run lint` and `npm run typecheck` were green after the last edits.
+- The server timetable tests pass.
+- `npm run build`, `npm run e2e` and the visual review had **not run yet**. The user interrupted that command to request this handoff.
+
+**Next steps to finish B1:**
+1. `npm run build`.
+2. Run the screenshot review, then look at every image in that folder:
+   ```
+   $env:REVIEW_DIR='<scratch folder>'; npx playwright test e2e/academics.spec.ts e2e/tmp-visual.spec.ts; Remove-Item Env:REVIEW_DIR
+   ```
+3. Fix what looks wrong or fails. Things to check closely:
+   - the grid's hour labels;
+   - blocks with lanes;
+   - the dialog actions;
+   - the mobile day list;
+   - the dark mode colours;
+   - the Today card.
+4. Delete `e2e/tmp-visual.spec.ts`.
+5. Run all gates: `npm run lint`, `npm run typecheck`, `npm test` (expect about 170 tests), `npm run e2e`, `npm audit`.
+6. Tick B1 above, commit ("University features, B1: timetable…") with the author flags in §11, and push.
+7. After Render deploys, check `/api/health`.
+
+### 1a.4 Architecture of the university features (how to extend)
+- **Shared** (`packages/shared/src`):
+  - `academics.ts`: pure calculators and constants:
+    - campus time (`campusClock`, `campusInstant`, `formatClock`, `formatShortDate`, `mondayOf`, `addDays`);
+    - terms (`termCodeFor`, `semesterNumber`, …);
+    - grading (`GRADE_SCALE`, `DEFAULT_GRADING`, `courseStanding`, `gradeTargets`, `gpa`);
+    - attendance (`attendanceSummary`);
+    - timetable (`findClashes`, `BLOCKING_CLASHES`);
+    - exams (`allocateSeats`, `eventsOverlap`);
+    - rooms (`ROOM_KINDS`).
+
+    It's tested in `academics.test.ts`.
+  - `access.ts`: record permissions returning the same `Decision` type as `policy.ts`:
+    - `canManageOffering` (the instructor or admin);
+    - `canViewOfferingRecords` (instructor, HOD, Exam Office, admin);
+    - `canStudyIn` (enrolled students);
+    - `canViewStudentRecord` (self, admin, Exam Office, a teacher of the student, the batch advisor, the HOD);
+    - `canManageTimetable` (admin, the department office of that department);
+    - `canManageCatalog` (admin, the HOD and department office of that department);
+    - `canManageCampus` (admin);
+    - `canManageExams` (Exam Office);
+    - `canManageFees` (Accounts Office);
+    - `canManageCalendar` (Director's Office);
+    - `canManageStudentAffairs` (Student Affairs).
+
+    It's tested in `access.test.ts`. New deny codes in `policy.ts`: `NOT_ALLOWED`, `NOT_ENROLLED`, `OFFICE_ONLY`.
+  - `academic-dto.ts` and `academic-schemas.ts` hold the university types and Zod schemas. Every new feature adds its types here; they're exported from `index.ts`.
+- **Server** (`apps/server/src`):
+  - **Models:** `Term` (exactly one `current`), `Room`, `CatalogCourse` (keyed by `code`), `Program` (plan per semester), `Notification` (deduplicated by `userId + key`, deleted automatically after 120 days), `ClassSlot`, `ClassChange`.
+  - **`CourseOffering`:** gained `termId`, `capacity` and `grading`. Its unique index is now (code, sectionId, termId). `initModels()` runs `syncIndexes()` for `CourseOffering` (the `SYNCED_MODELS` set in `models/index.ts`).
+  - **`services/terms.ts`:** `currentTerm()` is cached and creates the term from today's date if none exists. Call `invalidateTermCache()` wherever data is wiped (seed and setup already do).
+  - **`services/academic-setup.ts`:** `ensureAcademicDefaults()` runs at every start (in `server.ts`). It gives old offerings a term and backfills the catalog. This is how the user's live campus was upgraded.
+  - **`services/catalog.ts`:** catalog and programmes (permission checks, CSV import, `ensureCatalogEntry`). `services/structure.ts` `createCourse` sets `termId` and adds the course to the catalog; `listCourses` lists the current term only.
+  - **`services/notifications.ts`:** `notify(userIds, {type, title, body, link, key})` never throws. It pushes `notification:new` live to `user:<id>`. Use it for every feature's alerts.
+  - **Routes:**
+    - `http/routes/academics.ts` (`/api/academics/*`: anyone signed in reads; writes are checked with `access.ts`);
+    - `http/routes/notifications.ts` (`/api/notifications`);
+    - `admin.ts` adds `/api/admin/terms` and `/api/admin/rooms`, and the overview's `academics` counts.
+  - **Helpers:** `lib/csv.ts` (`parseCsv`, `readCsv`), `lib/text.ts` (`escapeRegex`, `containsText`).
+  - **Seed:**
+    - `seed/academic-data.ts`: terms FA23–FA26 (FA26 current), 13 rooms, a 44-course catalog, BCS/BSE/BEE plans.
+    - `seed/academic.ts`: `seedAcademicStructure`, `seedTimetable`.
+    - `seed/data.ts` `COURSES`: each section's full current semester. BCS sections are taught only by CS faculty, which keeps the test "Hira can't DM Dr. Sana Javed (EE)" true.
+- **Web** (`apps/web/src`):
+  - Home (`/home`, the landing page).
+  - The Academics area (`/academics/*`).
+  - `/notifications`.
+  - Admin `/admin/academic` (tabs Terms, Rooms, Course catalog, Degree programmes), plus the "Set up academics" checklist on Overview.
+  - **Building blocks:**
+    - `components/AreaLayout.tsx` (sidebar plus phone tabs for every area);
+    - `components/page.tsx` (`PageHeader`, `Card`, `Table`, `Tabs`, `Stat`; `pages/admin/ui.tsx` re-exports it);
+    - `hooks/useSubmit.ts` (`useSubmit` validates with the shared Zod schema; `useAction` runs buttons);
+    - `hooks/useNotifications.ts`;
+    - `components/NotificationBell.tsx` and `NotificationList.tsx`;
+    - `components/MobileTabBar.tsx` (Home, Chats, Academics, Alerts, You);
+    - `lib/nav.ts` (`areasFor` role decides the rail and tab items);
+    - `hooks/academics.ts` (`useTerms`, `useCurrentTerm`, `useRooms`, `usePrograms`, `useStudentSemester`).
+  - The chat sidebar's phone account row was removed; `UserMenu` now has variants `rail` and `tab`.
+- **Real-time pattern:** a service changes data, then calls `notify()` for the affected people, then a notifier broadcast so open screens refetch (as with `timetable:changed`). The client handles it in `useRealtimeSync.ts` by invalidating the query keys.
+- **Tests pattern:**
+  - Shared unit tests sit next to their files.
+  - Server integration tests are in `apps/server/test/*.test.ts` (`startTestApp()` is the seeded demo; `startTestApp({seed:false})` is empty; also `nextEvent`, `noEvent`, `userBy`).
+  - Browser tests are in `e2e/*.spec.ts`:
+    - sign-in lands on `/home`, so use `goToChats(page)` before reading the chat sidebar;
+    - `openConversation` does that itself.
+
+### 1a.5 Design notes for the remaining features (follow these)
+- **B2 Catalog & course pages:**
+  - `/academics/courses`: search by code or title and filter by department, using `GET /api/academics/catalog`.
+  - `/academics/courses/:code`:
+    - description, credits `formatCredits`, prerequisites as links, CLOs, weekly outline;
+    - grading weights (`DEFAULT_GRADING` or the offering's own);
+    - this term's sections with instructor, schedule (from `ClassSlot`) and seats;
+    - "Open chat" when the viewer is a member.
+  - Add an endpoint for course detail plus its offerings and slots.
+- **B3 Attendance:**
+  - **Models:** `AttendanceSession` {offeringId, slotId?, date, secret, status open|closed, openedBy} and `AttendanceRecord` {sessionId, offeringId, studentId, status present|late|absent|leave, method qr|manual}, unique (session, student).
+  - **Teacher:** "Start attendance" opens a full-screen QR (`qrcode.react`) that refreshes by fetching the token from REST each window. It shows a live list via the `attendance:update` socket event to the instructor's `user:` room, plus manual roll call.
+  - **Student:**
+    - `/attend/:sessionId?t=` checks in, rechecking login, enrolment, token window and that the session is open;
+    - "My attendance" shows a per-course % with `attendanceSummary` and shortage warnings, plus a notification when they're short.
+  - `RequireAuth` already keeps `?search` in the login redirect.
+- **B4 Marks:**
+  - **Models:** `Assessment` {offeringId, type, title, total, date, published} and `Mark` {assessmentId, studentId, obtained|null}. `CourseOffering.grading` overrides `DEFAULT_GRADING` (it must total 100).
+  - **Teacher:** a marks grid, then Publish, which sends `notify` type `results` ("AWT Sessional I marks are out").
+  - **Student:**
+    - a breakdown using `courseStanding`, with the projected grade from `gradeFor`;
+    - term GPA and CGPA via `gpa`.
+
+    Past terms need `Result` records: seed past-term offerings (no chat groups) with final grades for the transcript (C4).
+- **B5 Exams:**
+  - **Models:** `Exam` {termId, offeringIds, courseCode, kind sessional1|sessional2|terminal, date, start, end, roomIds, published} and `SeatAssignment` {examId, studentId, roomId, row, seat}.
+  - **Exam Office** (a new "Office" area for staff): date sheet with a check that no student has two papers at once (`eventsOverlap`); Publish notifies students.
+  - **Seating:** `allocateSeats` mixes sections across rooms using `Room.examRows × examCols`, gives a printable chart, and notifies each student of their seat.
+  - **Students:** "My exams" with room, row and seat.
+- **B6 Polls:**
+  - `Message` gains `kind: 'text'|'poll'` and `poll {question, options[], multiple, closedAt}`, with votes stored on the message.
+  - Socket `poll:vote` and `poll:close` with acknowledgements, and a `poll:updated` broadcast to the group room.
+  - Creating a poll requires `canPost`; voting requires `canRead`. The composer gets "Create poll".
+- **C-stage summary** (from the plan; same patterns):
+  - **C1 Room finder:** free rooms now or at a chosen time, and what's on in each room, using slots and changes.
+  - **C2 Search:** teacher directory with office location, courses and office hours; Ctrl+K searches chats, courses, teachers, rooms and messages; message search uses a Mongo text index limited to chats you can read.
+  - **C4 Results:** "What do I need" (`gradeTargets`), printable transcript, degree progress against `Program.plan`.
+  - **C5 Calendar:** `CalendarEvent` managed by the Director's Office; My calendar combines classes, exams, deadlines, events and bookings; a 1-minute in-process reminder scheduler with deduplication keys.
+  - **C6 Coursework:** assignments with GridFS submissions, a late flag and grades that feed marks; materials by week; live quizzes over sockets (`quiz:*`) whose scores become quiz marks.
+  - **C7 Chat upgrades:** mentions (autocomplete and notify), pins, reactions, replies, anonymous questions in course chats, office-hour booking (only if `canDM` allows), web push with VAPID keys generated and stored in the database, plus a PWA manifest and service worker.
+  - **C8 Services:** requests with routing (leave → batch advisor, transcript/bonafide → Exam Office, ID card → Student Affairs) and a status tracker; fees by the Accounts Office with a printable challan; registration with prerequisites, clashes, seats, credit limit and advisor approval; anonymous evaluation (store responses without identity, plus a separate "submitted" marker); complaints to Student Affairs.
+  - **C9 Campus life:** events with RSVP; directory/map of blocks → rooms with "now"; jobs board; lost & found; transport.
+  - **C10 Profile:** profile with a GridFS photo; ID card with a signed QR leading to a public `/verify/:token` page; notification settings per type and for push.
+
+### 1a.6 Environment notes learned in this build (Windows, this machine)
+- **Never use PowerShell `.Replace()` scripts for TypeScript template literals.** PowerShell treats the backtick as its escape character and swallowed them. Use the Edit tool for anything with backticks or `${…}`.
+- **Bulk text edits:** use `[IO.File]::ReadAllText` / `WriteAllText(..., (New-Object Text.UTF8Encoding $false))` (no BOM). `Get-Content` shows UTF-8 like `·` and `…` as mojibake, but the files are fine.
+- **Biome a11y:** `aria-label` on a plain `<span>` fails lint. Use an `sr-only` child instead.
+- **Playwright:** `getByRole('cell', { name })` also matches action buttons named "Actions for X", so use `exact: true`.
+- **The browser pane:** often hidden or not painting, so screenshots time out. Use Playwright screenshot specs instead (see `e2e/tmp-visual.spec.ts`).
+- **What Claude can't do here:**
+  - The Claude Terminal panel doesn't start (missing shell-integration file).
+  - The auto-mode classifier blocks Claude from opening public tunnels (`npm run share`).
+  - Claude may not create accounts or enter passwords on the live site; only the user can.
 
 ## 2. The assignment and the user's instructions
 

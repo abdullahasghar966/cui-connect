@@ -24,6 +24,9 @@ const AuditPage = lazy(() => import('@/pages/admin/AuditPage'));
 const AcademicSetupPage = lazy(() => import('@/pages/admin/AcademicSetupPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
+const AcademicsLayout = lazy(() => import('@/pages/academics/AcademicsLayout'));
+const TimetablePage = lazy(() => import('@/pages/academics/TimetablePage'));
+const TimetableEditorPage = lazy(() => import('@/pages/academics/TimetableEditorPage'));
 
 function FullScreenSpinner() {
   return (
@@ -97,6 +100,15 @@ export const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/home" replace /> },
       { path: '/home', element: <HomePage /> },
       { path: '/notifications', element: <NotificationsPage /> },
+      {
+        path: '/academics',
+        element: <AcademicsLayout />,
+        children: [
+          { index: true, element: <Navigate to="/academics/timetable" replace /> },
+          { path: 'timetable', element: <TimetablePage /> },
+          { path: 'timetable/edit', element: <TimetableEditorPage /> },
+        ],
+      },
       {
         path: '/chat',
         element: <ChatLayout />,

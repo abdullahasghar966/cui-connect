@@ -7,6 +7,9 @@ import type {
   CatalogCourseDTO,
   CatalogCourseInput,
   ChangePasswordInput,
+  ClassChangeInput,
+  ClassSlotDTO,
+  ClassSlotInput,
   CourseDTO,
   CreateCourseInput,
   CreateDepartmentInput,
@@ -32,7 +35,12 @@ import type {
   RoomDTO,
   RoomInput,
   SectionDTO,
+  SectionRefDTO,
+  SlotCheckDTO,
   TermDTO,
+  TimetableView,
+  TimetableWeekDTO,
+  TodayDTO,
   UpdateGroupInput,
   UpdateUserInput,
   UserDTO,
@@ -141,6 +149,35 @@ export const api = {
       send<{ ok: true }>(`/api/academics/catalog/${encodeURIComponent(code)}`, 'DELETE'),
     importCatalog: (csv: string) =>
       send<CsvImportResultDTO>('/api/academics/catalog/import', 'POST', { csv }),
+    sections: () => request<SectionRefDTO[]>('/api/academics/sections'),
+    offerings: (sectionId?: string) =>
+      request<CourseDTO[]>(`/api/academics/offerings${query({ sectionId })}`),
+    teachers: () => request<PublicUserDTO[]>('/api/academics/teachers'),
+    timetable: (params: { view?: TimetableView; id?: string; week?: string }) =>
+      request<TimetableWeekDTO>(`/api/academics/timetable${query(params)}`),
+    today: () => request<TodayDTO>('/api/academics/timetable/today'),
+    sectionSlots: (sectionId: string) =>
+      request<ClassSlotDTO[]>(`/api/academics/timetable/sections/${sectionId}/slots`),
+    checkSlot: (input: ClassSlotInput, slotId?: string) =>
+      send<SlotCheckDTO>('/api/academics/timetable/check', 'POST', { ...input, slotId }),
+    saveSlot: (input: ClassSlotInput, slotId?: string) =>
+      slotId
+        ? send<{ slot: ClassSlotDTO; warnings: string[] }>(
+            `/api/academics/timetable/slots/${slotId}`,
+            'PUT',
+            input,
+          )
+        : send<{ slot: ClassSlotDTO; warnings: string[] }>(
+            '/api/academics/timetable/slots',
+            'POST',
+            input,
+          ),
+    deleteSlot: (slotId: string) =>
+      send<{ ok: true }>(`/api/academics/timetable/slots/${slotId}`, 'DELETE'),
+    changeClass: (slotId: string, input: ClassChangeInput) =>
+      send<{ ok: true }>(`/api/academics/timetable/slots/${slotId}/changes`, 'POST', input),
+    restoreClass: (slotId: string, date: string) =>
+      send<{ ok: true }>(`/api/academics/timetable/slots/${slotId}/changes/${date}`, 'DELETE'),
     programs: () => request<ProgramDTO[]>('/api/academics/programs'),
     saveProgram: (code: string, input: ProgramInput) =>
       send<ProgramDTO>(`/api/academics/programs/${encodeURIComponent(code)}`, 'PUT', input),

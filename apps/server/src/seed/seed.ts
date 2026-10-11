@@ -27,7 +27,7 @@ import {
   reconcileUser,
 } from '../services/provisioning';
 import { invalidateTermCache } from '../services/terms';
-import { seedAcademicStructure } from './academic';
+import { seedAcademicStructure, seedTimetable } from './academic';
 import {
   COURSES,
   DEMO_PASSWORD,
@@ -167,6 +167,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
     courses.set(c.key, course);
     await provisionCourse(course, section);
   }
+  await seedTimetable([...courses.values()], academic.currentTerm);
 
   // Everyone joins the official groups their role, department, section and courses imply.
   for (const user of people.values()) await reconcileUser(user._id, { notify: false });

@@ -1,5 +1,11 @@
 import type { UserDTO } from '@cui/shared';
-import { House, LayoutDashboard, type LucideIcon, MessagesSquare } from 'lucide-react';
+import {
+  GraduationCap,
+  House,
+  LayoutDashboard,
+  type LucideIcon,
+  MessagesSquare,
+} from 'lucide-react';
 
 export interface AppArea {
   to: string;
@@ -20,6 +26,13 @@ export function areasFor(me: UserDTO): AppArea[] {
       hint: 'Conversations',
       icon: MessagesSquare,
       matches: ['/chat'],
+    },
+    {
+      to: '/academics',
+      label: 'Academics',
+      hint: 'Timetable and courses',
+      icon: GraduationCap,
+      matches: ['/academics'],
     },
   ];
   if (me.role === 'admin') {

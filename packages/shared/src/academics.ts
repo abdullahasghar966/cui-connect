@@ -94,6 +94,18 @@ export function formatTimeRange(start: string, end: string): string {
   return `${formatClock(start)} – ${formatClock(end)}`;
 }
 
+const shortDateFormat = new Intl.DateTimeFormat('en-GB', {
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
+
+/** `'2026-10-12'` → `'Mon 12 Oct'` (a calendar date, independent of anyone's time zone). */
+export function formatShortDate(date: string): string {
+  return shortDateFormat.format(new Date(`${date}T00:00:00Z`)).replace(',', '');
+}
+
 /** ISO weekday (1 = Monday … 7 = Sunday) of a `YYYY-MM-DD` date. */
 export function weekdayOf(date: string): number {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();

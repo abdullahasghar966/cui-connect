@@ -21,6 +21,10 @@ export const keys = {
   catalog: (q: string, departmentId = '') => ['academics', 'catalog', q, departmentId] as const,
   course: (code: string) => ['academics', 'course', code] as const,
   programs: ['academics', 'programs'] as const,
+  sections: ['academics', 'sections'] as const,
+  teachers: ['academics', 'teachers'] as const,
+  timetable: ['academics', 'timetable'] as const,
+  today: ['academics', 'timetable', 'today'] as const,
 };
 
 export function sortGroups(groups: GroupDTO[]): GroupDTO[] {
