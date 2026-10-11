@@ -269,6 +269,36 @@ export function gpa(courses: readonly { credits: number; points: number }[]): nu
   return round(courses.reduce((sum, c) => sum + c.points * c.credits, 0) / credits);
 }
 
+export interface GradedAttempt {
+  code: string;
+  /** Term code, e.g. `FA25`. */
+  term: string;
+  credits: number;
+  points: number;
+}
+
+/** A repeated course counts once: its latest attempt replaces the earlier ones (COMSATS rule). */
+export function latestAttempts<T extends GradedAttempt>(attempts: readonly T[]): T[] {
+  const latest = new Map<string, T>();
+  for (const attempt of attempts) {
+    const seen = latest.get(attempt.code);
+    if (!seen || termIndex(attempt.term) >= termIndex(seen.term)) latest.set(attempt.code, attempt);
+  }
+  return [...latest.values()];
+}
+
+/** Cumulative GPA over every term, counting each course's latest attempt. */
+export function cgpa(attempts: readonly GradedAttempt[]): number | null {
+  return gpa(latestAttempts(attempts));
+}
+
+/** Credit hours passed so far (latest attempts with a passing grade). */
+export function creditsEarned(attempts: readonly GradedAttempt[]): number {
+  return latestAttempts(attempts)
+    .filter((a) => a.points > 0)
+    .reduce((sum, a) => sum + a.credits, 0);
+}
+
 export interface MarkedAssessment {
   type: AssessmentType;
   total: number;

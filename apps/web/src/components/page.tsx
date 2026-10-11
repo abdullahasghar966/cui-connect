@@ -114,9 +114,14 @@ export function Tabs<T extends string>({
 }
 
 /** A single bordered strip of key numbers (instead of a grid of separate cards). */
-export function StatStrip({ children }: { children: ReactNode }) {
+export function StatStrip({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4 xl:grid-cols-8">
+    <div
+      className={cn(
+        'grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4 xl:grid-cols-8',
+        className,
+      )}
+    >
       {children}
     </div>
   );

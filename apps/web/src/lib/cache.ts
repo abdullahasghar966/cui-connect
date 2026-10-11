@@ -30,6 +30,8 @@ export const keys = {
   today: ['academics', 'timetable', 'today'] as const,
   settings: ['academics', 'settings'] as const,
   myAttendance: ['academics', 'attendance'] as const,
+  results: ['academics', 'results'] as const,
+  marksSheet: (offeringId: string) => ['teaching', 'marks', offeringId] as const,
   teachingCourses: ['teaching', 'courses'] as const,
   attendanceSheet: (offeringId: string) => ['teaching', 'sheet', offeringId] as const,
   attendanceSession: (sessionId: string) => ['teaching', 'session', sessionId] as const,

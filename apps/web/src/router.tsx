@@ -33,6 +33,8 @@ const AttendancePage = lazy(() => import('@/pages/academics/AttendancePage'));
 const AttendanceSessionPage = lazy(() => import('@/pages/academics/AttendanceSessionPage'));
 const AttendanceSheetPage = lazy(() => import('@/pages/academics/AttendanceSheetPage'));
 const CheckInPage = lazy(() => import('@/pages/academics/CheckInPage'));
+const ResultsPage = lazy(() => import('@/pages/academics/ResultsPage'));
+const MarksPage = lazy(() => import('@/pages/academics/MarksPage'));
 
 function FullScreenSpinner() {
   return (
@@ -119,6 +121,8 @@ export const router = createBrowserRouter([
           { path: 'attendance', element: <AttendancePage /> },
           { path: 'attendance/session/:sessionId', element: <AttendanceSessionPage /> },
           { path: 'attendance/course/:offeringId', element: <AttendanceSheetPage /> },
+          { path: 'results', element: <ResultsPage /> },
+          { path: 'marks/:offeringId', element: <MarksPage /> },
         ],
       },
       {

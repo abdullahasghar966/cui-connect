@@ -23,11 +23,8 @@ import {
   attendanceWindow,
   type CheckInInput,
   type CheckInResultDTO,
-  type CourseRefDTO,
   campusClock,
-  canManageOffering,
   canStudyIn,
-  canViewOfferingRecords,
   checkInSchema,
   formatShortDate,
   LATE_AFTER_MINUTES,
@@ -51,6 +48,8 @@ import {
   parse,
 } from '../lib/errors';
 import {
+  Assessment,
+  type AssessmentDoc,
   AttendanceRecord,
   type AttendanceRecordDoc,
   AttendanceSession,
@@ -60,14 +59,23 @@ import {
   type ClassSlotDoc,
   CourseOffering,
   type CourseOfferingDoc,
-  type SectionDoc,
   User,
   type UserDoc,
 } from '../models';
 import { sendAttendanceUpdate } from '../realtime/notifier';
 import { recordAudit } from './audit';
-import { getOrgLookup, idOf, type OrgLookup, sameId, toObjectId, toPolicyUser } from './mappers';
+import { getOrgLookup, idOf, sameId, toObjectId, toPolicyUser } from './mappers';
 import { notify } from './notifications';
+import {
+  assertCanView,
+  courseRef,
+  enrolledStudents,
+  loadOffering,
+  manageDecision,
+  type OfferingContext,
+  type StudentLite,
+  studentRef,
+} from './offering-context';
 import { getCampusSettings } from './settings';
 import { currentTerm } from './terms';
 import { offeringFacts } from './timetable';
@@ -95,35 +103,12 @@ function tokenIsCurrent(secret: string, sessionId: string, token: string, now: D
 
 // ---- Loading and shaping ----
 
-interface OfferingContext {
-  offering: CourseOfferingDoc;
-  section: SectionDoc | undefined;
-  org: OrgLookup;
-}
-
-async function loadOffering(offeringId: string): Promise<OfferingContext> {
-  const offering = await CourseOffering.findById(toObjectId(offeringId)).lean<CourseOfferingDoc>();
-  if (!offering) throw notFound('Course not found.');
-  const org = await getOrgLookup();
-  return { offering, section: org.sections.get(String(offering.sectionId)), org };
-}
-
 async function loadSession(sessionId: string, withSecret = false) {
   const query = AttendanceSession.findById(toObjectId(sessionId));
   const session = await (withSecret ? query.select('+secret') : query).lean<AttendanceSessionDoc>();
   if (!session) throw notFound('This attendance session does not exist.');
   return session;
 }
-
-const courseRef = (ctx: OfferingContext): CourseRefDTO => ({
-  offeringId: String(ctx.offering._id),
-  code: ctx.offering.code,
-  title: ctx.offering.title,
-  sectionName: ctx.section?.name ?? null,
-});
-
-const canManage = (user: UserDoc, ctx: OfferingContext) =>
-  canManageOffering(toPolicyUser(user), offeringFacts(ctx.offering, ctx.section));
 
 function countsFor(
   offering: CourseOfferingDoc,
@@ -165,19 +150,6 @@ function toSessionDTO(
   };
 }
 
-type StudentLite = Pick<UserDoc, '_id' | 'name' | 'regNo'>;
-
-async function enrolledStudents(offering: CourseOfferingDoc): Promise<StudentLite[]> {
-  const students = await User.find({ _id: { $in: offering.studentIds } })
-    .select('name regNo')
-    .lean<StudentLite[]>();
-  return students.sort(
-    (a, b) => (a.regNo ?? '').localeCompare(b.regNo ?? '') || a.name.localeCompare(b.name),
-  );
-}
-
-const studentRef = (s: StudentLite) => ({ id: String(s._id), name: s.name, regNo: s.regNo });
-
 function entryFor(student: StudentLite, record: AttendanceRecordDoc | undefined): RosterEntryDTO {
   return {
     student: studentRef(student),
@@ -216,12 +188,7 @@ export async function sessionDetail(
 ): Promise<AttendanceSessionDetailDTO> {
   const session = await loadSession(sessionId);
   const ctx = await loadOffering(String(session.offeringId));
-  const manage = canManage(viewer, ctx).allowed;
-  if (!manage) {
-    assertAllowed(
-      canViewOfferingRecords(toPolicyUser(viewer), offeringFacts(ctx.offering, ctx.section)),
-    );
-  }
+  const { canManage: manage } = assertCanView(viewer, ctx);
   const [records, students] = await Promise.all([
     AttendanceRecord.find({ sessionId: session._id }).lean<AttendanceRecordDoc[]>(),
     enrolledStudents(ctx.offering),
@@ -240,7 +207,7 @@ export async function startSession(
 ): Promise<AttendanceSessionDetailDTO> {
   const data = parse(startAttendanceSchema, input);
   const ctx = await loadOffering(data.offeringId);
-  assertAllowed(canManage(actor, ctx));
+  assertAllowed(manageDecision(actor, ctx));
   const term = await currentTerm();
   if (!sameId(ctx.offering.termId, term._id)) {
     throw badRequest(`${ctx.offering.code} isn't taught this term, so attendance is closed.`);
@@ -314,7 +281,7 @@ export async function sessionQr(
 ): Promise<AttendanceQrDTO> {
   const session = await loadSession(sessionId, true);
   const ctx = await loadOffering(String(session.offeringId));
-  assertAllowed(canManage(actor, ctx));
+  assertAllowed(manageDecision(actor, ctx));
   if (session.status !== 'open') throw badRequest('This attendance session is closed.');
   if (session.date !== campusClock(now).date) {
     throw badRequest(
@@ -341,7 +308,7 @@ export async function markStudent(
   const { status } = parse(markAttendanceSchema, input);
   const session = await loadSession(sessionId);
   const ctx = await loadOffering(String(session.offeringId));
-  assertAllowed(canManage(actor, ctx));
+  assertAllowed(manageDecision(actor, ctx));
   if (!ctx.offering.studentIds.some((id) => sameId(id, studentId))) {
     throw badRequest('That student is not enrolled in this course.');
   }
@@ -431,7 +398,7 @@ export async function closeSession(
 ): Promise<AttendanceSessionDetailDTO> {
   const session = await loadSession(sessionId);
   const ctx = await loadOffering(String(session.offeringId));
-  assertAllowed(canManage(actor, ctx));
+  assertAllowed(manageDecision(actor, ctx));
   if (session.status === 'open') await close(actor, session, ctx);
   return sessionDetail(actor, sessionId);
 }
@@ -580,11 +547,7 @@ export async function attendanceSheet(
   offeringId: string,
 ): Promise<AttendanceSheetDTO> {
   const ctx = await loadOffering(offeringId);
-  if (!canManage(viewer, ctx).allowed) {
-    assertAllowed(
-      canViewOfferingRecords(toPolicyUser(viewer), offeringFacts(ctx.offering, ctx.section)),
-    );
-  }
+  assertCanView(viewer, ctx);
   const [sessions, records, students, { minAttendance }] = await Promise.all([
     AttendanceSession.find({ offeringId: ctx.offering._id })
       .sort({ date: 1, start: 1 })
@@ -631,7 +594,7 @@ export async function teachingCourses(viewer: UserDoc): Promise<TeachingCourseDT
     getCampusSettings(),
   ]);
   const ids = offerings.map((o) => o._id);
-  const [sessions, records, slots, changes] = await Promise.all([
+  const [sessions, records, slots, changes, assessments] = await Promise.all([
     AttendanceSession.find({ offeringId: { $in: ids } })
       .select('offeringId status')
       .lean<Pick<AttendanceSessionDoc, '_id' | 'offeringId' | 'status'>[]>(),
@@ -642,6 +605,9 @@ export async function teachingCourses(viewer: UserDoc): Promise<TeachingCourseDT
     ClassChange.find({ offeringId: { $in: ids }, date: clock.date })
       .select('slotId')
       .lean(),
+    Assessment.find({ offeringId: { $in: ids } })
+      .select('offeringId published')
+      .lean<Pick<AssessmentDoc, 'offeringId' | 'published'>[]>(),
   ]);
   const changedToday = new Set(changes.map((c) => String(c.slotId)));
   return offerings.map((offering) => {
@@ -669,6 +635,12 @@ export async function teachingCourses(viewer: UserDoc): Promise<TeachingCourseDT
         .filter((s) => sameId(s.offeringId, offering._id) && !changedToday.has(String(s._id)))
         .sort((a, b) => a.start.localeCompare(b.start))
         .map((s) => ({ slotId: String(s._id), start: s.start, end: s.end })),
+      marks: {
+        assessments: assessments.filter((a) => sameId(a.offeringId, offering._id)).length,
+        published: assessments.filter((a) => sameId(a.offeringId, offering._id) && a.published)
+          .length,
+        finalized: !!offering.finalizedAt,
+      },
     };
   });
 }

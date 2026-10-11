@@ -10,7 +10,14 @@ import {
   type Weekday,
 } from '@cui/shared';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, BookOpen, CalendarDays, ClipboardCheck, MessagesSquare } from 'lucide-react';
+import {
+  ArrowLeft,
+  BookOpen,
+  CalendarDays,
+  ClipboardCheck,
+  MessagesSquare,
+  NotebookPen,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 import { EmptyState, Spinner } from '@/components/feedback';
@@ -88,6 +95,14 @@ function SectionRow({ section }: { section: CourseSectionDTO }) {
             className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             <ClipboardCheck /> Attendance
+          </Link>
+        )}
+        {section.canViewRecords && (
+          <Link
+            to={`/academics/marks/${section.offeringId}`}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
+            <NotebookPen /> Marks
           </Link>
         )}
         {section.groupId && (

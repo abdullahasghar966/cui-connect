@@ -28,6 +28,7 @@ import {
   toCatalogDTO,
 } from '../../services/catalog';
 import { getOrgLookup, toPublicUserDTO } from '../../services/mappers';
+import { myResults } from '../../services/marks';
 import { listRooms } from '../../services/rooms';
 import { getCampusSettings } from '../../services/settings';
 import { listCourses } from '../../services/structure';
@@ -51,6 +52,10 @@ const programCode = (req: Request) => parse(programSchema.shape.code, req.params
 
 academicsRouter.get('/settings', async (_req, res) => {
   res.json(await getCampusSettings());
+});
+
+academicsRouter.get('/results', async (req, res) => {
+  res.json(await myResults(currentUser(req)));
 });
 
 // ---- Attendance (students) ----

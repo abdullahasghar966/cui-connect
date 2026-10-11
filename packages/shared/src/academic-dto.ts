@@ -1,9 +1,11 @@
 /** Wire formats of the university features (terms, rooms, catalog, programs, notifications…). */
 import type {
+  AssessmentType,
   AttendanceMethod,
   AttendanceStatus,
   AttendanceSummary,
   ClassKind,
+  CourseStanding,
   GradingWeights,
   RoomKind,
 } from './academics';
@@ -274,6 +276,84 @@ export interface TeachingCourseDTO {
   openSessionId: string | null;
   /** Today's timetabled classes, for one-click "Take attendance". */
   today: { slotId: string; start: string; end: string }[];
+  marks: { assessments: number; published: number; finalized: boolean };
+}
+
+// ---- Marks and results ----
+
+export interface GradeDTO {
+  percent: number;
+  grade: string;
+  points: number;
+}
+
+export interface AssessmentDTO {
+  id: string;
+  type: AssessmentType;
+  title: string;
+  total: number;
+  date: string | null;
+  published: boolean;
+  publishedAt: string | null;
+  stats: { marked: number; average: number | null; highest: number | null; lowest: number | null };
+}
+
+/** The teacher's marks grid for one course. */
+export interface MarksSheetDTO {
+  course: CourseRefDTO;
+  credits: number;
+  grading: GradingWeights;
+  customGrading: boolean;
+  /** Oldest first; the columns of the grid. */
+  assessments: AssessmentDTO[];
+  students: {
+    student: { id: string; name: string; regNo: string | null };
+    /** One per assessment, in the same order (null = not entered). */
+    marks: (number | null)[];
+    standing: CourseStanding;
+    projected: GradeDTO | null;
+    final: GradeDTO | null;
+  }[];
+  finalizedAt: string | null;
+  canManage: boolean;
+}
+
+/** One course on a student's Results page (published marks only). */
+export interface StudentCourseResultDTO {
+  course: CourseRefDTO;
+  credits: number;
+  grading: GradingWeights;
+  assessments: {
+    id: string;
+    type: AssessmentType;
+    title: string;
+    total: number;
+    date: string | null;
+    obtained: number | null;
+    classAverage: number | null;
+  }[];
+  standing: CourseStanding;
+  projected: GradeDTO | null;
+  final: GradeDTO | null;
+}
+
+export interface TermResultDTO {
+  term: { code: string; name: string };
+  gpa: number | null;
+  credits: number;
+  courses: { code: string; title: string; credits: number; grade: string; points: number }[];
+}
+
+export interface MyResultsDTO {
+  term: { code: string; name: string };
+  courses: StudentCourseResultDTO[];
+  /** From this term's projected grades (not official until grades are final). */
+  projectedGpa: number | null;
+  /** Official, from final results of every term (latest attempt of a repeated course). */
+  cgpa: number | null;
+  creditsEarned: number;
+  /** Newest first. */
+  history: TermResultDTO[];
 }
 
 export interface CampusSettingsDTO {

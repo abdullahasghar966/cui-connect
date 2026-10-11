@@ -1,4 +1,11 @@
-import { BookOpen, CalendarCog, CalendarDays, ClipboardCheck } from 'lucide-react';
+import {
+  BookOpen,
+  CalendarCog,
+  CalendarDays,
+  ClipboardCheck,
+  GraduationCap,
+  NotebookPen,
+} from 'lucide-react';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
 import { useCurrentUser } from '@/hooks/queries';
 import { canEditTimetable } from './TimetablePage';
@@ -12,6 +19,11 @@ export default function AcademicsLayout() {
   ];
   if (me.role === 'student' || me.role === 'faculty') {
     sections.push({ to: '/academics/attendance', label: 'Attendance', icon: ClipboardCheck });
+    sections.push(
+      me.role === 'student'
+        ? { to: '/academics/results', label: 'Results', icon: GraduationCap }
+        : { to: '/academics/results', label: 'Marks', icon: NotebookPen },
+    );
   }
   if (canEditTimetable(me)) {
     sections.push({

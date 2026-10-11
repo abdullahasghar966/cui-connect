@@ -7,7 +7,9 @@ import {
   attendanceWindow,
   campusClock,
   campusInstant,
+  cgpa,
   courseStanding,
+  creditsEarned,
   DEFAULT_GRADING,
   eventsOverlap,
   findClashes,
@@ -16,6 +18,7 @@ import {
   gpa,
   gradeFor,
   gradeTargets,
+  latestAttempts,
   type MarkedAssessment,
   mondayOf,
   nextTermCode,
@@ -155,6 +158,20 @@ describe('attendance', () => {
     expect(attendanceOutlook({ held: 0, attended: 0 })).toEqual({ canMiss: 0, mustAttend: 0 });
     // 7 of 10 with a 75% rule: 8/11 = 72.7% is not enough, 9/12 = 75% is.
     expect(attendanceOutlook({ held: 10, attended: 7 }, 75)).toEqual({ canMiss: 0, mustAttend: 2 });
+  });
+
+  it('counts only the latest attempt of a repeated course in the CGPA', () => {
+    const attempts = [
+      { code: 'CSC211', term: 'FA24', credits: 4, points: 0 },
+      { code: 'CSC211', term: 'FA25', credits: 4, points: 3 },
+      { code: 'MTH104', term: 'FA23', credits: 3, points: 4 },
+    ];
+    expect(latestAttempts(attempts).map((a) => a.term)).toEqual(['FA25', 'FA23']);
+    // (4 x 3 + 3 x 4) / 7 = 3.43; with the failed attempt it would have been 2.18.
+    expect(cgpa(attempts)).toBe(3.43);
+    expect(creditsEarned(attempts)).toBe(7);
+    expect(creditsEarned([{ code: 'X', term: 'FA25', credits: 3, points: 0 }])).toBe(0);
+    expect(cgpa([])).toBeNull();
   });
 
   it('numbers 10-second windows for the rotating QR code', () => {

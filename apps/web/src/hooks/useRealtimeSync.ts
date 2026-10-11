@@ -30,6 +30,12 @@ import { useRealtime } from '@/state/realtime';
 import { useCurrentUser } from './queries';
 import { addNotification } from './useNotifications';
 
+/** Screens to refresh when a notification of a type arrives. */
+const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly string[]>> = {
+  results: keys.results,
+  attendance: keys.myAttendance,
+};
+
 export function useRealtimeSync(): void {
   const me = useCurrentUser();
   const qc = useQueryClient();
@@ -193,6 +199,9 @@ export function useRealtimeSync(): void {
 
     const onNotification = (notification: NotificationDTO) => {
       addNotification(qc, notification);
+      // The notification means the data behind it changed: refresh those screens.
+      const stale = REFRESH_ON[notification.type];
+      if (stale) void qc.invalidateQueries({ queryKey: stale });
       const { link } = notification;
       toast(notification.title, {
         description: notification.body ?? undefined,

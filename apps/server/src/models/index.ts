@@ -1,3 +1,4 @@
+import { Assessment } from './Assessment';
 import { AttendanceRecord } from './AttendanceRecord';
 import { AttendanceSession } from './AttendanceSession';
 import { AuditLog } from './AuditLog';
@@ -8,15 +9,18 @@ import { ClassSlot } from './ClassSlot';
 import { CourseOffering } from './CourseOffering';
 import { Department } from './Department';
 import { Group } from './Group';
+import { Mark } from './Mark';
 import { Membership } from './Membership';
 import { Message } from './Message';
 import { Notification } from './Notification';
 import { Program } from './Program';
+import { Result } from './Result';
 import { Room } from './Room';
 import { Section } from './Section';
 import { Term } from './Term';
 import { User } from './User';
 
+export * from './Assessment';
 export * from './AttendanceRecord';
 export * from './AttendanceSession';
 export * from './AuditLog';
@@ -27,10 +31,12 @@ export * from './ClassSlot';
 export * from './CourseOffering';
 export * from './Department';
 export * from './Group';
+export * from './Mark';
 export * from './Membership';
 export * from './Message';
 export * from './Notification';
 export * from './Program';
+export * from './Result';
 export * from './Room';
 export * from './Section';
 export * from './Term';
@@ -55,6 +61,9 @@ export const ALL_MODELS = [
   AttendanceSession,
   AttendanceRecord,
   CampusSettings,
+  Assessment,
+  Mark,
+  Result,
 ] as const;
 
 /** Models whose index definitions changed since launch: stale indexes are dropped and rebuilt. */

@@ -1,6 +1,7 @@
 /** Zod schemas for the university features, shared by the REST API and the web forms. */
 import { z } from 'zod';
 import {
+  ASSESSMENT_TYPES,
   ATTENDANCE_STATUSES,
   CLASS_KINDS,
   DATE_PATTERN,
@@ -189,6 +190,47 @@ export const markAttendanceSchema = z.object({
   status: z.enum(ATTENDANCE_STATUSES).nullable(),
 });
 
+// ---- Marks ----
+
+export const assessmentSchema = z.object({
+  type: z.enum(ASSESSMENT_TYPES),
+  title: z.string().trim().min(2, 'Give the assessment a title').max(60),
+  total: z.number().positive('Total marks must be more than 0').max(500),
+  date: dateSchema.nullish(),
+});
+
+const mark = z
+  .number()
+  .min(0, 'Marks cannot be negative')
+  .max(500)
+  .transform((value) => Math.round(value * 100) / 100);
+
+export const marksSchema = z.object({
+  marks: z
+    .array(z.object({ studentId: objectIdSchema, obtained: mark.nullable() }))
+    .min(1)
+    .max(500),
+});
+
+const weight = z.number().int().min(0).max(100);
+
+export const gradingWeightsSchema = z
+  .object({
+    quiz: weight,
+    assignment: weight,
+    sessional1: weight,
+    sessional2: weight,
+    terminal: weight,
+    lab: weight,
+    project: weight,
+  })
+  .refine((w) => Object.values(w).reduce((sum, v) => sum + v, 0) === 100, {
+    message: 'The weights must add up to 100',
+  });
+
+/** `null` goes back to the campus default. */
+export const courseGradingSchema = z.object({ weights: gradingWeightsSchema.nullable() });
+
 export const campusSettingsSchema = z.object({
   minAttendance: z.number().int().min(50).max(100),
 });
@@ -214,3 +256,6 @@ export type StartAttendanceInput = z.infer<typeof startAttendanceSchema>;
 export type CheckInInput = z.infer<typeof checkInSchema>;
 export type MarkAttendanceInput = z.infer<typeof markAttendanceSchema>;
 export type CampusSettingsInput = z.infer<typeof campusSettingsSchema>;
+export type AssessmentInput = z.input<typeof assessmentSchema>;
+export type MarksInput = z.input<typeof marksSchema>;
+export type CourseGradingInput = z.input<typeof courseGradingSchema>;

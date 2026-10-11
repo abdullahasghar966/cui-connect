@@ -3,6 +3,8 @@ import type {
   AdminGroupDTO,
   AdminOverviewDTO,
   ApiErrorBody,
+  AssessmentDTO,
+  AssessmentInput,
   AttendanceQrDTO,
   AttendanceSessionDetailDTO,
   AttendanceSheetDTO,
@@ -19,6 +21,7 @@ import type {
   ClassSlotInput,
   CourseDetailDTO,
   CourseDTO,
+  CourseGradingInput,
   CreateCourseInput,
   CreateDepartmentInput,
   CreateGroupInput,
@@ -29,14 +32,18 @@ import type {
   DepartmentDTO,
   DepartmentRefDTO,
   FirstAdminInput,
+  GradingWeights,
   GroupDTO,
   GroupType,
   LoginInput,
   MarkNotificationsInput,
+  MarksInput,
+  MarksSheetDTO,
   MemberDTO,
   MemberRole,
   MessagesPage,
   MyAttendanceCourseDTO,
+  MyResultsDTO,
   NotificationsPage,
   ProgramDTO,
   ProgramInput,
@@ -195,6 +202,7 @@ export const api = {
       send<{ ok: true }>(`/api/academics/timetable/slots/${slotId}/changes/${date}`, 'DELETE'),
     settings: () => request<CampusSettingsDTO>('/api/academics/settings'),
     myAttendance: () => request<MyAttendanceCourseDTO[]>('/api/academics/attendance'),
+    results: () => request<MyResultsDTO>('/api/academics/results'),
     checkIn: (sessionId: string, token: string) =>
       send<CheckInResultDTO>('/api/academics/attendance/check-in', 'POST', { sessionId, token }),
     programs: () => request<ProgramDTO[]>('/api/academics/programs'),
@@ -219,6 +227,25 @@ export const api = {
         'PUT',
         { status },
       ),
+    marks: (offeringId: string) =>
+      request<MarksSheetDTO>(`/api/teaching/courses/${offeringId}/marks`),
+    addAssessment: (offeringId: string, input: AssessmentInput) =>
+      send<AssessmentDTO>(`/api/teaching/courses/${offeringId}/assessments`, 'POST', input),
+    updateAssessment: (assessmentId: string, input: AssessmentInput) =>
+      send<{ ok: true }>(`/api/teaching/assessments/${assessmentId}`, 'PUT', input),
+    deleteAssessment: (assessmentId: string) =>
+      send<{ ok: true }>(`/api/teaching/assessments/${assessmentId}`, 'DELETE'),
+    saveMarks: (assessmentId: string, input: MarksInput) =>
+      send<{ saved: number }>(`/api/teaching/assessments/${assessmentId}/marks`, 'PUT', input),
+    publish: (assessmentId: string, publish: boolean) =>
+      send<{ ok: true }>(
+        `/api/teaching/assessments/${assessmentId}/${publish ? 'publish' : 'unpublish'}`,
+        'POST',
+      ),
+    setGrading: (offeringId: string, input: CourseGradingInput) =>
+      send<GradingWeights>(`/api/teaching/courses/${offeringId}/grading`, 'PUT', input),
+    finalize: (offeringId: string) =>
+      send<{ finalized: number }>(`/api/teaching/courses/${offeringId}/finalize`, 'POST'),
     closeSession: (sessionId: string) =>
       send<AttendanceSessionDetailDTO>(`/api/teaching/attendance/${sessionId}/close`, 'POST'),
   },

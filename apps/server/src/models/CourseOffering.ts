@@ -15,6 +15,8 @@ export interface CourseOfferingDoc {
   capacity: number | null;
   /** Null uses the campus default (DEFAULT_GRADING). */
   grading: GradingWeights | null;
+  /** When the teacher last finalised grades (final results written). */
+  finalizedAt: Date | null;
   createdAt: Date;
 }
 
@@ -33,6 +35,7 @@ const courseSchema = new Schema<CourseOfferingDoc>(
     termId: { type: Schema.Types.ObjectId, ref: 'Term', default: null, index: true },
     capacity: { type: Number, default: null },
     grading: { type: gradingSchema, default: null },
+    finalizedAt: { type: Date, default: null },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

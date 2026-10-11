@@ -15,6 +15,16 @@ import {
   startSession,
   teachingCourses,
 } from '../../services/attendance';
+import {
+  createAssessment,
+  deleteAssessment,
+  finalizeCourse,
+  marksSheet,
+  publishAssessment,
+  saveMarks,
+  setGrading,
+  updateAssessment,
+} from '../../services/marks';
 
 export const teachingRouter = Router();
 
@@ -27,6 +37,50 @@ teachingRouter.get('/courses', async (req, res) => {
 teachingRouter.get('/courses/:offeringId/attendance', async (req, res) => {
   res.json(await attendanceSheet(currentUser(req), id(req, 'offeringId')));
 });
+
+// ---- Marks ----
+
+teachingRouter.get('/courses/:offeringId/marks', async (req, res) => {
+  res.json(await marksSheet(currentUser(req), id(req, 'offeringId')));
+});
+
+teachingRouter.post('/courses/:offeringId/assessments', async (req, res) => {
+  res.status(201).json(await createAssessment(currentUser(req), id(req, 'offeringId'), req.body));
+});
+
+teachingRouter.put('/courses/:offeringId/grading', async (req, res) => {
+  res.json(await setGrading(currentUser(req), id(req, 'offeringId'), req.body));
+});
+
+teachingRouter.post('/courses/:offeringId/finalize', async (req, res) => {
+  res.json(await finalizeCourse(currentUser(req), id(req, 'offeringId')));
+});
+
+teachingRouter.put('/assessments/:assessmentId', async (req, res) => {
+  await updateAssessment(currentUser(req), id(req, 'assessmentId'), req.body);
+  res.json({ ok: true });
+});
+
+teachingRouter.delete('/assessments/:assessmentId', async (req, res) => {
+  await deleteAssessment(currentUser(req), id(req, 'assessmentId'));
+  res.json({ ok: true });
+});
+
+teachingRouter.put('/assessments/:assessmentId/marks', async (req, res) => {
+  res.json(await saveMarks(currentUser(req), id(req, 'assessmentId'), req.body));
+});
+
+teachingRouter.post('/assessments/:assessmentId/publish', async (req, res) => {
+  await publishAssessment(currentUser(req), id(req, 'assessmentId'), true);
+  res.json({ ok: true });
+});
+
+teachingRouter.post('/assessments/:assessmentId/unpublish', async (req, res) => {
+  await publishAssessment(currentUser(req), id(req, 'assessmentId'), false);
+  res.json({ ok: true });
+});
+
+// ---- Attendance ----
 
 teachingRouter.post('/attendance', async (req, res) => {
   res.status(201).json(await startSession(currentUser(req), req.body));

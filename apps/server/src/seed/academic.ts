@@ -1,6 +1,7 @@
 /** Seeds the academic side of the demo campus (terms, rooms, catalog, programmes). */
 import { randomBytes } from 'node:crypto';
 import {
+  type AssessmentType,
   ATTENDANCE_WARNING_MARGIN,
   type AttendanceStatus,
   addDays,
@@ -10,23 +11,36 @@ import {
   DEFAULT_MIN_ATTENDANCE,
   defaultTermDates,
   findClashes,
+  gradeFor,
   type SlotLike,
+  semesterNumber,
+  termIndex,
   termName,
   weekdayOf,
 } from '@cui/shared';
 import type { Types } from 'mongoose';
 import {
+  Assessment,
+  type AssessmentDoc,
   AttendanceRecord,
   type AttendanceRecordDoc,
   AttendanceSession,
   type AttendanceSessionDoc,
   CatalogCourse,
+  type CatalogCourseDoc,
   ClassSlot,
   type ClassSlotDoc,
   type CourseOfferingDoc,
+  Mark,
+  type MarkDoc,
   Program,
+  type ProgramDoc,
+  Result,
+  type ResultDoc,
   Room,
   type RoomDoc,
+  Section,
+  type SectionDoc,
   Term,
   type TermDoc,
   User,
@@ -179,6 +193,141 @@ function roll(text: string): number {
     hash = Math.imul(hash, 16777619);
   }
   return Math.abs(hash) % 100;
+}
+
+/** How well a student usually does (0.62–0.95), so their marks and grades look like one person's. */
+function ability(regNo: string): number {
+  if (regNo === 'FA23-BCS-003') return 0.63; // Ahmed: a C student (and short of attendance)
+  if (regNo === 'FA23-BCS-002') return 0.84; // Hira: a strong student
+  return 0.62 + roll(`ability:${regNo}`) * 0.0033;
+}
+
+/** A score out of `total` around the student's usual level, to the nearest half mark. */
+function scoreFor(regNo: string, salt: string, total: number): number {
+  const noise = (roll(`${regNo}:${salt}`) - 50) / 400; // ±0.125
+  const share = Math.min(1, Math.max(0, ability(regNo) + noise));
+  return Math.round(total * share * 2) / 2;
+}
+
+/** This term's assessments so far, by week of the term (later ones are left for teachers). */
+const TERM_ASSESSMENTS: {
+  type: AssessmentType;
+  title: string;
+  total: number;
+  week: number;
+  publish: boolean;
+}[] = [
+  { type: 'quiz', title: 'Quiz 1', total: 10, week: 2, publish: true },
+  { type: 'assignment', title: 'Assignment 1', total: 20, week: 3, publish: true },
+  { type: 'quiz', title: 'Quiz 2', total: 10, week: 4, publish: true },
+  { type: 'sessional1', title: 'Sessional I', total: 25, week: 6, publish: true },
+  // Marked but not yet published: the teacher's "Publish" demo.
+  { type: 'quiz', title: 'Quiz 3', total: 10, week: 6, publish: false },
+];
+
+/** A failed course retaken the next term, to show the latest-attempt CGPA rule. */
+const RETAKE = { regNo: 'FA23-BCS-003', code: 'CSC211', failedIn: 'FA24', passedIn: 'SP25' };
+
+/**
+ * Marks for this term's assessments that have already happened, and final results for every
+ * earlier semester of each student's degree plan (their transcript and CGPA).
+ */
+export async function seedMarks(
+  offerings: CourseOfferingDoc[],
+  terms: Map<string, TermDoc>,
+  currentTerm: TermDoc,
+  today = campusClock().date,
+): Promise<{ assessments: number; results: number }> {
+  const students = await User.find({ role: 'student' })
+    .select('regNo sectionId')
+    .lean<{ _id: Types.ObjectId; regNo: string | null; sectionId: Types.ObjectId | null }[]>();
+  const regNoOf = new Map(students.map((s) => [String(s._id), s.regNo ?? '']));
+
+  // This term.
+  const assessments: Omit<AssessmentDoc, '_id' | 'createdAt'>[] = [];
+  for (const offering of offerings) {
+    for (const plan of TERM_ASSESSMENTS) {
+      const date = addDays(currentTerm.startsOn, plan.week * 7 - 3);
+      if (date >= today) continue;
+      assessments.push({
+        offeringId: offering._id,
+        type: plan.type,
+        title: plan.title,
+        total: plan.total,
+        date,
+        published: plan.publish,
+        publishedAt: plan.publish ? campusInstant(addDays(date, 4), '12:00') : null,
+        createdById: offering.instructorId,
+      });
+    }
+  }
+  const savedAssessments = await Assessment.insertMany(assessments);
+  const offeringById = new Map(offerings.map((o) => [String(o._id), o]));
+  const marks: Omit<MarkDoc, '_id' | 'updatedAt'>[] = [];
+  for (const a of savedAssessments) {
+    const offering = offeringById.get(String(a.offeringId));
+    if (!offering) continue;
+    for (const studentId of offering.studentIds) {
+      const regNo = regNoOf.get(String(studentId)) ?? '';
+      marks.push({
+        assessmentId: a._id,
+        offeringId: offering._id,
+        studentId,
+        obtained: scoreFor(regNo, `${offering.code}:${a.title}`, a.total),
+        updatedById: offering.instructorId,
+      });
+    }
+  }
+  await Mark.insertMany(marks);
+
+  // Earlier semesters: one result per course of the student's degree plan.
+  const [sections, programs, catalog] = await Promise.all([
+    Section.find().lean<SectionDoc[]>(),
+    Program.find().lean<ProgramDoc[]>(),
+    CatalogCourse.find().select('code title credits').lean<CatalogCourseDoc[]>(),
+  ]);
+  const sectionById = new Map(sections.map((s) => [String(s._id), s]));
+  const programByCode = new Map(programs.map((p) => [p.code, p]));
+  const courseByCode = new Map(catalog.map((c) => [c.code, c]));
+  const results: Omit<ResultDoc, '_id' | 'createdAt'>[] = [];
+  const addResult = (studentId: Types.ObjectId, term: TermDoc, code: string, percent: number) => {
+    const course = courseByCode.get(code);
+    if (!course) return;
+    const band = gradeFor(percent);
+    results.push({
+      studentId,
+      termId: term._id,
+      offeringId: null,
+      code,
+      title: course.title,
+      credits: course.credits,
+      percent,
+      grade: band.grade,
+      points: band.points,
+    });
+  };
+  for (const student of students) {
+    const section = student.sectionId ? sectionById.get(String(student.sectionId)) : undefined;
+    const program = section ? programByCode.get(section.program) : undefined;
+    if (!section || !program || !student.regNo) continue;
+    const current = semesterNumber(section.intake, currentTerm.code);
+    for (const [code, term] of terms) {
+      const semester = semesterNumber(section.intake, code);
+      if (termIndex(code) < termIndex(section.intake) || semester >= current) continue;
+      const plan = program.plan.find((p) => p.semester === semester);
+      for (const course of plan?.courses ?? []) {
+        let percent = scoreFor(student.regNo, `final:${course}`, 100);
+        if (student.regNo === RETAKE.regNo && course === RETAKE.code) percent = 41;
+        addResult(student._id, term, course, Math.max(percent, 35));
+      }
+    }
+    if (student.regNo === RETAKE.regNo) {
+      const passedIn = terms.get(RETAKE.passedIn);
+      if (passedIn) addResult(student._id, passedIn, RETAKE.code, 66);
+    }
+  }
+  await Result.insertMany(results);
+  return { assessments: savedAssessments.length, results: results.length };
 }
 
 /** Students the demo shows in trouble in one course: below the minimum, or just above it. */

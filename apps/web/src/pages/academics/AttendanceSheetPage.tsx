@@ -81,7 +81,7 @@ export default function AttendanceSheetPage() {
               <tr className="bg-surface-2 text-[12px] text-muted-foreground">
                 <th
                   scope="col"
-                  className="sticky left-0 z-10 min-w-52 bg-surface-2 px-4 py-2 text-left font-semibold"
+                  className="sticky left-0 z-10 w-52 min-w-52 bg-surface-2 px-4 py-2 text-left font-semibold"
                 >
                   Student
                 </th>
@@ -111,7 +111,7 @@ export default function AttendanceSheetPage() {
                 <tr key={student.id} className="border-t">
                   <th
                     scope="row"
-                    className="sticky left-0 z-10 bg-surface px-4 py-1.5 text-left font-normal"
+                    className="sticky left-0 z-10 w-52 min-w-52 bg-surface px-4 py-1.5 text-left font-normal"
                   >
                     <span className="block font-semibold">{student.name}</span>
                     <span className="block text-[11.5px] text-muted-foreground">
