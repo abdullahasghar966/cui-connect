@@ -7,7 +7,9 @@ import {
   dateSchema,
   objectIdSchema,
   programSchema,
+  recordStudentsQuerySchema,
   roomFinderQuerySchema,
+  studentRecordQuerySchema,
   teacherDirectoryQuerySchema,
   timetableQuerySchema,
 } from '@cui/shared';
@@ -32,6 +34,7 @@ import {
 import { teacherDirectory, updateOffice } from '../../services/directory';
 import { getOrgLookup, toPublicUserDTO } from '../../services/mappers';
 import { myResults } from '../../services/marks';
+import { degreeProgress, recordStudents, transcript } from '../../services/records';
 import { roomFinder } from '../../services/room-finder';
 import { listRooms } from '../../services/rooms';
 import { getCampusSettings } from '../../services/settings';
@@ -56,6 +59,22 @@ const programCode = (req: Request) => parse(programSchema.shape.code, req.params
 
 academicsRouter.get('/settings', async (_req, res) => {
   res.json(await getCampusSettings());
+});
+
+academicsRouter.get('/transcript', async (req, res) => {
+  const { studentId } = parse(studentRecordQuerySchema, req.query);
+  res.json(await transcript(currentUser(req), studentId));
+});
+
+academicsRouter.get('/progress', async (req, res) => {
+  const { studentId } = parse(studentRecordQuerySchema, req.query);
+  res.json(await degreeProgress(currentUser(req), studentId));
+});
+
+/** Students whose records the viewer may open (staff and teachers look a student up). */
+academicsRouter.get('/records/students', async (req, res) => {
+  const { q } = parse(recordStudentsQuerySchema, req.query);
+  res.json(await recordStudents(currentUser(req), q));
 });
 
 academicsRouter.get('/results', async (req, res) => {

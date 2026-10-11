@@ -455,7 +455,8 @@ export async function finalizeCourse(
 
 // ---- Students ----
 
-async function attemptsFor(studentIds: Types.ObjectId[]) {
+/** Every final result of these students, with the term code (for CGPA and transcripts). */
+export async function attemptsFor(studentIds: Types.ObjectId[]) {
   const [results, terms] = await Promise.all([
     Result.find({ studentId: { $in: studentIds } }).lean<ResultDoc[]>(),
     Term.find().lean<TermDoc[]>(),

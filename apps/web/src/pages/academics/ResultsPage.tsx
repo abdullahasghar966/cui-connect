@@ -16,16 +16,7 @@ import { useCurrentUser } from '@/hooks/queries';
 import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
 import { cn } from '@/lib/utils';
-
-const fixed = (n: number | null | undefined, digits = 2) =>
-  n === null || n === undefined ? '–' : n.toFixed(digits);
-
-function gradeTone(points: number): string {
-  if (points >= 3.66) return 'text-primary dark:text-link';
-  if (points >= 2) return 'text-foreground';
-  if (points > 0) return 'text-warning';
-  return 'text-danger';
-}
+import { fixed, gradeTone, RecordTabs, WhatIfPanel } from './records-ui';
 
 function CourseResult({ result }: { result: StudentCourseResultDTO }) {
   const [open, setOpen] = useState(false);
@@ -126,6 +117,8 @@ function CourseResult({ result }: { result: StudentCourseResultDTO }) {
               </tr>
             </tbody>
           </table>
+
+          {!result.final && <WhatIfPanel standing={standing} />}
 
           {result.assessments.length > 0 && (
             <ul aria-label="Marks" className="divide-y border-t">
@@ -232,6 +225,7 @@ function MyResults() {
         title="Results"
         description={`${data.term.name}. Marks appear when your teacher publishes them; grades are projections until they're final.`}
       />
+      <RecordTabs me={{ role: 'student' }} />
       <div className="mb-5">
         <StatStrip className="xl:grid-cols-4">
           <Stat label="CGPA" value={fixed(data.cgpa)} hint="Official, all terms" />

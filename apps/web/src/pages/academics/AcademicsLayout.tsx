@@ -5,6 +5,7 @@ import {
   ClipboardCheck,
   DoorOpen,
   FileClock,
+  FileText,
   GraduationCap,
   NotebookPen,
   Users,
@@ -30,6 +31,14 @@ export default function AcademicsLayout() {
         ? { to: '/academics/results', label: 'Results', icon: GraduationCap }
         : { to: '/academics/results', label: 'Marks', icon: NotebookPen },
     );
+  }
+  // Teachers, HODs, the Exam Office and IT look up students' transcripts and degree progress.
+  if (
+    me.role === 'faculty' ||
+    me.role === 'admin' ||
+    (me.role === 'staff' && me.office === 'EXAM')
+  ) {
+    sections.push({ to: '/academics/transcript', label: 'Student records', icon: FileText });
   }
   if (me.role === 'student' || me.role === 'faculty' || canManageExams(me)) {
     sections.push({ to: '/academics/exams', label: 'Exams', icon: FileClock });

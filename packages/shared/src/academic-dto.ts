@@ -358,6 +358,54 @@ export interface MyResultsDTO {
   history: TermResultDTO[];
 }
 
+// ---- Student records: transcript and degree progress ----
+
+export interface StudentRecordRefDTO {
+  id: string;
+  name: string;
+  regNo: string | null;
+  sectionName: string | null;
+  programCode: string | null;
+}
+
+export interface TranscriptDTO {
+  student: StudentRecordRefDTO & {
+    programName: string | null;
+    departmentName: string | null;
+    intake: string | null;
+  };
+  /** Oldest first. */
+  terms: TermResultDTO[];
+  cgpa: number | null;
+  creditsEarned: number;
+  creditsRequired: number | null;
+  generatedAt: string;
+}
+
+export type PlanCourseStatus = 'passed' | 'failed' | 'current' | 'planned';
+
+export interface DegreeProgressDTO {
+  student: StudentRecordRefDTO;
+  program: { code: string; name: string; totalCredits: number } | null;
+  semesters: {
+    semester: number;
+    courses: {
+      code: string;
+      title: string;
+      credits: number;
+      status: PlanCourseStatus;
+      grade: string | null;
+      term: string | null;
+    }[];
+  }[];
+  /** Courses passed that aren't in the plan (electives, transfers). */
+  outsidePlan: { code: string; title: string; credits: number; grade: string }[];
+  creditsEarned: number;
+  creditsInProgress: number;
+  cgpa: number | null;
+  currentSemester: number | null;
+}
+
 // ---- Directory and search ----
 
 export interface OfficeHourDTO {

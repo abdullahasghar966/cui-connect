@@ -247,6 +247,11 @@ export const officeSchema = z.object({
 
 export const searchQuerySchema = z.object({ q: z.string().trim().min(2).max(80) });
 
+/** Whose record to open (default: your own). */
+export const studentRecordQuerySchema = z.object({ studentId: objectIdSchema.optional() });
+
+export const recordStudentsQuerySchema = z.object({ q: z.string().trim().max(80).default('') });
+
 export const teacherDirectoryQuerySchema = z.object({
   q: z.string().trim().max(80).default(''),
   departmentId: objectIdSchema.optional(),

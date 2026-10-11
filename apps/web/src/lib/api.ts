@@ -29,6 +29,7 @@ import type {
   CreateTermInput,
   CreateUserInput,
   CsvImportResultDTO,
+  DegreeProgressDTO,
   DepartmentDTO,
   DepartmentRefDTO,
   ExamCheckDTO,
@@ -66,12 +67,14 @@ import type {
   SectionRefDTO,
   SlotCheckDTO,
   StartAttendanceInput,
+  StudentRecordRefDTO,
   TeacherDTO,
   TeachingCourseDTO,
   TermDTO,
   TimetableView,
   TimetableWeekDTO,
   TodayDTO,
+  TranscriptDTO,
   UpdateGroupInput,
   UpdateUserInput,
   UserDTO,
@@ -223,6 +226,12 @@ export const api = {
     settings: () => request<CampusSettingsDTO>('/api/academics/settings'),
     myAttendance: () => request<MyAttendanceCourseDTO[]>('/api/academics/attendance'),
     results: () => request<MyResultsDTO>('/api/academics/results'),
+    transcript: (studentId?: string) =>
+      request<TranscriptDTO>(`/api/academics/transcript${query({ studentId })}`),
+    progress: (studentId?: string) =>
+      request<DegreeProgressDTO>(`/api/academics/progress${query({ studentId })}`),
+    recordStudents: (q: string) =>
+      request<StudentRecordRefDTO[]>(`/api/academics/records/students${query({ q })}`),
     checkIn: (sessionId: string, token: string) =>
       send<CheckInResultDTO>('/api/academics/attendance/check-in', 'POST', { sessionId, token }),
     programs: () => request<ProgramDTO[]>('/api/academics/programs'),
