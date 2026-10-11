@@ -6,6 +6,7 @@ import {
   messageRefSchema,
   muteMemberSchema,
   openDmSchema,
+  pollVoteSchema,
   readReceiptSchema,
   sendMessageSchema,
 } from '@cui/shared';
@@ -16,6 +17,7 @@ import { Membership, User, type UserDoc } from '../models';
 import { openDirect } from '../services/direct';
 import { deleteMessage, markRead, sendMessage } from '../services/messages';
 import { joinGroup, leaveGroup, muteMember, setLocked } from '../services/moderation';
+import { closePoll, votePoll } from '../services/polls';
 import { isOnline, markConnected, markDisconnected } from './presence';
 import { TokenBucket } from './rateLimit';
 import { groupRoom, type IoServer, type IoSocket, userRoom } from './types';
@@ -56,6 +58,8 @@ export function registerConnection(io: IoServer, socket: IoSocket): void {
 
   const messageBucket = new TokenBucket(env.MESSAGE_BURST, env.MESSAGE_RATE_PER_SEC);
   const typingBucket = new TokenBucket(10, 5);
+  // Changing your mind on a poll is quick clicking, not spam: its own, roomier budget.
+  const voteBucket = new TokenBucket(10, 4);
 
   socket.on('message:send', (payload, ack) =>
     respond(ack, async () => {
@@ -128,6 +132,17 @@ export function registerConnection(io: IoServer, socket: IoSocket): void {
       const { userId: peerId } = parse(openDmSchema, payload);
       return openDirect(await liveUser(socket), peerId);
     }),
+  );
+
+  socket.on('poll:vote', (payload, ack) =>
+    respond(ack, async () => {
+      if (!voteBucket.take()) throw rateLimited('You are voting too quickly. Slow down.');
+      return votePoll(await liveUser(socket), parse(pollVoteSchema, payload));
+    }),
+  );
+
+  socket.on('poll:close', (payload, ack) =>
+    respond(ack, async () => closePoll(await liveUser(socket), parse(messageRefSchema, payload))),
   );
 
   socket.on('presence:list', (ack) =>

@@ -10,6 +10,7 @@ import type {
   MemberUpdateEvent,
   MessageDTO,
   NotificationDTO,
+  PollDTO,
 } from '@cui/shared';
 import { buildGroupDTO } from '../services/groups';
 import { type AdminNamespace, groupRoom, type IoServer, userRoom } from './types';
@@ -44,6 +45,10 @@ export function sendAttendanceUpdate(userIds: string[], update: AttendanceUpdate
 /** Timetables are public on campus, so every open timetable view refreshes. */
 export function broadcastTimetableChanged(offeringIds: string[]): void {
   io?.emit('timetable:changed', { offeringIds });
+}
+
+export function broadcastPollUpdated(groupId: string, messageId: string, poll: PollDTO): void {
+  io?.to(groupRoom(groupId)).emit('poll:updated', { groupId, messageId, poll });
 }
 
 export function broadcastMessageDeleted(groupId: string, messageId: string): void {

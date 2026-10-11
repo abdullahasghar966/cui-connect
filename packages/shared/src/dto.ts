@@ -43,14 +43,27 @@ export interface MessageSenderDTO {
   isCR: boolean;
 }
 
+export interface PollDTO {
+  question: string;
+  options: { id: string; text: string; voterIds: string[] }[];
+  /** Voters may pick several options. */
+  multiple: boolean;
+  closedAt: string | null;
+  /** People who voted (each counted once, even with several picks). */
+  voters: number;
+}
+
 export interface MessageDTO {
   id: string;
   groupId: string;
+  kind: 'text' | 'poll';
   body: string;
   createdAt: string;
   clientId: string | null;
   deleted: boolean;
   sender: MessageSenderDTO;
+  /** Set when `kind` is `poll` (null once deleted). */
+  poll: PollDTO | null;
 }
 
 export interface MessagesPage {

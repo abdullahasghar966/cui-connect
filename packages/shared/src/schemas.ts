@@ -187,6 +187,18 @@ export const userListQuerySchema = z.object({
 
 // ---- Socket.IO payloads ----
 
+export const pollInputSchema = z.object({
+  question: z.string().trim().min(3, 'Ask a question').max(300),
+  options: z
+    .array(z.string().trim().min(1, 'An option is empty').max(100))
+    .min(2, 'A poll needs at least two options')
+    .max(10, 'A poll can have up to 10 options')
+    .refine((o) => new Set(o.map((x) => x.toLowerCase())).size === o.length, {
+      message: 'Each option must be different',
+    }),
+  multiple: z.boolean().default(false),
+});
+
 export const sendMessageSchema = z.object({
   groupId: objectIdSchema,
   body: z
@@ -196,6 +208,14 @@ export const sendMessageSchema = z.object({
     .max(MESSAGE_MAX_LENGTH, `Messages are limited to ${MESSAGE_MAX_LENGTH} characters`),
   /** Client-generated id for idempotent retries and optimistic UI. */
   clientId: z.string().min(8).max(64),
+  /** Makes the message a poll (the body repeats the question). */
+  poll: pollInputSchema.optional(),
+});
+
+export const pollVoteSchema = z.object({
+  messageId: objectIdSchema,
+  /** Empty withdraws the vote. */
+  optionIds: z.array(z.string().min(1).max(12)).max(10),
 });
 
 export const messageRefSchema = z.object({ messageId: objectIdSchema });
@@ -224,6 +244,8 @@ export type UpdateGroupInput = z.infer<typeof updateGroupSchema>;
 export type AddMemberInput = z.input<typeof addMemberSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type MessageRefInput = z.infer<typeof messageRefSchema>;
+export type PollInput = z.input<typeof pollInputSchema>;
+export type PollVoteInput = z.infer<typeof pollVoteSchema>;
 export type ReadReceiptInput = z.infer<typeof readReceiptSchema>;
 export type GroupRefInput = z.infer<typeof groupRefSchema>;
 export type LockGroupInput = z.infer<typeof lockGroupSchema>;

@@ -5,6 +5,7 @@ import type {
   PolicyGroup,
   PolicyMembership,
   PolicyUser,
+  PollDTO,
   PublicUserDTO,
   UserDTO,
 } from '@cui/shared';
@@ -16,6 +17,7 @@ import {
   type GroupDoc,
   type MembershipDoc,
   type MessageDoc,
+  type PollDoc,
   Section,
   type SectionDoc,
   type UserDoc,
@@ -114,11 +116,27 @@ export function toSenderDTO(user: UserDoc | undefined, fallbackId: Id): MessageS
   };
 }
 
+export function toPollDTO(poll: PollDoc): PollDTO {
+  return {
+    question: poll.question,
+    options: poll.options.map((o) => ({
+      id: o.id,
+      text: o.text,
+      voterIds: poll.votes.filter((v) => v.optionIds.includes(o.id)).map((v) => String(v.userId)),
+    })),
+    multiple: poll.multiple,
+    closedAt: poll.closedAt?.toISOString() ?? null,
+    voters: poll.votes.filter((v) => v.optionIds.length > 0).length,
+  };
+}
+
 export function toMessageDTO(message: MessageDoc, sender: UserDoc | undefined): MessageDTO {
   const deleted = !!message.deletedAt;
   return {
     id: String(message._id),
     groupId: String(message.groupId),
+    kind: message.kind ?? 'text',
+    poll: !deleted && message.poll ? toPollDTO(message.poll) : null,
     body: deleted ? '' : message.body,
     createdAt: message.createdAt.toISOString(),
     clientId: message.clientId ?? null,

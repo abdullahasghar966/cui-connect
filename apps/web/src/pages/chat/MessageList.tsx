@@ -32,6 +32,7 @@ import { useCurrentUser, useMessages } from '@/hooks/queries';
 import { useDeleteMessage, useMarkRead, useSendMessage } from '@/hooks/useChatActions';
 import { type ClientMessage, removeMessage } from '@/lib/cache';
 import { cn, formatDayLabel, formatTime, isSameDay } from '@/lib/utils';
+import { PollCard } from './PollCard';
 
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
 const URL_PATTERN = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]])/g;
@@ -85,7 +86,19 @@ function useMessageControls(message: ClientMessage, group: GroupDTO, me: UserDTO
   return {
     canDelete,
     remove: () => void deleteMessage(message.id),
-    retry: () => void send(group.id, message.body, message.clientId ?? undefined),
+    retry: () =>
+      void send(
+        group.id,
+        message.body,
+        message.clientId ?? undefined,
+        message.poll
+          ? {
+              question: message.poll.question,
+              options: message.poll.options.map((o) => o.text),
+              multiple: message.poll.multiple,
+            }
+          : undefined,
+      ),
     discard: () => removeMessage(qc, group.id, (m) => m.id === message.id),
   };
 }
@@ -132,8 +145,15 @@ function MessageRow({ message, group, me, grouped, seen }: RowProps) {
             message.deleted && 'text-muted-foreground italic',
           )}
         >
-          {message.deleted ? 'This message was deleted.' : <Linkified text={message.body} />}
+          {message.deleted ? (
+            'This message was deleted.'
+          ) : message.kind === 'poll' && message.poll ? null : (
+            <Linkified text={message.body} />
+          )}
         </div>
+        {!message.deleted && message.kind === 'poll' && message.poll && (
+          <PollCard message={message} poll={message.poll} group={group} me={me} />
+        )}
         {message.status === 'failed' && (
           <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[12.5px] text-danger">
             <TriangleAlert className="size-3.5" aria-hidden />

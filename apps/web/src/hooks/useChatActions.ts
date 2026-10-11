@@ -1,4 +1,4 @@
-import type { Ack, MessageDTO } from '@cui/shared';
+import type { Ack, MessageDTO, PollInput } from '@cui/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
@@ -13,11 +13,26 @@ export function useSendMessage() {
   const me = useCurrentUser();
 
   return useCallback(
-    async (groupId: string, body: string, retryClientId?: string): Promise<Ack<MessageDTO>> => {
+    async (
+      groupId: string,
+      body: string,
+      retryClientId?: string,
+      poll?: PollInput,
+    ): Promise<Ack<MessageDTO>> => {
       const clientId = retryClientId ?? randomId();
       const optimistic: ClientMessage = {
         id: `local-${clientId}`,
         groupId,
+        kind: poll ? 'poll' : 'text',
+        poll: poll
+          ? {
+              question: poll.question,
+              options: poll.options.map((text, i) => ({ id: `o${i + 1}`, text, voterIds: [] })),
+              multiple: poll.multiple ?? false,
+              closedAt: null,
+              voters: 0,
+            }
+          : null,
         body,
         createdAt: new Date().toISOString(),
         clientId,
@@ -38,7 +53,12 @@ export function useSendMessage() {
       const res = await withAck(
         getSocket()
           .timeout(ACK_TIMEOUT_MS)
-          .emitWithAck('message:send', { groupId, body, clientId }),
+          .emitWithAck('message:send', {
+            groupId,
+            body,
+            clientId,
+            ...(poll ? { poll: { ...poll, multiple: poll.multiple ?? false } } : {}),
+          }),
       );
       if (res.ok) {
         upsertMessage(qc, res.data);

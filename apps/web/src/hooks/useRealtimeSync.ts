@@ -9,6 +9,7 @@ import type {
   MemberUpdateEvent,
   MessageDTO,
   NotificationDTO,
+  PollDTO,
   TypingEvent,
 } from '@cui/shared';
 import { useQueryClient } from '@tanstack/react-query';
@@ -108,8 +109,20 @@ export function useRealtimeSync(): void {
       });
     };
 
+    const onPollUpdated = ({
+      groupId,
+      messageId,
+      poll,
+    }: {
+      groupId: string;
+      messageId: string;
+      poll: PollDTO;
+    }) => {
+      patchMessage(qc, groupId, (m) => m.id === messageId, { poll });
+    };
+
     const onMessageDeleted = ({ groupId, messageId }: { groupId: string; messageId: string }) => {
-      patchMessage(qc, groupId, (m) => m.id === messageId, { deleted: true, body: '' });
+      patchMessage(qc, groupId, (m) => m.id === messageId, { deleted: true, body: '', poll: null });
       patchGroup(qc, groupId, (g) =>
         g.lastMessage?.id === messageId
           ? { lastMessage: { ...g.lastMessage, deleted: true, body: '' } }
@@ -215,6 +228,7 @@ export function useRealtimeSync(): void {
     socket.on('connect_error', onConnectError);
     socket.on('message:new', onMessage);
     socket.on('message:deleted', onMessageDeleted);
+    socket.on('poll:updated', onPollUpdated);
     socket.on('typing', onTyping);
     socket.on('presence:update', onPresence);
     socket.on('read:update', onRead);
@@ -241,6 +255,7 @@ export function useRealtimeSync(): void {
       socket.off('connect_error', onConnectError);
       socket.off('message:new', onMessage);
       socket.off('message:deleted', onMessageDeleted);
+      socket.off('poll:updated', onPollUpdated);
       socket.off('typing', onTyping);
       socket.off('presence:update', onPresence);
       socket.off('read:update', onRead);

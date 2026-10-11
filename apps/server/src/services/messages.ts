@@ -107,8 +107,19 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
     const created = await Message.create({
       groupId: group._id,
       senderId: user._id,
-      body: input.body,
+      kind: input.poll ? 'poll' : 'text',
+      body: input.poll ? input.poll.question : input.body,
       clientId: input.clientId,
+      poll: input.poll
+        ? {
+            question: input.poll.question,
+            options: input.poll.options.map((text, i) => ({ id: `o${i + 1}`, text })),
+            multiple: input.poll.multiple ?? false,
+            closedAt: null,
+            closedById: null,
+            votes: [],
+          }
+        : null,
     });
     doc = created.toObject<MessageDoc>();
   } catch (err) {
@@ -187,7 +198,7 @@ export async function deleteMessage(user: UserDoc, messageId: string) {
   );
   await Message.updateOne(
     { _id: message._id },
-    { $set: { deletedAt: new Date(), deletedById: user._id, body: '' } },
+    { $set: { deletedAt: new Date(), deletedById: user._id, body: '', poll: null } },
   );
   const groupId = String(group._id);
   broadcastMessageDeleted(groupId, messageId);

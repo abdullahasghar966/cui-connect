@@ -6,13 +6,14 @@ import {
   toPolicyMembership,
   toPolicyUser,
 } from '@cui/shared';
-import { BellOff, Lock, SendHorizontal } from 'lucide-react';
+import { BellOff, ChartNoAxesColumn, Lock, SendHorizontal } from 'lucide-react';
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/hooks/queries';
 import { useSendMessage } from '@/hooks/useChatActions';
 import { getSocket } from '@/lib/socket';
 import { cn } from '@/lib/utils';
+import { PollDialog } from './PollDialog';
 import { TypingIndicator } from './TypingIndicator';
 
 const TYPING_REPEAT_MS = 2500;
@@ -38,6 +39,7 @@ export function Composer({ group }: { group: GroupDTO }) {
   const me = useCurrentUser();
   const send = useSendMessage();
   const [text, setText] = useState('');
+  const [pollOpen, setPollOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastTypingSent = useRef(0);
   const idleTimer = useRef<number | undefined>(undefined);
@@ -150,6 +152,15 @@ export function Composer({ group }: { group: GroupDTO }) {
             <span className="font-semibold">Shift + Enter</span> for a new line
           </span>
           <span className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Create poll"
+              title="Create poll"
+              onClick={() => setPollOpen(true)}
+              className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ChartNoAxesColumn className="size-4" />
+            </button>
             {remaining < 500 && (
               <span
                 className={cn(
@@ -177,6 +188,7 @@ export function Composer({ group }: { group: GroupDTO }) {
         </div>
       </form>
       <TypingIndicator groupId={group.id} />
+      <PollDialog group={group} open={pollOpen} onOpenChange={setPollOpen} />
     </div>
   );
 }

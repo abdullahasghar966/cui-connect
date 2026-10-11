@@ -1,7 +1,7 @@
 /** Typed Socket.IO contracts shared by the server and the web client. */
 import type { AttendanceCountsDTO, NotificationDTO, RosterEntryDTO } from './academic-dto';
 import type { ErrorCode, MemberRole, Role } from './constants';
-import type { AuditDTO, GroupDTO, LiveStatsDTO, MemberDTO, MessageDTO } from './dto';
+import type { AuditDTO, GroupDTO, LiveStatsDTO, MemberDTO, MessageDTO, PollDTO } from './dto';
 import type { GroupSettings } from './policy';
 import type {
   GroupRefInput,
@@ -9,6 +9,7 @@ import type {
   MessageRefInput,
   MuteMemberInput,
   OpenDmInput,
+  PollVoteInput,
   ReadReceiptInput,
   SendMessageInput,
 } from './schemas';
@@ -55,11 +56,15 @@ export interface ClientToServerEvents {
   'member:mute': (payload: MuteMemberInput, ack: AckCallback<MemberDTO>) => void;
   'dm:open': (payload: OpenDmInput, ack: AckCallback<GroupDTO>) => void;
   'presence:list': (ack: AckCallback<string[]>) => void;
+  'poll:vote': (payload: PollVoteInput, ack: AckCallback<PollDTO>) => void;
+  'poll:close': (payload: MessageRefInput, ack: AckCallback<PollDTO>) => void;
 }
 
 export interface ServerToClientEvents {
   'message:new': (message: MessageDTO) => void;
   'message:deleted': (payload: { groupId: string; messageId: string }) => void;
+  /** Votes changed or the poll closed (sent to the chat's room). */
+  'poll:updated': (payload: { groupId: string; messageId: string; poll: PollDTO }) => void;
   typing: (payload: TypingEvent) => void;
   'presence:update': (payload: { userId: string; online: boolean }) => void;
   'read:update': (payload: { groupId: string; userId: string; messageId: string }) => void;
