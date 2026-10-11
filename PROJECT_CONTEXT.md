@@ -8,7 +8,7 @@
 > - the conventions (including **push to GitHub after every completed task**).
 >
 > **Last updated:** Sunday 2026-10-11, about 07:30 Pakistan time.
-> **Current work:** the **university features build** (§1a). Stage A, B1 (timetable) and B2 (catalog and course pages) are pushed. Next: B3 in the §1a.2 checklist.
+> **Current work:** the **university features build** (§1a). Stage A, B1 (timetable), B2 (catalog) and B3 (attendance) are pushed. Next: B4 in the §1a.2 checklist.
 > The assignment deadline (Fri 2026-10-09) has passed; this is now an extension project.
 > **Repository:** https://github.com/abdullahasghar966/cui-connect (public), branch `main`.
 > **Live site:** https://cui-connect.onrender.com. It **auto-deploys on every push to `main`**, so never push failing code.
@@ -37,9 +37,9 @@ Plans for these features are pre-approved; explain anything I need to decide in 
 | GUI first run + deployment (user request 2026-10-09: "everything through GUI", one link) | **Code done** (`a8a6d4a`): browser setup page guarded by `SETUP_CODE`, 5-step admin checklist, self-service change password, `TRUST_PROXY`, `render.yaml` (Render free, Singapore + MongoDB Atlas). Vercel rejected: free-plan WebSockets end after 5 min and don't broadcast across instances. **Deployed 2026-10-09: https://cui-connect.onrender.com** (Render free, Singapore; Atlas M0, AWS Mumbai). The first deploy crashed on a wrong `MONGODB_URI`; startup now explains Mongo connection errors in plain words (`b19b9e9`). Verified from outside: health OK, setup closed, demo accounts 404, HSTS on. The user created the admin through the setup page. `docs/USER_GUIDE.md` covers every feature plus a 10-step viva demo |
 | Final verification | **Done.** All gates green, `npm run build` + `npm start` smoke test as two users (localhost + 127.0.0.1): live message and live delete |
 | Lint (Biome) / typecheck (TS 7) | Green |
-| Unit + integration tests (Vitest) | **172 passing after B2** |
-| End-to-end tests (Playwright) | **14 passing after B2**; 3 utility specs are skipped by design |
-| University features | Stage A, B1 and B2 pushed. See §1a |
+| Unit + integration tests (Vitest) | **180 passing after B3** |
+| End-to-end tests (Playwright) | **16 passing after B3**; 3 utility specs are skipped by design |
+| University features | Stage A and B1–B3 pushed. See §1a |
 | `npm audit` | 0 vulnerabilities |
 | GitHub | Public repo `abdullahasghar966/cui-connect`. All work up to this file is pushed |
 
@@ -84,7 +84,7 @@ Plans for these features are pre-approved; explain anything I need to decide in 
 - [x] **A. Foundations.** Commit `8144dd8`, pushed and deployed; the live site is healthy.
 - [x] **B1 Timetable.** Pushed. The visual review found and fixed two grid bugs: overlap lanes were computed across the whole week (classes on different days squeezed each other), and hashed course colours made CSC491/CSC498 look the same (now `courseHues()` in `lib/utils.ts`).
 - [x] **B2 Catalog search and course pages.** Pushed. `/academics/courses` (search, department filter, "offered this term") and `/academics/courses/:code` (sections with teacher, schedule, seats and a chat link for members; prerequisites and "required for"; degree plans; CLOs; outline; grading and grade scale). API: `GET /api/academics/courses/:code` (`courseDetail` in `services/catalog.ts`), `GET /api/academics/departments`, `catalog?offered=1`. The timetable class dialog links to the course page. `biome.json` uses `"preset": "recommended"` (note: `biome migrate` wrongly wrote `"none"`).
-- [ ] B3 Attendance (rotating QR, roll call, %, shortage)
+- [x] **B3 Attendance.** Pushed. Models `AttendanceSession` (secret `select: false`; unique offering+date+slot, so taking attendance again reopens) and `AttendanceRecord` (unique session+student; method `qr`/`manual`/`auto`), plus `CampusSettings` (`minAttendance`, admin card in Academic setup › Terms). `services/attendance.ts`: token = HMAC-SHA256(secret, `session:window`) shortened to 22 chars, accepted for the current and previous 10 s window (`timingSafeEqual`); check-in needs `canStudyIn`, an open session dated today, and a current code; late after 15 min from opening; a teacher's manual "absent" blocks re-scanning; closing marks the rest `auto` absent and `notify`s students who reach warning/short (key `attendance:<offering>:<state>`, once each). Live `attendance:update` goes only to the instructor and whoever opened it. Routes: new `routes/teaching.ts` (`/api/teaching/courses`, `/courses/:id/attendance`, `/attendance`, `/attendance/:id`, `/qr`, `/students/:id`, `/close`) and `/api/academics/attendance` (+ `/check-in`, `/settings`), `PUT /api/admin/settings`. Web: `/academics/attendance` (students: per-course %, bar with the minimum marker, "you can miss N more" from `attendanceOutlook`, class-by-class squares; teachers: courses with Take attendance/Sheet), `/academics/attendance/session/:id` (rotating `qrcode.react` code with countdown, full-screen mode, live roster with P/L/A/Lv buttons, close/reopen), `/academics/attendance/course/:id` (register, opens scrolled to the newest classes), `/attend/:id?t=` (check-in page; login keeps the link). The class dialog has Take attendance for the teacher on the day; course pages show Attendance to those with `canViewRecords`. Seed: closed sessions for every past class this term; `absencesFor()` keeps Ahmed (FA23-BCS-003) short in CSC441 and Hira warning in CSC455 whatever the date.
 - [ ] B4 Marks, GPA/CGPA, result notifications
 - [ ] B5 Exams: date sheet and seating
 - [ ] B6 Polls in chats

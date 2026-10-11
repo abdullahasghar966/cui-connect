@@ -40,6 +40,7 @@ import { countMembers, toAdminGroupDTO } from '../../services/groups';
 import { getOrgLookup, toAuditDTO, toUserDTO } from '../../services/mappers';
 import { addMember } from '../../services/moderation';
 import { deleteRoom, saveRoom } from '../../services/rooms';
+import { updateCampusSettings } from '../../services/settings';
 import {
   createCourse,
   createDepartment,
@@ -85,7 +86,11 @@ adminRouter.get('/overview', async (_req, res) => {
   res.json(overview);
 });
 
-// ---- Campus setup: terms and rooms ----
+// ---- Campus setup: terms, rooms and rules ----
+
+adminRouter.put('/settings', async (req, res) => {
+  res.json(await updateCampusSettings(currentUser(req), req.body));
+});
 
 adminRouter.post('/terms', async (req, res) => {
   res.status(201).json(await createTerm(currentUser(req), parse(createTermSchema, req.body)));

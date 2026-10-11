@@ -378,6 +378,38 @@ export const DEFAULT_MIN_ATTENDANCE = 80;
 /** How close to the minimum counts as a warning. */
 export const ATTENDANCE_WARNING_MARGIN = 5;
 
+/**
+ * What a student can still afford: how many more classes they can miss and stay at the minimum,
+ * or how many in a row they must attend to get back to it.
+ */
+export function attendanceOutlook(
+  summary: Pick<AttendanceSummary, 'held' | 'attended'>,
+  minimum = DEFAULT_MIN_ATTENDANCE,
+): { canMiss: number; mustAttend: number } {
+  const share = minimum / 100;
+  const { held, attended } = summary;
+  if (attended >= share * held) {
+    // Largest k with attended / (held + k) >= share.
+    return { canMiss: Math.max(0, Math.floor(attended / share - held + 1e-9)), mustAttend: 0 };
+  }
+  if (share >= 1) return { canMiss: 0, mustAttend: Number.POSITIVE_INFINITY };
+  // Smallest n with (attended + n) / (held + n) >= share.
+  return { canMiss: 0, mustAttend: Math.ceil((share * held - attended) / (1 - share) - 1e-9) };
+}
+
+/** The QR code on the classroom screen changes this often. */
+export const ATTENDANCE_WINDOW_SECONDS = 10;
+/** Checking in this long after attendance opened counts as late. */
+export const LATE_AFTER_MINUTES = 15;
+
+/** The numbered 10-second window an instant falls in (codes are valid for this and the last one). */
+export function attendanceWindow(at: Date = new Date()): number {
+  return Math.floor(at.getTime() / (ATTENDANCE_WINDOW_SECONDS * 1000));
+}
+
+export const ATTENDANCE_METHODS = ['qr', 'manual', 'auto'] as const;
+export type AttendanceMethod = (typeof ATTENDANCE_METHODS)[number];
+
 export interface AttendanceSummary {
   /** Classes that count (approved leave is excused). */
   held: number;

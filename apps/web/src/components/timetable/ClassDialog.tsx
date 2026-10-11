@@ -12,16 +12,18 @@ import {
   Clock,
   DoorOpen,
   MessagesSquare,
+  QrCode,
   RotateCcw,
   UserRound,
   Users,
 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field, Input, Select } from '@/components/ui/form';
 import { useRooms } from '@/hooks/academics';
+import { useCurrentUser } from '@/hooks/queries';
 import { useAction, useSubmit } from '@/hooks/useSubmit';
 import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
@@ -187,6 +189,15 @@ export function ClassDialog({
   onClose: () => void;
 }) {
   const [mode, setMode] = useState<Mode>('view');
+  const me = useCurrentUser();
+  const navigate = useNavigate();
+  const takeAttendance = useAction((o: ClassOccurrenceDTO) =>
+    api.teaching.startAttendance({
+      offeringId: o.slot.offeringId,
+      slotId: o.status === 'scheduled' ? o.slot.id : undefined,
+      date: o.date,
+    }),
+  );
   const restore = useAction(
     (o: ClassOccurrenceDTO) =>
       api.academics.restoreClass(
@@ -202,6 +213,11 @@ export function ClassDialog({
   if (!occurrence) return null;
   const { slot } = occurrence;
   const upcoming = occurrence.date >= campusClock().date;
+  const teachesToday =
+    me.role === 'faculty' &&
+    slot.instructor?.id === me.id &&
+    occurrence.date === campusClock().date &&
+    (occurrence.status === 'scheduled' || occurrence.status === 'moved-in');
   const changed = occurrence.status !== 'scheduled';
 
   return (
@@ -250,6 +266,21 @@ export function ClassDialog({
             >
               <BookOpen /> Course page
             </Link>
+            {teachesToday && (
+              <Button
+                loading={takeAttendance.isPending}
+                onClick={() =>
+                  takeAttendance.mutate(occurrence, {
+                    onSuccess: (detail) => {
+                      close();
+                      navigate(`/academics/attendance/session/${detail.session.id}`);
+                    },
+                  })
+                }
+              >
+                <QrCode /> Take attendance
+              </Button>
+            )}
             {slot.groupId && (
               <Link
                 to={`/chat/${slot.groupId}`}

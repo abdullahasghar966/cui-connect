@@ -6,6 +6,7 @@ import {
   type CourseSectionDTO,
   type CsvImportResultDTO,
   canManageCatalog,
+  canViewOfferingRecords,
   catalogCourseSchema,
   DEFAULT_GRADING,
   type DepartmentRefDTO,
@@ -39,6 +40,7 @@ import {
 import { recordAudit } from './audit';
 import { getOrgLookup, type Id, idOf, type OrgLookup, sameId, toPolicyUser } from './mappers';
 import { currentTerm } from './terms';
+import { offeringFacts } from './timetable';
 
 export function toCatalogDTO(
   course: CatalogCourseDoc,
@@ -367,6 +369,10 @@ export async function courseDetail(viewer: UserDoc, code: string): Promise<Cours
         groupId: groupId && memberOf.has(groupId) ? groupId : null,
         mine:
           sameId(o.instructorId, viewer._id) || o.studentIds.some((id) => sameId(id, viewer._id)),
+        canViewRecords: canViewOfferingRecords(
+          toPolicyUser(viewer),
+          offeringFacts(o, org.sections.get(String(o.sectionId))),
+        ).allowed,
       };
     })
     .sort(

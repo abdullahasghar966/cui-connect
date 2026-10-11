@@ -1,13 +1,25 @@
 /** Seeds the academic side of the demo campus (terms, rooms, catalog, programmes). */
+import { randomBytes } from 'node:crypto';
 import {
+  ATTENDANCE_WARNING_MARGIN,
+  type AttendanceStatus,
+  addDays,
   BLOCKING_CLASHES,
+  campusClock,
+  campusInstant,
+  DEFAULT_MIN_ATTENDANCE,
   defaultTermDates,
   findClashes,
   type SlotLike,
   termName,
+  weekdayOf,
 } from '@cui/shared';
 import type { Types } from 'mongoose';
 import {
+  AttendanceRecord,
+  type AttendanceRecordDoc,
+  AttendanceSession,
+  type AttendanceSessionDoc,
   CatalogCourse,
   ClassSlot,
   type ClassSlotDoc,
@@ -17,6 +29,7 @@ import {
   type RoomDoc,
   Term,
   type TermDoc,
+  User,
 } from '../models';
 import { CATALOG, PROGRAMS, ROOMS, SEED_CURRENT_TERM, SEED_TERMS } from './academic-data';
 import type { DeptCode } from './data';
@@ -156,4 +169,118 @@ export async function seedTimetable(
   }
   await ClassSlot.insertMany(docs);
   return docs.length;
+}
+
+/** A stable number from 0 to 99 for a piece of text, so reseeding gives the same demo data. */
+function roll(text: string): number {
+  let hash = 2166136261;
+  for (const ch of text) {
+    hash ^= ch.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash) % 100;
+}
+
+/** Students the demo shows in trouble in one course: below the minimum, or just above it. */
+const ATTENDANCE_STORIES: Record<string, { course: string; state: 'short' | 'warning' }> = {
+  'FA23-BCS-003': { course: 'CSC441', state: 'short' },
+  'FA23-BCS-002': { course: 'CSC455', state: 'warning' },
+};
+
+/**
+ * How many of `total` classes to miss to land in a state, whatever the date of the seed:
+ * short = below the minimum; warning = at least the minimum but within the warning margin.
+ */
+function absencesFor(total: number, state: 'short' | 'warning'): number {
+  // Whole-number percentages: 0.2 * 10 is 1.9999… in floating point.
+  const minimum = DEFAULT_MIN_ATTENDANCE;
+  const warnUntil = DEFAULT_MIN_ATTENDANCE + ATTENDANCE_WARNING_MARGIN;
+  if (state === 'short') return Math.min(total, Math.floor((total * (100 - minimum)) / 100) + 1);
+  // Fewest absences that drop below the warning line, if that still meets the minimum.
+  const k = Math.floor((total * (100 - warnUntil)) / 100) + 1;
+  return (total - k) * 100 >= minimum * total ? k : Math.floor((total * (100 - minimum)) / 100);
+}
+
+/**
+ * Attendance for every class of the term that has already happened (closed sessions), mostly
+ * present with a few late, absent and on-leave marks. Today's classes are left for the demo.
+ */
+export async function seedAttendance(
+  offerings: CourseOfferingDoc[],
+  term: TermDoc,
+  today = campusClock().date,
+): Promise<number> {
+  const slots = await ClassSlot.find({ termId: term._id }).lean<ClassSlotDoc[]>();
+  const students = await User.find({ role: 'student' })
+    .select('regNo')
+    .lean<{ _id: Types.ObjectId; regNo: string | null }[]>();
+  const regNoOf = new Map(students.map((s) => [String(s._id), s.regNo ?? String(s._id)]));
+  const sessions: Omit<AttendanceSessionDoc, '_id'>[] = [];
+  const meetings: { offering: CourseOfferingDoc; date: string; start: string; index: number }[] =
+    [];
+
+  for (const offering of offerings) {
+    const own = slots.filter((s) => String(s.offeringId) === String(offering._id));
+    const dates: { date: string; slot: ClassSlotDoc }[] = [];
+    for (let date = term.startsOn; date < today && date <= term.endsOn; date = addDays(date, 1)) {
+      for (const slot of own) if (slot.day === weekdayOf(date)) dates.push({ date, slot });
+    }
+    dates.sort((a, b) => a.date.localeCompare(b.date) || a.slot.start.localeCompare(b.slot.start));
+    for (const [index, { date, slot }] of dates.entries()) {
+      const openedAt = campusInstant(date, slot.start);
+      sessions.push({
+        offeringId: offering._id,
+        termId: term._id,
+        slotId: slot._id,
+        date,
+        start: slot.start,
+        secret: randomBytes(32).toString('base64url'),
+        status: 'closed',
+        openedById: offering.instructorId,
+        openedAt,
+        closedAt: new Date(openedAt.getTime() + 20 * 60_000),
+      });
+      meetings.push({ offering, date, start: slot.start, index });
+    }
+  }
+  const saved = await AttendanceSession.insertMany(sessions);
+
+  const totals = new Map<string, number>();
+  for (const m of meetings) {
+    const id = String(m.offering._id);
+    totals.set(id, Math.max(totals.get(id) ?? 0, m.index + 1));
+  }
+  const records: Omit<AttendanceRecordDoc, '_id'>[] = [];
+  for (const [i, meeting] of meetings.entries()) {
+    const session = saved[i];
+    if (!session) continue;
+    const total = totals.get(String(meeting.offering._id)) ?? 1;
+    for (const studentId of meeting.offering.studentIds) {
+      const regNo = regNoOf.get(String(studentId)) ?? '';
+      const story = ATTENDANCE_STORIES[regNo];
+      let status: AttendanceStatus;
+      if (story?.course === meeting.offering.code) {
+        // Spread a fixed number of absences evenly across the term.
+        const absences = absencesFor(total, story.state);
+        const absentAt = new Set(
+          Array.from({ length: absences }, (_, j) => Math.floor(((j + 0.5) * total) / absences)),
+        );
+        status = absentAt.has(meeting.index) ? 'absent' : 'present';
+      } else {
+        const r = roll(`${regNo}:${meeting.offering.code}:${meeting.date}:${meeting.start}`);
+        status = r < 4 ? 'absent' : r < 9 ? 'late' : r < 10 ? 'leave' : 'present';
+      }
+      records.push({
+        sessionId: session._id,
+        offeringId: meeting.offering._id,
+        studentId,
+        status,
+        method: status === 'absent' ? 'auto' : status === 'leave' ? 'manual' : 'qr',
+        markedById: status === 'leave' ? meeting.offering.instructorId : studentId,
+        markedAt: session.openedAt,
+      });
+    }
+  }
+  await AttendanceRecord.insertMany(records);
+  return saved.length;
 }

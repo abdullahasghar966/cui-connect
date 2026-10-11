@@ -1,5 +1,5 @@
 /** Typed Socket.IO contracts shared by the server and the web client. */
-import type { NotificationDTO } from './academic-dto';
+import type { AttendanceCountsDTO, NotificationDTO, RosterEntryDTO } from './academic-dto';
 import type { ErrorCode, MemberRole, Role } from './constants';
 import type { AuditDTO, GroupDTO, LiveStatsDTO, MemberDTO, MessageDTO } from './dto';
 import type { GroupSettings } from './policy';
@@ -71,6 +71,15 @@ export interface ServerToClientEvents {
   'notification:new': (notification: NotificationDTO) => void;
   /** A class of these course offerings was added, changed, cancelled or moved. */
   'timetable:changed': (payload: { offeringIds: string[] }) => void;
+  /** Someone checked in or was marked (sent to the people running the session). */
+  'attendance:update': (payload: AttendanceUpdateEvent) => void;
+}
+
+export interface AttendanceUpdateEvent {
+  sessionId: string;
+  entry: RosterEntryDTO | null;
+  counts: AttendanceCountsDTO;
+  status: 'open' | 'closed';
 }
 
 // biome-ignore lint/complexity/noBannedTypes: Socket.IO expects an (empty) event map here.

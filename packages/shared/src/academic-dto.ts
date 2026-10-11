@@ -1,5 +1,12 @@
 /** Wire formats of the university features (terms, rooms, catalog, programs, notifications…). */
-import type { ClassKind, GradingWeights, RoomKind } from './academics';
+import type {
+  AttendanceMethod,
+  AttendanceStatus,
+  AttendanceSummary,
+  ClassKind,
+  GradingWeights,
+  RoomKind,
+} from './academics';
 import type { NotificationType } from './constants';
 
 export interface TermDTO {
@@ -67,6 +74,8 @@ export interface CourseSectionDTO {
   groupId: string | null;
   /** The viewer teaches or is enrolled in this section. */
   mine: boolean;
+  /** The viewer may open the section's attendance sheet (its teacher, HOD, Exam Office, IT). */
+  canViewRecords: boolean;
 }
 
 export interface CourseDetailDTO {
@@ -168,6 +177,107 @@ export interface SlotCheckDTO {
   blocking: string[];
   /** Allowed, but worth knowing (shared students, room too small). */
   warnings: string[];
+}
+
+// ---- Attendance ----
+
+export interface CourseRefDTO {
+  offeringId: string;
+  code: string;
+  title: string;
+  sectionName: string | null;
+}
+
+export interface AttendanceCountsDTO {
+  enrolled: number;
+  present: number;
+  late: number;
+  absent: number;
+  leave: number;
+  unmarked: number;
+}
+
+export interface AttendanceSessionDTO {
+  id: string;
+  course: CourseRefDTO;
+  date: string;
+  /** Start of the timetabled class, when attendance was taken for one. */
+  start: string | null;
+  status: 'open' | 'closed';
+  openedAt: string;
+  closedAt: string | null;
+  counts: AttendanceCountsDTO;
+}
+
+export interface RosterEntryDTO {
+  student: { id: string; name: string; regNo: string | null };
+  status: AttendanceStatus | null;
+  method: AttendanceMethod | null;
+  markedAt: string | null;
+}
+
+export interface AttendanceSessionDetailDTO {
+  session: AttendanceSessionDTO;
+  roster: RosterEntryDTO[];
+  /** The viewer runs the course (can mark students and close the session). */
+  canManage: boolean;
+}
+
+/** What the classroom screen shows: a code valid for this window and the last one. */
+export interface AttendanceQrDTO {
+  token: string;
+  /** In-app path the QR code opens: `/attend/<session>?t=<token>`. */
+  path: string;
+  /** Time left in the current window (measured on the server, so clock skew doesn't matter). */
+  remainingMs: number;
+  windowSeconds: number;
+}
+
+export interface CheckInResultDTO {
+  status: AttendanceStatus;
+  /** The student had already checked in to this session. */
+  already: boolean;
+  course: CourseRefDTO;
+  date: string;
+}
+
+export interface MyAttendanceCourseDTO {
+  course: CourseRefDTO;
+  summary: AttendanceSummary;
+  minimum: number;
+  /** Oldest first. */
+  sessions: { date: string; status: AttendanceStatus }[];
+}
+
+export interface AttendanceSheetDTO {
+  course: CourseRefDTO;
+  minimum: number;
+  /** Oldest first; the columns of the sheet. */
+  sessions: AttendanceSessionDTO[];
+  students: {
+    student: { id: string; name: string; regNo: string | null };
+    /** One per session, in the same order (null = not marked). */
+    statuses: (AttendanceStatus | null)[];
+    summary: AttendanceSummary;
+  }[];
+}
+
+/** A course the viewer teaches, for the Attendance page. */
+export interface TeachingCourseDTO {
+  course: CourseRefDTO;
+  enrolled: number;
+  sessionsHeld: number;
+  /** Class average attendance (null before the first session). */
+  averagePercent: number | null;
+  /** Students below the minimum. */
+  short: number;
+  openSessionId: string | null;
+  /** Today's timetabled classes, for one-click "Take attendance". */
+  today: { slotId: string; start: string; end: string }[];
+}
+
+export interface CampusSettingsDTO {
+  minAttendance: number;
 }
 
 export interface NotificationDTO {

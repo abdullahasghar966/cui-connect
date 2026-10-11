@@ -180,6 +180,16 @@
   }
 }
 
+/* Time left before the attendance QR code changes. */
+@keyframes qr-countdown {
+  from {
+    width: var(--qr-from, 100%);
+  }
+  to {
+    width: 0%;
+  }
+}
+
 .animate-in {
   animation: fade-in 120ms ease-out;
 }

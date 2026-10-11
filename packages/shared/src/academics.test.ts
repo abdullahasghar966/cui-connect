@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   addDays,
   allocateSeats,
+  attendanceOutlook,
   attendanceSummary,
+  attendanceWindow,
   campusClock,
   campusInstant,
   courseStanding,
@@ -141,6 +143,24 @@ describe('attendance', () => {
       state: 'ok',
     });
     expect(attendanceSummary([]).percent).toBeNull();
+  });
+
+  it('says how many classes a student can still miss, or must attend', () => {
+    // 18 of 20 = 90%: two more absences give 18/22 = 81.8%, a third 18/23 = 78%.
+    expect(attendanceOutlook({ held: 20, attended: 18 })).toEqual({ canMiss: 2, mustAttend: 0 });
+    // Exactly at the minimum: no room left.
+    expect(attendanceOutlook({ held: 10, attended: 8 })).toEqual({ canMiss: 0, mustAttend: 0 });
+    // 6 of 10 = 60%: needs 10 in a row (16/20 = 80%).
+    expect(attendanceOutlook({ held: 10, attended: 6 })).toEqual({ canMiss: 0, mustAttend: 10 });
+    expect(attendanceOutlook({ held: 0, attended: 0 })).toEqual({ canMiss: 0, mustAttend: 0 });
+    // 7 of 10 with a 75% rule: 8/11 = 72.7% is not enough, 9/12 = 75% is.
+    expect(attendanceOutlook({ held: 10, attended: 7 }, 75)).toEqual({ canMiss: 0, mustAttend: 2 });
+  });
+
+  it('numbers 10-second windows for the rotating QR code', () => {
+    expect(attendanceWindow(new Date(0))).toBe(0);
+    expect(attendanceWindow(new Date(9_999))).toBe(0);
+    expect(attendanceWindow(new Date(10_000))).toBe(1);
   });
 });
 

@@ -3,10 +3,17 @@ import type {
   AdminGroupDTO,
   AdminOverviewDTO,
   ApiErrorBody,
+  AttendanceQrDTO,
+  AttendanceSessionDetailDTO,
+  AttendanceSheetDTO,
+  AttendanceStatus,
   AuditDTO,
+  CampusSettingsDTO,
+  CampusSettingsInput,
   CatalogCourseDTO,
   CatalogCourseInput,
   ChangePasswordInput,
+  CheckInResultDTO,
   ClassChangeInput,
   ClassSlotDTO,
   ClassSlotInput,
@@ -29,6 +36,7 @@ import type {
   MemberDTO,
   MemberRole,
   MessagesPage,
+  MyAttendanceCourseDTO,
   NotificationsPage,
   ProgramDTO,
   ProgramInput,
@@ -39,6 +47,8 @@ import type {
   SectionDTO,
   SectionRefDTO,
   SlotCheckDTO,
+  StartAttendanceInput,
+  TeachingCourseDTO,
   TermDTO,
   TimetableView,
   TimetableWeekDTO,
@@ -183,6 +193,10 @@ export const api = {
       send<{ ok: true }>(`/api/academics/timetable/slots/${slotId}/changes`, 'POST', input),
     restoreClass: (slotId: string, date: string) =>
       send<{ ok: true }>(`/api/academics/timetable/slots/${slotId}/changes/${date}`, 'DELETE'),
+    settings: () => request<CampusSettingsDTO>('/api/academics/settings'),
+    myAttendance: () => request<MyAttendanceCourseDTO[]>('/api/academics/attendance'),
+    checkIn: (sessionId: string, token: string) =>
+      send<CheckInResultDTO>('/api/academics/attendance/check-in', 'POST', { sessionId, token }),
     programs: () => request<ProgramDTO[]>('/api/academics/programs'),
     saveProgram: (code: string, input: ProgramInput) =>
       send<ProgramDTO>(`/api/academics/programs/${encodeURIComponent(code)}`, 'PUT', input),
@@ -190,8 +204,29 @@ export const api = {
       send<{ ok: true }>(`/api/academics/programs/${encodeURIComponent(code)}`, 'DELETE'),
   },
 
+  teaching: {
+    courses: () => request<TeachingCourseDTO[]>('/api/teaching/courses'),
+    attendanceSheet: (offeringId: string) =>
+      request<AttendanceSheetDTO>(`/api/teaching/courses/${offeringId}/attendance`),
+    startAttendance: (input: StartAttendanceInput) =>
+      send<AttendanceSessionDetailDTO>('/api/teaching/attendance', 'POST', input),
+    session: (sessionId: string) =>
+      request<AttendanceSessionDetailDTO>(`/api/teaching/attendance/${sessionId}`),
+    qr: (sessionId: string) => request<AttendanceQrDTO>(`/api/teaching/attendance/${sessionId}/qr`),
+    mark: (sessionId: string, studentId: string, status: AttendanceStatus | null) =>
+      send<AttendanceSessionDetailDTO['roster'][number]>(
+        `/api/teaching/attendance/${sessionId}/students/${studentId}`,
+        'PUT',
+        { status },
+      ),
+    closeSession: (sessionId: string) =>
+      send<AttendanceSessionDetailDTO>(`/api/teaching/attendance/${sessionId}/close`, 'POST'),
+  },
+
   admin: {
     overview: () => request<AdminOverviewDTO>('/api/admin/overview'),
+    updateSettings: (input: CampusSettingsInput) =>
+      send<CampusSettingsDTO>('/api/admin/settings', 'PUT', input),
     createTerm: (input: CreateTermInput) => send<TermDTO>('/api/admin/terms', 'POST', input),
     setCurrentTerm: (termId: string) => send<TermDTO>(`/api/admin/terms/${termId}/current`, 'POST'),
     createRoom: (input: RoomInput) => send<RoomDTO>('/api/admin/rooms', 'POST', input),

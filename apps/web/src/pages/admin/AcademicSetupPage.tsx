@@ -3,6 +3,7 @@ import { PageHeader, Tabs } from '@/components/page';
 import { CatalogSection } from './academic/CatalogSection';
 import { ProgramsSection } from './academic/ProgramsSection';
 import { RoomsSection } from './academic/RoomsSection';
+import { RulesSection } from './academic/RulesSection';
 import { TermsSection } from './academic/TermsSection';
 
 const TABS = [
@@ -29,7 +30,12 @@ export default function AcademicSetupPage() {
         onChange={(value) => setParams({ tab: value }, { replace: true })}
         options={[...TABS]}
       />
-      {tab === 'terms' && <TermsSection />}
+      {tab === 'terms' && (
+        <div className="space-y-5">
+          <TermsSection />
+          <RulesSection />
+        </div>
+      )}
       {tab === 'rooms' && <RoomsSection />}
       {tab === 'catalog' && <CatalogSection />}
       {tab === 'programs' && <ProgramsSection />}

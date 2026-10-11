@@ -28,6 +28,11 @@ export const keys = {
   teachers: ['academics', 'teachers'] as const,
   timetable: ['academics', 'timetable'] as const,
   today: ['academics', 'timetable', 'today'] as const,
+  settings: ['academics', 'settings'] as const,
+  myAttendance: ['academics', 'attendance'] as const,
+  teachingCourses: ['teaching', 'courses'] as const,
+  attendanceSheet: (offeringId: string) => ['teaching', 'sheet', offeringId] as const,
+  attendanceSession: (sessionId: string) => ['teaching', 'session', sessionId] as const,
 };
 
 export function sortGroups(groups: GroupDTO[]): GroupDTO[] {

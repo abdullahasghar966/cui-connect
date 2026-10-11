@@ -1,4 +1,7 @@
+import { AttendanceRecord } from './AttendanceRecord';
+import { AttendanceSession } from './AttendanceSession';
 import { AuditLog } from './AuditLog';
+import { CampusSettings } from './CampusSettings';
 import { CatalogCourse } from './CatalogCourse';
 import { ClassChange } from './ClassChange';
 import { ClassSlot } from './ClassSlot';
@@ -14,7 +17,10 @@ import { Section } from './Section';
 import { Term } from './Term';
 import { User } from './User';
 
+export * from './AttendanceRecord';
+export * from './AttendanceSession';
 export * from './AuditLog';
+export * from './CampusSettings';
 export * from './CatalogCourse';
 export * from './ClassChange';
 export * from './ClassSlot';
@@ -46,6 +52,9 @@ export const ALL_MODELS = [
   Notification,
   ClassSlot,
   ClassChange,
+  AttendanceSession,
+  AttendanceRecord,
+  CampusSettings,
 ] as const;
 
 /** Models whose index definitions changed since launch: stale indexes are dropped and rebuilt. */

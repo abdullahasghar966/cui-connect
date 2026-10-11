@@ -3,6 +3,7 @@
  * when no Socket.IO server is attached (seed script, unit tests) they are no-ops.
  */
 import type {
+  AttendanceUpdateEvent,
   AuditDTO,
   GroupUpdateEvent,
   LiveStatsDTO,
@@ -32,6 +33,12 @@ export function broadcastMessage(message: MessageDTO): void {
 
 export function pushNotification(userId: string, notification: NotificationDTO): void {
   io?.to(userRoom(userId)).emit('notification:new', notification);
+}
+
+/** Live check-ins go only to the people running the session (the instructor, whoever opened it). */
+export function sendAttendanceUpdate(userIds: string[], update: AttendanceUpdateEvent): void {
+  if (!io || !userIds.length) return;
+  io.to([...new Set(userIds)].map(userRoom)).emit('attendance:update', update);
 }
 
 /** Timetables are public on campus, so every open timetable view refreshes. */

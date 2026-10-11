@@ -29,6 +29,10 @@ const TimetablePage = lazy(() => import('@/pages/academics/TimetablePage'));
 const TimetableEditorPage = lazy(() => import('@/pages/academics/TimetableEditorPage'));
 const CoursesPage = lazy(() => import('@/pages/academics/CoursesPage'));
 const CoursePage = lazy(() => import('@/pages/academics/CoursePage'));
+const AttendancePage = lazy(() => import('@/pages/academics/AttendancePage'));
+const AttendanceSessionPage = lazy(() => import('@/pages/academics/AttendanceSessionPage'));
+const AttendanceSheetPage = lazy(() => import('@/pages/academics/AttendanceSheetPage'));
+const CheckInPage = lazy(() => import('@/pages/academics/CheckInPage'));
 
 function FullScreenSpinner() {
   return (
@@ -102,6 +106,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/home" replace /> },
       { path: '/home', element: <HomePage /> },
       { path: '/notifications', element: <NotificationsPage /> },
+      { path: '/attend/:sessionId', element: <CheckInPage /> },
       {
         path: '/academics',
         element: <AcademicsLayout />,
@@ -111,6 +116,9 @@ export const router = createBrowserRouter([
           { path: 'timetable/edit', element: <TimetableEditorPage /> },
           { path: 'courses', element: <CoursesPage /> },
           { path: 'courses/:code', element: <CoursePage /> },
+          { path: 'attendance', element: <AttendancePage /> },
+          { path: 'attendance/session/:sessionId', element: <AttendanceSessionPage /> },
+          { path: 'attendance/course/:offeringId', element: <AttendanceSheetPage /> },
         ],
       },
       {

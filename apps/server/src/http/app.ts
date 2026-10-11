@@ -14,6 +14,7 @@ import { adminRouter } from './routes/admin';
 import { apiRouter } from './routes/api';
 import { authRouter } from './routes/auth';
 import { notificationsRouter } from './routes/notifications';
+import { teachingRouter } from './routes/teaching';
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof AppError) {
@@ -64,6 +65,7 @@ export function createApp() {
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
   app.use('/api/academics', requireAuth, academicsRouter);
   app.use('/api/notifications', requireAuth, notificationsRouter);
+  app.use('/api/teaching', requireAuth, teachingRouter);
   app.use('/api', requireAuth, apiRouter);
   app.use('/api', () => {
     throw notFound('No such API endpoint.');

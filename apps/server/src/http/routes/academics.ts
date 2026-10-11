@@ -13,6 +13,7 @@ import { type Request, Router } from 'express';
 import { currentUser } from '../../auth/middleware';
 import { forbidden, parse } from '../../lib/errors';
 import { CourseOffering, User, type UserDoc } from '../../models';
+import { checkIn, myAttendance } from '../../services/attendance';
 import {
   courseDetail,
   deleteCatalogCourse,
@@ -28,6 +29,7 @@ import {
 } from '../../services/catalog';
 import { getOrgLookup, toPublicUserDTO } from '../../services/mappers';
 import { listRooms } from '../../services/rooms';
+import { getCampusSettings } from '../../services/settings';
 import { listCourses } from '../../services/structure';
 import { currentTerm, listTerms } from '../../services/terms';
 import {
@@ -46,6 +48,20 @@ export const academicsRouter = Router();
 const code = (req: Request) => parse(courseCodeSchema, req.params.code);
 const id = (req: Request, name: string) => parse(objectIdSchema, req.params[name]);
 const programCode = (req: Request) => parse(programSchema.shape.code, req.params.code);
+
+academicsRouter.get('/settings', async (_req, res) => {
+  res.json(await getCampusSettings());
+});
+
+// ---- Attendance (students) ----
+
+academicsRouter.get('/attendance', async (req, res) => {
+  res.json(await myAttendance(currentUser(req)));
+});
+
+academicsRouter.post('/attendance/check-in', async (req, res) => {
+  res.json(await checkIn(currentUser(req), req.body));
+});
 
 academicsRouter.get('/terms', async (_req, res) => {
   res.json(await listTerms());

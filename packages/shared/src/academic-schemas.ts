@@ -1,6 +1,7 @@
 /** Zod schemas for the university features, shared by the REST API and the web forms. */
 import { z } from 'zod';
 import {
+  ATTENDANCE_STATUSES,
   CLASS_KINDS,
   DATE_PATTERN,
   ROOM_KINDS,
@@ -166,6 +167,32 @@ export const timetableQuerySchema = z.object({
   week: dateSchema.optional(),
 });
 
+// ---- Attendance ----
+
+export const startAttendanceSchema = z.object({
+  offeringId: objectIdSchema,
+  /** Defaults to today on campus; earlier dates record a class that already happened. */
+  date: dateSchema.optional(),
+  slotId: objectIdSchema.optional(),
+});
+
+export const checkInSchema = z.object({
+  sessionId: objectIdSchema,
+  token: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9_-]{8,64}$/, 'That code is not valid. Scan the code on the screen again.'),
+});
+
+export const markAttendanceSchema = z.object({
+  /** Null clears the mark. */
+  status: z.enum(ATTENDANCE_STATUSES).nullable(),
+});
+
+export const campusSettingsSchema = z.object({
+  minAttendance: z.number().int().min(50).max(100),
+});
+
 export const notificationsQuerySchema = z.object({
   before: objectIdSchema.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(30),
@@ -183,3 +210,7 @@ export type ProgramInput = z.input<typeof programSchema>;
 export type MarkNotificationsInput = z.infer<typeof markNotificationsSchema>;
 export type ClassSlotInput = z.input<typeof classSlotSchema>;
 export type ClassChangeInput = z.infer<typeof classChangeSchema>;
+export type StartAttendanceInput = z.infer<typeof startAttendanceSchema>;
+export type CheckInInput = z.infer<typeof checkInSchema>;
+export type MarkAttendanceInput = z.infer<typeof markAttendanceSchema>;
+export type CampusSettingsInput = z.infer<typeof campusSettingsSchema>;
