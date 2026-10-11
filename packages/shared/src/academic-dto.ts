@@ -6,6 +6,7 @@ import type {
   AttendanceSummary,
   ClassKind,
   CourseStanding,
+  ExamKind,
   GradingWeights,
   RoomKind,
 } from './academics';
@@ -354,6 +355,77 @@ export interface MyResultsDTO {
   creditsEarned: number;
   /** Newest first. */
   history: TermResultDTO[];
+}
+
+// ---- Exams ----
+
+export interface ExamRoomDTO extends RoomRefDTO {
+  /** Exam seats (rows × seats per row). */
+  seats: number;
+}
+
+/** One paper on the date sheet: a course code, sat by one or more sections together. */
+export interface ExamDTO {
+  id: string;
+  kind: ExamKind;
+  code: string;
+  title: string;
+  sections: { offeringId: string; sectionName: string | null; students: number }[];
+  date: string;
+  start: string;
+  end: string;
+  rooms: ExamRoomDTO[];
+  published: boolean;
+  students: number;
+  seats: number;
+  /** Students with a seat (0 until seats are assigned). */
+  seated: number;
+}
+
+/** What the Exam Office can put on the date sheet: this term's courses and the exam rooms. */
+export interface ExamOptionsDTO {
+  courses: {
+    code: string;
+    title: string;
+    offerings: { offeringId: string; sectionName: string | null; students: number }[];
+  }[];
+  rooms: ExamRoomDTO[];
+}
+
+export interface ExamCheckDTO {
+  blocking: string[];
+  warnings: string[];
+}
+
+/** A paper on a student's or teacher's own date sheet. */
+export interface MyExamDTO {
+  id: string;
+  kind: ExamKind;
+  code: string;
+  title: string;
+  date: string;
+  start: string;
+  end: string;
+  rooms: RoomRefDTO[];
+  /** The student's seat once assigned (always null for teachers). */
+  seat: { room: RoomRefDTO; row: number; seat: number } | null;
+  /** Teachers: the sections of theirs sitting this paper. */
+  sections: string[];
+}
+
+export interface SeatingChartDTO {
+  exam: ExamDTO;
+  rooms: {
+    room: ExamRoomDTO;
+    rows: number;
+    cols: number;
+    seats: {
+      row: number;
+      seat: number;
+      student: { id: string; name: string; regNo: string | null; sectionName: string | null };
+    }[];
+  }[];
+  unseated: number;
 }
 
 export interface CampusSettingsDTO {

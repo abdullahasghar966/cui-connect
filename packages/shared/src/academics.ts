@@ -520,6 +520,24 @@ export function findClashes<T extends SlotLike>(
   return clashes;
 }
 
+// ---- Exams ----
+
+export const EXAM_KINDS = ['sessional1', 'sessional2', 'terminal'] as const;
+export type ExamKind = (typeof EXAM_KINDS)[number];
+
+export const EXAM_KIND_LABELS: Record<ExamKind, string> = {
+  sessional1: 'Sessional I',
+  sessional2: 'Sessional II',
+  terminal: 'Terminal exam',
+};
+
+/** Usual paper times on campus, offered as presets on the date sheet. */
+export const EXAM_SLOTS: readonly [string, string][] = [
+  ['09:00', '10:30'],
+  ['11:30', '13:00'],
+  ['14:00', '15:30'],
+];
+
 // ---- Exam seating ----
 
 export interface SeatRoom {
@@ -539,6 +557,31 @@ export interface Seat {
   roomId: string;
   row: number;
   seat: number;
+}
+
+/**
+ * A repeatable shuffle: the same seed always gives the same order. Used per paper, so a
+ * student's seat changes from one paper to the next.
+ */
+export function seededOrder<T>(items: readonly T[], seed: string, keyOf: (item: T) => string): T[] {
+  const score = (text: string) => {
+    let hash = 2166136261;
+    for (const ch of text) {
+      hash ^= ch.charCodeAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    // Final mixing (MurmurHash3), so every character affects the whole result.
+    hash ^= hash >>> 16;
+    hash = Math.imul(hash, 0x85ebca6b);
+    hash ^= hash >>> 13;
+    hash = Math.imul(hash, 0xc2b2ae35);
+    hash ^= hash >>> 16;
+    return hash >>> 0;
+  };
+  return [...items]
+    .map((item) => ({ item, score: score(`${seed}:${keyOf(item)}`) }))
+    .sort((a, b) => a.score - b.score)
+    .map((x) => x.item);
 }
 
 /** Round-robin across groups, so classmates don't sit next to each other. */

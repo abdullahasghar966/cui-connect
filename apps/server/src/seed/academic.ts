@@ -5,14 +5,18 @@ import {
   ATTENDANCE_WARNING_MARGIN,
   type AttendanceStatus,
   addDays,
+  allocateSeats,
   BLOCKING_CLASHES,
   campusClock,
   campusInstant,
   DEFAULT_MIN_ATTENDANCE,
   defaultTermDates,
+  EXAM_SLOTS,
   findClashes,
   gradeFor,
+  mondayOf,
   type SlotLike,
+  seededOrder,
   semesterNumber,
   termIndex,
   termName,
@@ -31,6 +35,7 @@ import {
   ClassSlot,
   type ClassSlotDoc,
   type CourseOfferingDoc,
+  Exam,
   Mark,
   type MarkDoc,
   Program,
@@ -39,6 +44,7 @@ import {
   type ResultDoc,
   Room,
   type RoomDoc,
+  SeatAssignment,
   Section,
   type SectionDoc,
   Term,
@@ -328,6 +334,102 @@ export async function seedMarks(
   }
   await Result.insertMany(results);
   return { assessments: savedAssessments.length, results: results.length };
+}
+
+/**
+ * Published date sheets with seats: Sessional I in week 6 (already sat) and Sessional II in week
+ * 11 (coming up). Each course code is one paper for all its sections, placed in the first slot
+ * where none of its students has another paper and enough exam rooms are free.
+ */
+export async function seedExams(offerings: CourseOfferingDoc[], term: TermDoc): Promise<number> {
+  const [rooms, office] = await Promise.all([
+    Room.find({ examRows: { $gt: 0 } })
+      .sort({ name: 1 })
+      .lean<RoomDoc[]>(),
+    User.findOne({ role: 'staff', office: 'EXAM' }).select('_id').lean(),
+  ]);
+  if (!rooms.length || !office) return 0;
+  const sections = new Map(
+    (await Section.find().lean<SectionDoc[]>()).map((s) => [String(s._id), s.name]),
+  );
+  const byCode = new Map<string, CourseOfferingDoc[]>();
+  for (const o of offerings) byCode.set(o.code, [...(byCode.get(o.code) ?? []), o]);
+  const studentsOf = (list: CourseOfferingDoc[]) => [
+    ...new Set(list.flatMap((o) => o.studentIds.map(String))),
+  ];
+  const codes = [...byCode.keys()].sort(
+    (a, b) =>
+      studentsOf(byCode.get(b) ?? []).length - studentsOf(byCode.get(a) ?? []).length ||
+      a.localeCompare(b),
+  );
+
+  let created = 0;
+  for (const [kind, week] of [
+    ['sessional1', 6],
+    ['sessional2', 11],
+  ] as const) {
+    const monday = mondayOf(addDays(term.startsOn, (week - 1) * 7));
+    const slots = [0, 1, 2, 3, 4, 5].flatMap((d) =>
+      EXAM_SLOTS.map(([start, end]) => ({ date: addDays(monday, d), start, end })),
+    );
+    const used = slots.map(() => ({ students: new Set<string>(), rooms: new Set<string>() }));
+    for (const code of codes) {
+      const list = byCode.get(code) ?? [];
+      const students = studentsOf(list);
+      const index = slots.findIndex((_, i) => {
+        const slot = used[i];
+        if (!slot || students.some((s) => slot.students.has(s))) return false;
+        const free = rooms.filter((r) => !slot.rooms.has(String(r._id)));
+        return free.reduce((n, r) => n + r.examRows * r.examCols, 0) >= students.length;
+      });
+      const slot = slots[index];
+      const busy = used[index];
+      if (!slot || !busy) throw new Error(`Seed exams: no slot left for ${code}`);
+      const chosen: RoomDoc[] = [];
+      for (const room of rooms) {
+        if (busy.rooms.has(String(room._id))) continue;
+        if (chosen.reduce((n, r) => n + r.examRows * r.examCols, 0) >= students.length) break;
+        chosen.push(room);
+      }
+      for (const s of students) busy.students.add(s);
+      for (const r of chosen) busy.rooms.add(String(r._id));
+
+      const exam = await Exam.create({
+        termId: term._id,
+        kind,
+        code,
+        title: list[0]?.title ?? code,
+        offeringIds: list.map((o) => o._id),
+        ...slot,
+        roomIds: chosen.map((r) => r._id),
+        published: true,
+        publishedAt: campusInstant(addDays(monday, -10), '10:00'),
+        createdById: office._id,
+      });
+      const offeringOf = new Map<string, CourseOfferingDoc>();
+      const candidates = list.flatMap((o) =>
+        o.studentIds
+          .filter((s) => !offeringOf.has(String(s)) && offeringOf.set(String(s), o))
+          .map((s) => ({ id: String(s), group: sections.get(String(o.sectionId)) ?? '' })),
+      );
+      const { seats } = allocateSeats(
+        seededOrder(candidates, `${code}:${kind}`, (c) => c.id),
+        chosen.map((r) => ({ id: String(r._id), rows: r.examRows, cols: r.examCols })),
+      );
+      await SeatAssignment.insertMany(
+        seats.map((s) => ({
+          examId: exam._id,
+          studentId: s.studentId,
+          offeringId: offeringOf.get(s.studentId)?._id,
+          roomId: s.roomId,
+          row: s.row,
+          seat: s.seat,
+        })),
+      );
+      created++;
+    }
+  }
+  return created;
 }
 
 /** Students the demo shows in trouble in one course: below the minimum, or just above it. */

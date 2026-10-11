@@ -23,6 +23,7 @@ import {
   mondayOf,
   nextTermCode,
   previousTermCode,
+  seededOrder,
   semesterNumber,
   termCodeFor,
   termName,
@@ -227,6 +228,14 @@ describe('timetable clashes', () => {
 });
 
 describe('exam seating', () => {
+  it('shuffles repeatably, differently for each paper', () => {
+    const ids = Array.from({ length: 12 }, (_, i) => `s${i}`);
+    const a = seededOrder(ids, 'CSC337:terminal', (x) => x);
+    expect(seededOrder(ids, 'CSC337:terminal', (x) => x)).toEqual(a);
+    expect(seededOrder(ids, 'CSC441:terminal', (x) => x)).not.toEqual(a);
+    expect([...a].sort()).toEqual([...ids].sort());
+  });
+
   it('mixes sections and fills rooms row by row', () => {
     const students = [
       { id: 'a1', group: 'A' },

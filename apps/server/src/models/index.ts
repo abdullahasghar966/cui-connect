@@ -8,6 +8,7 @@ import { ClassChange } from './ClassChange';
 import { ClassSlot } from './ClassSlot';
 import { CourseOffering } from './CourseOffering';
 import { Department } from './Department';
+import { Exam } from './Exam';
 import { Group } from './Group';
 import { Mark } from './Mark';
 import { Membership } from './Membership';
@@ -16,6 +17,7 @@ import { Notification } from './Notification';
 import { Program } from './Program';
 import { Result } from './Result';
 import { Room } from './Room';
+import { SeatAssignment } from './SeatAssignment';
 import { Section } from './Section';
 import { Term } from './Term';
 import { User } from './User';
@@ -30,6 +32,7 @@ export * from './ClassChange';
 export * from './ClassSlot';
 export * from './CourseOffering';
 export * from './Department';
+export * from './Exam';
 export * from './Group';
 export * from './Mark';
 export * from './Membership';
@@ -38,6 +41,7 @@ export * from './Notification';
 export * from './Program';
 export * from './Result';
 export * from './Room';
+export * from './SeatAssignment';
 export * from './Section';
 export * from './Term';
 export * from './User';
@@ -64,6 +68,8 @@ export const ALL_MODELS = [
   Assessment,
   Mark,
   Result,
+  Exam,
+  SeatAssignment,
 ] as const;
 
 /** Models whose index definitions changed since launch: stale indexes are dropped and rebuilt. */

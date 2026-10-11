@@ -13,6 +13,7 @@ import { academicsRouter } from './routes/academics';
 import { adminRouter } from './routes/admin';
 import { apiRouter } from './routes/api';
 import { authRouter } from './routes/auth';
+import { examsRouter } from './routes/exams';
 import { notificationsRouter } from './routes/notifications';
 import { teachingRouter } from './routes/teaching';
 
@@ -66,6 +67,7 @@ export function createApp() {
   app.use('/api/academics', requireAuth, academicsRouter);
   app.use('/api/notifications', requireAuth, notificationsRouter);
   app.use('/api/teaching', requireAuth, teachingRouter);
+  app.use('/api/exams', requireAuth, examsRouter);
   app.use('/api', requireAuth, apiRouter);
   app.use('/api', () => {
     throw notFound('No such API endpoint.');

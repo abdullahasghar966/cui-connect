@@ -31,6 +31,8 @@ export const keys = {
   settings: ['academics', 'settings'] as const,
   myAttendance: ['academics', 'attendance'] as const,
   results: ['academics', 'results'] as const,
+  exams: ['exams'] as const,
+  myExams: ['exams', 'mine'] as const,
   marksSheet: (offeringId: string) => ['teaching', 'marks', offeringId] as const,
   teachingCourses: ['teaching', 'courses'] as const,
   attendanceSheet: (offeringId: string) => ['teaching', 'sheet', offeringId] as const,

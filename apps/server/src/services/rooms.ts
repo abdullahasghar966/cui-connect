@@ -4,6 +4,7 @@ import { roomSchema } from '@cui/shared';
 import { conflict, isDuplicateKeyError, notFound, parse } from '../lib/errors';
 import { Room, type RoomDoc, type UserDoc } from '../models';
 import { recordAudit } from './audit';
+import { roomUsedByExams } from './exams';
 import { roomInUse } from './timetable';
 
 export function toRoomDTO(room: RoomDoc): RoomDTO {
@@ -58,6 +59,11 @@ export async function deleteRoom(actor: UserDoc, roomId: string): Promise<void> 
   if (!room) throw notFound('Room not found.');
   if (await roomInUse(roomId)) {
     throw conflict(`${room.name} still has classes in the timetable. Move them first.`);
+  }
+  if (await roomUsedByExams(roomId)) {
+    throw conflict(
+      `${room.name} is booked for exams on the date sheet. Change those papers first.`,
+    );
   }
   await Room.deleteOne({ _id: room._id });
   void recordAudit({

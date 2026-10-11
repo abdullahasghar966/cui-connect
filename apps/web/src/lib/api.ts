@@ -31,6 +31,11 @@ import type {
   CsvImportResultDTO,
   DepartmentDTO,
   DepartmentRefDTO,
+  ExamCheckDTO,
+  ExamDTO,
+  ExamInput,
+  ExamKind,
+  ExamOptionsDTO,
   FirstAdminInput,
   GradingWeights,
   GroupDTO,
@@ -43,6 +48,7 @@ import type {
   MemberRole,
   MessagesPage,
   MyAttendanceCourseDTO,
+  MyExamDTO,
   MyResultsDTO,
   NotificationsPage,
   ProgramDTO,
@@ -51,6 +57,7 @@ import type {
   Role,
   RoomDTO,
   RoomInput,
+  SeatingChartDTO,
   SectionDTO,
   SectionRefDTO,
   SlotCheckDTO,
@@ -248,6 +255,24 @@ export const api = {
       send<{ finalized: number }>(`/api/teaching/courses/${offeringId}/finalize`, 'POST'),
     closeSession: (sessionId: string) =>
       send<AttendanceSessionDetailDTO>(`/api/teaching/attendance/${sessionId}/close`, 'POST'),
+  },
+
+  exams: {
+    list: (kind?: ExamKind) => request<ExamDTO[]>(`/api/exams${query({ kind })}`),
+    mine: () => request<MyExamDTO[]>('/api/exams/mine'),
+    options: () => request<ExamOptionsDTO>('/api/exams/options'),
+    check: (input: ExamInput, examId?: string) =>
+      send<ExamCheckDTO>('/api/exams/check', 'POST', { ...input, examId }),
+    save: (input: ExamInput, examId?: string) =>
+      examId
+        ? send<{ exam: ExamDTO; warnings: string[] }>(`/api/exams/${examId}`, 'PUT', input)
+        : send<{ exam: ExamDTO; warnings: string[] }>('/api/exams', 'POST', input),
+    remove: (examId: string) => send<{ ok: true }>(`/api/exams/${examId}`, 'DELETE'),
+    publish: (kind: ExamKind) =>
+      send<{ published: number }>('/api/exams/publish', 'POST', { kind }),
+    assignSeats: (examId: string) =>
+      send<{ seated: number; unseated: number }>(`/api/exams/${examId}/seats`, 'POST'),
+    seating: (examId: string) => request<SeatingChartDTO>(`/api/exams/${examId}/seating`),
   },
 
   admin: {

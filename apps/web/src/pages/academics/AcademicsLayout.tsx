@@ -3,11 +3,13 @@ import {
   CalendarCog,
   CalendarDays,
   ClipboardCheck,
+  FileClock,
   GraduationCap,
   NotebookPen,
 } from 'lucide-react';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
 import { useCurrentUser } from '@/hooks/queries';
+import { canManageExams } from './ExamsPage';
 import { canEditTimetable } from './TimetablePage';
 
 /** Everything about studying and teaching: timetable, courses, attendance, results, exams. */
@@ -25,6 +27,9 @@ export default function AcademicsLayout() {
         : { to: '/academics/results', label: 'Marks', icon: NotebookPen },
     );
   }
+  if (me.role === 'student' || me.role === 'faculty' || canManageExams(me)) {
+    sections.push({ to: '/academics/exams', label: 'Exams', icon: FileClock });
+  }
   if (canEditTimetable(me)) {
     sections.push({
       to: '/academics/timetable/edit',
@@ -38,7 +43,7 @@ export default function AcademicsLayout() {
       label="Academics sections"
       sections={sections}
       wide
-      footer="Timetable changes reach everyone affected immediately."
+      footer="Changes reach everyone affected immediately."
     />
   );
 }

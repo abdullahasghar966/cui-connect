@@ -34,6 +34,7 @@ import { addNotification } from './useNotifications';
 const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly string[]>> = {
   results: keys.results,
   attendance: keys.myAttendance,
+  exams: keys.myExams,
 };
 
 export function useRealtimeSync(): void {

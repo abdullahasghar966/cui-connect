@@ -5,6 +5,7 @@ import {
   ATTENDANCE_STATUSES,
   CLASS_KINDS,
   DATE_PATTERN,
+  EXAM_KINDS,
   ROOM_KINDS,
   TERM_PATTERN,
   TIME_PATTERN,
@@ -231,6 +232,29 @@ export const gradingWeightsSchema = z
 /** `null` goes back to the campus default. */
 export const courseGradingSchema = z.object({ weights: gradingWeightsSchema.nullable() });
 
+// ---- Exams ----
+
+export const examSchema = z
+  .object({
+    kind: z.enum(EXAM_KINDS),
+    code: courseCodeSchema,
+    offeringIds: z.array(objectIdSchema).min(1, 'Choose at least one section').max(20),
+    date: dateSchema,
+    start: timeSchema,
+    end: timeSchema,
+    roomIds: z.array(objectIdSchema).max(20).default([]),
+  })
+  .refine((e) => minutesBetween(e.start, e.end) >= 30, {
+    message: 'A paper must last at least 30 minutes and end after it starts',
+    path: ['end'],
+  })
+  .refine((e) => minutesBetween(e.start, e.end) <= 240, {
+    message: 'A paper can last at most 4 hours',
+    path: ['end'],
+  });
+
+export const publishExamsSchema = z.object({ kind: z.enum(EXAM_KINDS) });
+
 export const campusSettingsSchema = z.object({
   minAttendance: z.number().int().min(50).max(100),
 });
@@ -259,3 +283,4 @@ export type CampusSettingsInput = z.infer<typeof campusSettingsSchema>;
 export type AssessmentInput = z.input<typeof assessmentSchema>;
 export type MarksInput = z.input<typeof marksSchema>;
 export type CourseGradingInput = z.input<typeof courseGradingSchema>;
+export type ExamInput = z.input<typeof examSchema>;

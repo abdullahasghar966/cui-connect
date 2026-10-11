@@ -180,6 +180,28 @@
   }
 }
 
+/* Printing a page marked data-print (seating charts, transcripts) prints only that page. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  [data-print],
+  [data-print] * {
+    visibility: visible;
+  }
+  [data-print] {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    padding: 0;
+    background: white;
+    color: black;
+  }
+  [data-print] [data-print-hide] {
+    display: none;
+  }
+}
+
 /* Time left before the attendance QR code changes. */
 @keyframes qr-countdown {
   from {
