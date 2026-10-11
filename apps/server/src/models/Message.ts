@@ -56,6 +56,8 @@ const messageSchema = new Schema<MessageDoc>(
 
 // History pagination: newest-first within a group.
 messageSchema.index({ groupId: 1, _id: -1 });
+// Message search (whole words, any order); results are limited to chats the reader may read.
+messageSchema.index({ body: 'text' }, { default_language: 'english' });
 messageSchema.index(
   { senderId: 1, clientId: 1 },
   { unique: true, partialFilterExpression: { clientId: { $type: 'string' } } },

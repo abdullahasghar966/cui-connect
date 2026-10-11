@@ -232,6 +232,26 @@ export const gradingWeightsSchema = z
 /** `null` goes back to the campus default. */
 export const courseGradingSchema = z.object({ weights: gradingWeightsSchema.nullable() });
 
+export const officeSchema = z.object({
+  officeLocation: z.string().trim().max(120).nullable(),
+  officeHours: z
+    .array(
+      z
+        .object({ day: z.number().int().min(1).max(6), start: timeSchema, end: timeSchema })
+        .refine((h) => minutesBetween(h.start, h.end) >= 15, {
+          message: 'Office hours must end at least 15 minutes after they start',
+        }),
+    )
+    .max(12),
+});
+
+export const searchQuerySchema = z.object({ q: z.string().trim().min(2).max(80) });
+
+export const teacherDirectoryQuerySchema = z.object({
+  q: z.string().trim().max(80).default(''),
+  departmentId: objectIdSchema.optional(),
+});
+
 export const roomFinderQuerySchema = z.object({
   date: dateSchema.optional(),
   time: timeSchema.optional(),
@@ -289,3 +309,4 @@ export type AssessmentInput = z.input<typeof assessmentSchema>;
 export type MarksInput = z.input<typeof marksSchema>;
 export type CourseGradingInput = z.input<typeof courseGradingSchema>;
 export type ExamInput = z.input<typeof examSchema>;
+export type OfficeInput = z.infer<typeof officeSchema>;

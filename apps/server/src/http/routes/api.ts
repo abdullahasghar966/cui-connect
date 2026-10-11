@@ -6,6 +6,7 @@ import {
   directoryQuerySchema,
   historyQuerySchema,
   objectIdSchema,
+  searchQuerySchema,
   updateGroupSchema,
   updateMemberSchema,
 } from '@cui/shared';
@@ -24,6 +25,7 @@ import {
 import { toPolicyGroup, toPolicyMembership, toPolicyUser } from '../../services/mappers';
 import { listMessages } from '../../services/messages';
 import { addMember, removeMember, setMemberRole, updateGroup } from '../../services/moderation';
+import { searchEverything, searchMessages } from '../../services/search';
 
 export const apiRouter = Router();
 
@@ -99,4 +101,15 @@ apiRouter.get('/groups/:groupId/messages', async (req, res) => {
 apiRouter.get('/directory', async (req, res) => {
   const { q } = parse(directoryQuerySchema, req.query);
   res.json(await listDirectory(currentUser(req), q));
+});
+
+/** Ctrl+K: courses, teachers, rooms and messages (only from chats the viewer may read). */
+apiRouter.get('/search', async (req, res) => {
+  const { q } = parse(searchQuerySchema, req.query);
+  res.json(await searchEverything(currentUser(req), q));
+});
+
+apiRouter.get('/search/messages', async (req, res) => {
+  const { q } = parse(searchQuerySchema, req.query);
+  res.json(await searchMessages(currentUser(req), q, 50));
 });

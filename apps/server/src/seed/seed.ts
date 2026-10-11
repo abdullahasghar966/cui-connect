@@ -32,6 +32,7 @@ import {
   seedAttendance,
   seedExams,
   seedMarks,
+  seedOfficeHours,
   seedTimetable,
 } from './academic';
 import {
@@ -177,6 +178,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   await seedAttendance([...courses.values()], academic.currentTerm);
   await seedMarks([...courses.values()], academic.terms, academic.currentTerm);
   await seedExams([...courses.values()], academic.currentTerm);
+  await seedOfficeHours();
 
   // Everyone joins the official groups their role, department, section and courses imply.
   for (const user of people.values()) await reconcileUser(user._id, { notify: false });

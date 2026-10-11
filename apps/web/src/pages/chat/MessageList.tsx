@@ -18,6 +18,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useSearchParams } from 'react-router';
+import { toast } from 'sonner';
 import { Spinner } from '@/components/feedback';
 import { GroupIcon } from '@/components/group-meta';
 import { Avatar, RoleBadge, roleLabel } from '@/components/people';
@@ -70,6 +72,8 @@ interface RowProps {
   me: UserDTO;
   grouped: boolean;
   seen: boolean | null;
+  /** Briefly marked after jumping here from search. */
+  highlight?: boolean;
 }
 
 function useMessageControls(message: ClientMessage, group: GroupDTO, me: UserDTO) {
@@ -103,16 +107,18 @@ function useMessageControls(message: ClientMessage, group: GroupDTO, me: UserDTO
   };
 }
 
-function MessageRow({ message, group, me, grouped, seen }: RowProps) {
+function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) {
   const controls = useMessageControls(message, group, me);
   const created = new Date(message.createdAt);
 
   return (
     <div
+      id={`message-${message.id}`}
       className={cn(
-        'group/message relative flex gap-2.5 px-5 transition-colors hover:bg-surface-2 has-[[data-state=open]]:bg-surface-2',
+        'group/message relative flex gap-2.5 px-5 transition-colors duration-700 hover:bg-surface-2 has-[[data-state=open]]:bg-surface-2',
         grouped ? 'py-0.5' : 'mt-1.5 pt-1.5 pb-0.5',
         message.status === 'sending' && 'opacity-60',
+        highlight && 'bg-warning-soft hover:bg-warning-soft',
       )}
     >
       <div className="w-9 shrink-0">
@@ -316,6 +322,43 @@ export function MessageList({ group }: { group: GroupDTO }) {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Jump to a message from search: load older pages until it's there, then show it.
+  const [params, setParams] = useSearchParams();
+  const target = params.get('message');
+  const [flash, setFlash] = useState<string | null>(null);
+  const tries = useRef(0);
+  useEffect(() => {
+    if (!target || isPending) return;
+    const clear = () => {
+      const next = new URLSearchParams(params);
+      next.delete('message');
+      setParams(next, { replace: true });
+    };
+    if (messages.some((m) => m.id === target)) {
+      atBottom.current = false;
+      document.getElementById(`message-${target}`)?.scrollIntoView({ block: 'center' });
+      setFlash(target);
+      window.setTimeout(() => setFlash(null), 2500);
+      clear();
+    } else if (hasNextPage && tries.current < 30) {
+      if (isFetchingNextPage) return;
+      tries.current++;
+      void fetchNextPage();
+    } else {
+      toast('That message is no longer in this chat.');
+      clear();
+    }
+  }, [
+    target,
+    isPending,
+    messages,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    params,
+    setParams,
+  ]);
+
   // Read receipts: mark the newest confirmed message as read while the tab is visible.
   const lastConfirmed = useMemo(() => [...messages].reverse().find((m) => !m.status), [messages]);
   useEffect(() => {
@@ -382,7 +425,14 @@ export function MessageList({ group }: { group: GroupDTO }) {
         <Fragment key={message.clientId ?? message.id}>
           {newDay && <DayDivider iso={message.createdAt} />}
           {isFirstNew && <NewDivider />}
-          <MessageRow message={message} group={group} me={me} grouped={grouped} seen={seen} />
+          <MessageRow
+            message={message}
+            group={group}
+            me={me}
+            grouped={grouped}
+            seen={seen}
+            highlight={message.id === flash}
+          />
         </Fragment>
       );
     });

@@ -58,7 +58,7 @@ test('review: desktop light', async ({ browser, person }) => {
   await hira.screenshot({ path: shot('08-dm') });
 
   await hira.keyboard.press('Control+k');
-  await hira.getByRole('combobox', { name: 'Jump to a conversation' }).fill('c');
+  await hira.getByRole('combobox', { name: 'Search CUI Connect' }).fill('c');
   await hira.waitForTimeout(300);
   await hira.screenshot({ path: shot('09-switcher') });
   await hira.keyboard.press('Escape');

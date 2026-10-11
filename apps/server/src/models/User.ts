@@ -19,6 +19,9 @@ export interface UserDoc {
   /** Incremented to revoke every issued session (deactivation, password reset). */
   tokenVersion: number;
   lastSeenAt: Date | null;
+  /** Faculty: where to find them, and when they take questions. */
+  officeLocation: string | null;
+  officeHours: { day: number; start: string; end: string }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,6 +42,8 @@ const userSchema = new Schema<UserDoc>(
     isCR: { type: Boolean, default: false },
     tokenVersion: { type: Number, default: 0 },
     lastSeenAt: { type: Date, default: null },
+    officeLocation: { type: String, default: null, trim: true },
+    officeHours: { type: [{ _id: false, day: Number, start: String, end: String }], default: [] },
   },
   { timestamps: true },
 );

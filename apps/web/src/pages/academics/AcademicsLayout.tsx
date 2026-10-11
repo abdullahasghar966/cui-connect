@@ -7,6 +7,7 @@ import {
   FileClock,
   GraduationCap,
   NotebookPen,
+  Users,
 } from 'lucide-react';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
 import { useCurrentUser } from '@/hooks/queries';
@@ -19,6 +20,7 @@ export default function AcademicsLayout() {
   const sections: AreaSection[] = [
     { to: '/academics/timetable', label: 'Timetable', icon: CalendarDays, end: true },
     { to: '/academics/courses', label: 'Courses', icon: BookOpen },
+    { to: '/academics/teachers', label: 'Teachers', icon: Users },
     { to: '/academics/rooms', label: 'Room finder', icon: DoorOpen },
   ];
   if (me.role === 'student' || me.role === 'faculty') {

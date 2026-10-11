@@ -20,6 +20,7 @@ import {
   semesterNumber,
   termIndex,
   termName,
+  timesOverlap,
   weekdayOf,
 } from '@cui/shared';
 import type { Types } from 'mongoose';
@@ -35,6 +36,7 @@ import {
   ClassSlot,
   type ClassSlotDoc,
   type CourseOfferingDoc,
+  Department,
   Exam,
   Mark,
   type MarkDoc,
@@ -50,6 +52,7 @@ import {
   Term,
   type TermDoc,
   User,
+  type UserDoc,
 } from '../models';
 import { CATALOG, PROGRAMS, ROOMS, SEED_CURRENT_TERM, SEED_TERMS } from './academic-data';
 import type { DeptCode } from './data';
@@ -189,6 +192,46 @@ export async function seedTimetable(
   }
   await ClassSlot.insertMany(docs);
   return docs.length;
+}
+
+const OFFICE_HOUR_TIMES: [string, string][] = [
+  ['14:00', '15:00'],
+  ['11:30', '12:30'],
+  ['15:30', '16:30'],
+  ['10:00', '11:00'],
+];
+
+/** Each teacher gets an office and two weekly office hours that don't clash with their classes. */
+export async function seedOfficeHours(): Promise<void> {
+  const [teachers, slots, departments] = await Promise.all([
+    User.find({ role: 'faculty' }).sort({ name: 1 }).lean<UserDoc[]>(),
+    ClassSlot.find().lean<ClassSlotDoc[]>(),
+    Department.find().lean(),
+  ]);
+  const deptCode = new Map(departments.map((d) => [String(d._id), d.code]));
+  for (const [i, teacher] of teachers.entries()) {
+    const own = slots.filter((s) => String(s.instructorId) === String(teacher._id));
+    const hours: { day: number; start: string; end: string }[] = [];
+    for (let k = 0; k < 25 && hours.length < 2; k++) {
+      const day = ((i + k * 2) % 5) + 1;
+      const [start, end] = OFFICE_HOUR_TIMES[(i + k) % OFFICE_HOUR_TIMES.length] as [
+        string,
+        string,
+      ];
+      const busy = own.some((s) => s.day === day && timesOverlap(s.start, s.end, start, end));
+      if (!busy && !hours.some((h) => h.day === day)) hours.push({ day, start, end });
+    }
+    const code = deptCode.get(String(teacher.departmentId)) ?? 'CS';
+    await User.updateOne(
+      { _id: teacher._id },
+      {
+        $set: {
+          officeLocation: `Faculty Block ${code}, Room ${201 + i}`,
+          officeHours: hours.sort((a, b) => a.day - b.day),
+        },
+      },
+    );
+  }
 }
 
 /** A stable number from 0 to 99 for a piece of text, so reseeding gives the same demo data. */

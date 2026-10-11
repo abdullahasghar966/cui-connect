@@ -154,7 +154,7 @@ export function Sidebar({
               <Compass /> Browse societies
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setSwitcherOpen(true)}>
-              <Search /> Jump to…
+              <Search /> Search…
               <span className="ml-auto text-[12px] opacity-70 pointer-coarse:hidden">
                 {MOD_KEY} K
               </span>
@@ -188,7 +188,7 @@ export function Sidebar({
           className="flex h-8 w-full items-center gap-2 rounded-md border border-sidebar-border bg-white/[0.04] px-2.5 text-[13.5px] text-sidebar-muted hover:bg-white/[0.08] hover:text-sidebar-foreground"
         >
           <Search className="size-[15px]" aria-hidden />
-          Jump to…
+          Search…
           <Kbd className="ml-auto text-sidebar-muted pointer-coarse:hidden">{MOD_KEY} K</Kbd>
         </button>
       </div>

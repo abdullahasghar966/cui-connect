@@ -142,6 +142,17 @@ async function buildDMContext(me: UserDoc): Promise<(other: UserDoc) => DMFacts>
   };
 }
 
+/** Which of these people the viewer may start a direct message with. */
+export async function messageableIds(me: UserDoc, people: UserDoc[]): Promise<Set<string>> {
+  const factsFor = await buildDMContext(me);
+  const self = toPolicyUser(me);
+  return new Set(
+    people
+      .filter((p) => !sameId(p._id, me._id) && canDM(self, toPolicyUser(p), factsFor(p)).allowed)
+      .map((p) => String(p._id)),
+  );
+}
+
 /** People the viewer is allowed to start a conversation with, optionally filtered by `q`. */
 export async function listDirectory(me: UserDoc, q: string): Promise<PublicUserDTO[]> {
   const filter: Record<string, unknown> = { _id: { $ne: me._id }, active: true };

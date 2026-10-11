@@ -46,11 +46,13 @@ import type {
   MarksSheetDTO,
   MemberDTO,
   MemberRole,
+  MessageHitDTO,
   MessagesPage,
   MyAttendanceCourseDTO,
   MyExamDTO,
   MyResultsDTO,
   NotificationsPage,
+  OfficeInput,
   ProgramDTO,
   ProgramInput,
   PublicUserDTO,
@@ -58,11 +60,13 @@ import type {
   RoomDTO,
   RoomFinderDTO,
   RoomInput,
+  SearchResultsDTO,
   SeatingChartDTO,
   SectionDTO,
   SectionRefDTO,
   SlotCheckDTO,
   StartAttendanceInput,
+  TeacherDTO,
   TeachingCourseDTO,
   TermDTO,
   TimetableView,
@@ -157,6 +161,8 @@ export const api = {
   messages: (groupId: string, params: { before?: string; after?: string; limit?: number }) =>
     request<MessagesPage>(`/api/groups/${groupId}/messages${query(params)}`),
   directory: (q: string) => request<PublicUserDTO[]>(`/api/directory${query({ q })}`),
+  search: (q: string) => request<SearchResultsDTO>(`/api/search${query({ q })}`),
+  searchMessages: (q: string) => request<MessageHitDTO[]>(`/api/search/messages${query({ q })}`),
 
   notifications: (before?: string) =>
     request<NotificationsPage>(`/api/notifications${query({ before, limit: 30 })}`),
@@ -185,6 +191,10 @@ export const api = {
     offerings: (sectionId?: string) =>
       request<CourseDTO[]>(`/api/academics/offerings${query({ sectionId })}`),
     teachers: () => request<PublicUserDTO[]>('/api/academics/teachers'),
+    teacherDirectory: (params: { q?: string; departmentId?: string } = {}) =>
+      request<TeacherDTO[]>(`/api/academics/teachers/directory${query(params)}`),
+    updateOffice: (input: OfficeInput) =>
+      send<TeacherDTO>('/api/academics/me/office', 'PUT', input),
     timetable: (params: { view?: TimetableView; id?: string; week?: string }) =>
       request<TimetableWeekDTO>(`/api/academics/timetable${query(params)}`),
     today: () => request<TodayDTO>('/api/academics/timetable/today'),

@@ -11,6 +11,7 @@ import type {
   RoomKind,
 } from './academics';
 import type { NotificationType } from './constants';
+import type { PublicUserDTO } from './dto';
 
 export interface TermDTO {
   id: string;
@@ -355,6 +356,48 @@ export interface MyResultsDTO {
   creditsEarned: number;
   /** Newest first. */
   history: TermResultDTO[];
+}
+
+// ---- Directory and search ----
+
+export interface OfficeHourDTO {
+  day: number;
+  start: string;
+  end: string;
+}
+
+export interface TeacherDTO {
+  user: PublicUserDTO;
+  departmentName: string | null;
+  officeLocation: string | null;
+  officeHours: OfficeHourDTO[];
+  /** This term's teaching. */
+  courses: { code: string; title: string; sectionName: string | null }[];
+  /** The viewer may start a direct message (the DM rules decide). */
+  canMessage: boolean;
+}
+
+export interface MessageHitDTO {
+  id: string;
+  groupId: string;
+  groupName: string;
+  sender: string;
+  /** A short piece of the message around the match. */
+  snippet: string;
+  createdAt: string;
+}
+
+export interface SearchResultsDTO {
+  courses: { code: string; title: string; departmentCode: string | null }[];
+  teachers: {
+    id: string;
+    name: string;
+    designation: string | null;
+    departmentCode: string | null;
+  }[];
+  rooms: { id: string; name: string; block: string }[];
+  /** Only from chats the viewer may read. */
+  messages: MessageHitDTO[];
 }
 
 // ---- Room finder ----

@@ -8,6 +8,7 @@ import {
   objectIdSchema,
   programSchema,
   roomFinderQuerySchema,
+  teacherDirectoryQuerySchema,
   timetableQuerySchema,
 } from '@cui/shared';
 import { type Request, Router } from 'express';
@@ -28,6 +29,7 @@ import {
   saveProgram,
   toCatalogDTO,
 } from '../../services/catalog';
+import { teacherDirectory, updateOffice } from '../../services/directory';
 import { getOrgLookup, toPublicUserDTO } from '../../services/mappers';
 import { myResults } from '../../services/marks';
 import { roomFinder } from '../../services/room-finder';
@@ -138,6 +140,15 @@ academicsRouter.get('/sections', async (_req, res) => {
         departmentCode: org.departments.get(String(s.departmentId))?.code ?? null,
       })),
   );
+});
+
+/** The teacher directory: office, office hours, courses, and whether you may message them. */
+academicsRouter.get('/teachers/directory', async (req, res) => {
+  res.json(await teacherDirectory(currentUser(req), parse(teacherDirectoryQuerySchema, req.query)));
+});
+
+academicsRouter.put('/me/office', async (req, res) => {
+  res.json(await updateOffice(currentUser(req), req.body));
 });
 
 academicsRouter.get('/teachers', async (_req, res) => {
