@@ -37,6 +37,7 @@ const ResultsPage = lazy(() => import('@/pages/academics/ResultsPage'));
 const MarksPage = lazy(() => import('@/pages/academics/MarksPage'));
 const ExamsPage = lazy(() => import('@/pages/academics/ExamsPage'));
 const SeatingChartPage = lazy(() => import('@/pages/academics/SeatingChartPage'));
+const RoomFinderPage = lazy(() => import('@/pages/academics/RoomFinderPage'));
 
 function FullScreenSpinner() {
   return (
@@ -127,6 +128,7 @@ export const router = createBrowserRouter([
           { path: 'marks/:offeringId', element: <MarksPage /> },
           { path: 'exams', element: <ExamsPage /> },
           { path: 'exams/:examId/seating', element: <SeatingChartPage /> },
+          { path: 'rooms', element: <RoomFinderPage /> },
         ],
       },
       {

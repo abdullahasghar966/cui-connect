@@ -48,6 +48,7 @@ import { recordAudit } from './audit';
 import { getOrgLookup, type OrgLookup, sameId, toObjectId, toPolicyUser } from './mappers';
 import { notify } from './notifications';
 import { currentTerm } from './terms';
+import { classesOn } from './timetable';
 
 const examSeats = (room: Pick<RoomDoc, 'examRows' | 'examCols'>) => room.examRows * room.examCols;
 
@@ -248,6 +249,19 @@ function checkPlan(plan: Plan, ctx: TermExams, examId?: string): ExamCheckDTO {
   return { blocking, warnings };
 }
 
+/** Timetabled classes in the chosen rooms at that time: the paper takes the room over them. */
+async function classesInRooms(actor: UserDoc, plan: Plan): Promise<string[]> {
+  if (!plan.rooms.length) return [];
+  const rooms = new Set(plan.rooms.map((r) => String(r._id)));
+  const classes = await classesOn(actor, plan.data.date);
+  return classes
+    .filter((c) => c.room && rooms.has(c.room.id) && eventsOverlap(plan.data, c))
+    .map(
+      (c) =>
+        `${c.room?.name} normally has ${c.slot.code} · ${c.slot.sectionName ?? ''} then (${formatTimeRange(c.start, c.end)}); the paper takes the room.`,
+    );
+}
+
 export async function checkExam(
   actor: UserDoc,
   input: ExamInput,
@@ -255,7 +269,9 @@ export async function checkExam(
 ): Promise<ExamCheckDTO> {
   manage(actor);
   const ctx = await loadTermExams();
-  return checkPlan(planExam(input, ctx), ctx, examId);
+  const plan = planExam(input, ctx);
+  const result = checkPlan(plan, ctx, examId);
+  return { ...result, warnings: [...result.warnings, ...(await classesInRooms(actor, plan))] };
 }
 
 export async function saveExam(
@@ -268,7 +284,9 @@ export async function saveExam(
   const existing = examId ? ctx.exams.find((e) => String(e._id) === examId) : undefined;
   if (examId && !existing) throw notFound('Paper not found.');
   const plan = planExam(input, ctx);
-  const { blocking, warnings } = checkPlan(plan, ctx, examId ?? undefined);
+  const checked = checkPlan(plan, ctx, examId ?? undefined);
+  const { blocking } = checked;
+  const warnings = [...checked.warnings, ...(await classesInRooms(actor, plan))];
   if (blocking.length)
     throw new AppError(409, 'CONFLICT', blocking.join(' '), { blocking, warnings });
 

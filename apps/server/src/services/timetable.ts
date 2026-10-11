@@ -699,6 +699,13 @@ export async function restoreClass(actor: UserDoc, slotId: string, date: string)
   broadcastTimetableChanged([String(offering._id)]);
 }
 
+/** Every class actually happening on a date (after cancellations and moves), campus-wide. */
+export async function classesOn(viewer: UserDoc, date: string): Promise<ClassOccurrenceDTO[]> {
+  const ctx = await loadTerm();
+  const changes = await changesBetween(ctx.term, date, date);
+  return (expand(ctx.slots, changes, date, 1, ctx, viewer).get(date) ?? []).filter(active);
+}
+
 /** Rooms that still have classes can't be deleted. */
 export async function roomInUse(roomId: string): Promise<boolean> {
   return !!(await ClassSlot.exists({ roomId: toObjectId(roomId) }));

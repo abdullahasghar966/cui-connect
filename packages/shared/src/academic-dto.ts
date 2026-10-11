@@ -357,6 +357,34 @@ export interface MyResultsDTO {
   history: TermResultDTO[];
 }
 
+// ---- Room finder ----
+
+export interface RoomBookingDTO {
+  kind: 'class' | 'exam';
+  start: string;
+  end: string;
+  /** e.g. `CSC337 Advanced Web Technologies`. */
+  title: string;
+  /** e.g. `BCS-7A · Dr. Imran Haider` or `Sessional II`. */
+  detail: string;
+}
+
+export interface RoomStatusDTO {
+  room: RoomDTO;
+  /** What is in the room at the chosen time. */
+  current: RoomBookingDTO | null;
+  /** When it is free: until the next booking (null = for the rest of the day). */
+  freeUntil: string | null;
+  /** The whole day, in order. */
+  bookings: RoomBookingDTO[];
+}
+
+export interface RoomFinderDTO {
+  date: string;
+  time: string;
+  rooms: RoomStatusDTO[];
+}
+
 // ---- Exams ----
 
 export interface ExamRoomDTO extends RoomRefDTO {

@@ -56,6 +56,7 @@ import type {
   PublicUserDTO,
   Role,
   RoomDTO,
+  RoomFinderDTO,
   RoomInput,
   SeatingChartDTO,
   SectionDTO,
@@ -165,6 +166,8 @@ export const api = {
   academics: {
     terms: () => request<TermDTO[]>('/api/academics/terms'),
     rooms: () => request<RoomDTO[]>('/api/academics/rooms'),
+    roomFinder: (params: { date?: string; time?: string }) =>
+      request<RoomFinderDTO>(`/api/academics/rooms/finder${query(params)}`),
     catalog: (params: { q?: string; departmentId?: string; offered?: '1' } = {}) =>
       request<CatalogCourseDTO[]>(`/api/academics/catalog${query(params)}`),
     course: (code: string) =>

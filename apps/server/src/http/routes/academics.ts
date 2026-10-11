@@ -7,6 +7,7 @@ import {
   dateSchema,
   objectIdSchema,
   programSchema,
+  roomFinderQuerySchema,
   timetableQuerySchema,
 } from '@cui/shared';
 import { type Request, Router } from 'express';
@@ -29,6 +30,7 @@ import {
 } from '../../services/catalog';
 import { getOrgLookup, toPublicUserDTO } from '../../services/mappers';
 import { myResults } from '../../services/marks';
+import { roomFinder } from '../../services/room-finder';
 import { listRooms } from '../../services/rooms';
 import { getCampusSettings } from '../../services/settings';
 import { listCourses } from '../../services/structure';
@@ -74,6 +76,11 @@ academicsRouter.get('/terms', async (_req, res) => {
 
 academicsRouter.get('/rooms', async (_req, res) => {
   res.json(await listRooms());
+});
+
+/** Which rooms are free at a moment (default: now on campus), and each room's day. */
+academicsRouter.get('/rooms/finder', async (req, res) => {
+  res.json(await roomFinder(currentUser(req), parse(roomFinderQuerySchema, req.query)));
 });
 
 academicsRouter.get('/catalog', async (req, res) => {

@@ -232,6 +232,11 @@ export const gradingWeightsSchema = z
 /** `null` goes back to the campus default. */
 export const courseGradingSchema = z.object({ weights: gradingWeightsSchema.nullable() });
 
+export const roomFinderQuerySchema = z.object({
+  date: dateSchema.optional(),
+  time: timeSchema.optional(),
+});
+
 // ---- Exams ----
 
 export const examSchema = z

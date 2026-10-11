@@ -3,6 +3,7 @@ import {
   CalendarCog,
   CalendarDays,
   ClipboardCheck,
+  DoorOpen,
   FileClock,
   GraduationCap,
   NotebookPen,
@@ -18,6 +19,7 @@ export default function AcademicsLayout() {
   const sections: AreaSection[] = [
     { to: '/academics/timetable', label: 'Timetable', icon: CalendarDays, end: true },
     { to: '/academics/courses', label: 'Courses', icon: BookOpen },
+    { to: '/academics/rooms', label: 'Room finder', icon: DoorOpen },
   ];
   if (me.role === 'student' || me.role === 'faculty') {
     sections.push({ to: '/academics/attendance', label: 'Attendance', icon: ClipboardCheck });
