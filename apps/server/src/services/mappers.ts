@@ -1,13 +1,15 @@
-import type {
-  AuditDTO,
-  MessageDTO,
-  MessageSenderDTO,
-  PolicyGroup,
-  PolicyMembership,
-  PolicyUser,
-  PollDTO,
-  PublicUserDTO,
-  UserDTO,
+import {
+  ANONYMOUS_ID,
+  type AuditDTO,
+  type MessageDTO,
+  type MessageSenderDTO,
+  type PolicyGroup,
+  type PolicyMembership,
+  type PolicyUser,
+  type PollDTO,
+  type PublicUserDTO,
+  type ReactionDTO,
+  type UserDTO,
 } from '@cui/shared';
 import { Types } from 'mongoose';
 import {
@@ -130,8 +132,28 @@ export function toPollDTO(poll: PollDoc): PollDTO {
   };
 }
 
-export function toMessageDTO(message: MessageDoc, sender: UserDoc | undefined): MessageDTO {
+/** Who everyone but the author sees on an anonymous question. */
+export const ANONYMOUS_SENDER: MessageSenderDTO = {
+  id: ANONYMOUS_ID,
+  name: 'Anonymous student',
+  role: 'student',
+  designation: null,
+  office: null,
+  isHOD: false,
+  isCR: false,
+};
+
+/**
+ * A message as `viewerId` sees it. Anonymous questions show the real sender only to their
+ * author; broadcasts (no viewer) never carry it.
+ */
+export function toMessageDTO(
+  message: MessageDoc,
+  sender: UserDoc | undefined,
+  viewerId?: Id,
+): MessageDTO {
   const deleted = !!message.deletedAt;
+  const hidden = !!message.anonymous && !sameId(message.senderId, viewerId);
   return {
     id: String(message._id),
     groupId: String(message.groupId),
@@ -141,8 +163,31 @@ export function toMessageDTO(message: MessageDoc, sender: UserDoc | undefined): 
     createdAt: message.createdAt.toISOString(),
     clientId: message.clientId ?? null,
     deleted,
-    sender: toSenderDTO(sender, message.senderId),
+    sender: hidden ? ANONYMOUS_SENDER : toSenderDTO(sender, message.senderId),
+    replyTo: message.replyTo
+      ? {
+          id: String(message.replyTo.messageId),
+          senderName: message.replyTo.senderName,
+          snippet: message.replyTo.deleted ? '' : message.replyTo.snippet,
+          deleted: message.replyTo.deleted,
+        }
+      : null,
+    reactions: deleted ? [] : toReactionsDTO(message.reactions),
+    pinned:
+      !deleted && message.pinnedAt
+        ? { at: message.pinnedAt.toISOString(), byName: message.pinnedByName ?? 'A moderator' }
+        : null,
+    mentions: deleted
+      ? []
+      : (message.mentions ?? []).map((m) => ({ id: String(m.userId), name: m.name })),
+    anonymous: !!message.anonymous,
   };
+}
+
+export function toReactionsDTO(reactions: MessageDoc['reactions'] | undefined): ReactionDTO[] {
+  return (reactions ?? [])
+    .filter((r) => r.userIds.length > 0)
+    .map((r) => ({ emoji: r.emoji, userIds: r.userIds.map(String) }));
 }
 
 export function toAuditDTO(

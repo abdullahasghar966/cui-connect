@@ -43,7 +43,7 @@ export function PollDialog({
     }
     onOpenChange(false);
     reset();
-    await send(group.id, parsed.data.question, undefined, parsed.data);
+    await send(group.id, parsed.data.question, { poll: parsed.data });
   };
 
   return (

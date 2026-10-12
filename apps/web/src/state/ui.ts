@@ -1,3 +1,4 @@
+import type { MessageDTO } from '@cui/shared';
 import { create } from 'zustand';
 
 /** App-wide dialogs that can be opened from the rail, sidebar, menus or shortcuts. */
@@ -8,6 +9,9 @@ interface UiState {
   setSwitcherOpen: (open: boolean) => void;
   setNewMessageOpen: (open: boolean) => void;
   setDiscoverOpen: (open: boolean) => void;
+  /** The message each chat's composer is replying to. */
+  replyTo: Record<string, MessageDTO | undefined>;
+  setReplyTo: (groupId: string, message: MessageDTO | undefined) => void;
 }
 
 export const useUi = create<UiState>((set) => ({
@@ -17,4 +21,6 @@ export const useUi = create<UiState>((set) => ({
   setSwitcherOpen: (switcherOpen) => set({ switcherOpen }),
   setNewMessageOpen: (newMessageOpen) => set({ newMessageOpen }),
   setDiscoverOpen: (discoverOpen) => set({ discoverOpen }),
+  replyTo: {},
+  setReplyTo: (groupId, message) => set((s) => ({ replyTo: { ...s.replyTo, [groupId]: message } })),
 }));

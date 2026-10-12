@@ -9,7 +9,9 @@ import {
   canManageMembers,
   canModerate,
   canMuteMember,
+  canPin,
   canPost,
+  canPostAnonymously,
   canRead,
   type Decision,
   type DMFacts,
@@ -334,6 +336,44 @@ describe('moderation', () => {
     expectDecision(canDeleteMessage(admin, group('DIRECT'), null, recent, NOW), false);
     expectDecision(canDeleteMessage(student7A, group('DIRECT'), member, recent, NOW), true);
     expectDecision(canDeleteMessage(inactive, course, member, recent, NOW), false, 'INACTIVE');
+  });
+});
+
+describe('chat extras: pins and anonymous questions', () => {
+  it('lets moderators pin in groups, and either person in a direct message', () => {
+    expectDecision(canPin(facultyCS, group('COURSE'), owner), true);
+    expectDecision(canPin(student7A, group('COURSE'), member), false, 'NOT_MODERATOR');
+    expectDecision(canPin(admin, group('SECTION'), member), true);
+    expectDecision(canPin(student7A, group('DIRECT'), member), true);
+    expectDecision(canPin(student7B, group('DIRECT'), null), false, 'NOT_MEMBER');
+    expectDecision(canPin(inactive, group('DIRECT'), member), false, 'INACTIVE');
+  });
+
+  it('lets only students ask anonymously, only in course chats, and only where they may post', () => {
+    expectDecision(canPostAnonymously(student7A, group('COURSE'), member, NOW), true);
+    expectDecision(canPostAnonymously(cr7A, group('SECTION'), member, NOW), false, 'NOT_ALLOWED');
+    expectDecision(
+      canPostAnonymously(facultyCS, group('COURSE'), owner, NOW),
+      false,
+      'NOT_ALLOWED',
+    );
+    // A locked course or a muted student can't post, named or not.
+    expectDecision(
+      canPostAnonymously(student7A, group('COURSE', { locked: true }), member, NOW),
+      false,
+      'LOCKED',
+    );
+    expectDecision(
+      canPostAnonymously(
+        student7A,
+        group('COURSE'),
+        { role: 'member', mutedUntil: minutesFromNow(10) },
+        NOW,
+      ),
+      false,
+      'MUTED',
+    );
+    expectDecision(canPostAnonymously(student7B, group('COURSE'), null, NOW), false, 'NOT_MEMBER');
   });
 });
 

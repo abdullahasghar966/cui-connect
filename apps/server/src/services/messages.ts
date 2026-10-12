@@ -1,14 +1,22 @@
 import {
   canDeleteMessage,
   canDM,
+  canPin,
   canPost,
+  canPostAnonymously,
   canRead,
+  MAX_PINS,
   type MessageDTO,
   type MessagesPage,
+  type PinDTO,
+  type PinInput,
+  type ReactInput,
+  type ReactionDTO,
   type SendMessageInput,
 } from '@cui/shared';
 import { Types } from 'mongoose';
-import { assertAllowed, forbidden, isDuplicateKeyError, notFound } from '../lib/errors';
+import { assertAllowed, badRequest, forbidden, isDuplicateKeyError, notFound } from '../lib/errors';
+import { escapeRegex } from '../lib/text';
 import {
   Group,
   type GroupDoc,
@@ -16,12 +24,14 @@ import {
   type MembershipDoc,
   Message,
   type MessageDoc,
+  type ReplyRefDoc,
   User,
   type UserDoc,
 } from '../models';
 import {
   broadcastMessage,
   broadcastMessageDeleted,
+  broadcastMessageUpdated,
   broadcastReadReceipt,
   notifyMembershipAdded,
 } from '../realtime/notifier';
@@ -29,12 +39,15 @@ import { recordMessageSent } from '../realtime/stats';
 import { recordAudit } from './audit';
 import { computeDMFacts } from './direct';
 import {
+  ANONYMOUS_SENDER,
   toMessageDTO,
   toObjectId,
   toPolicyGroup,
   toPolicyMembership,
   toPolicyUser,
+  toReactionsDTO,
 } from './mappers';
+import { notify } from './notifications';
 
 async function loadGroupContext(user: UserDoc, groupId: string) {
   const [group, membership] = await Promise.all([
@@ -81,6 +94,11 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
         };
   }
 
+  // An anonymous question needs the same right to post, in a course chat, as a student.
+  if (decision.allowed && input.anonymous) {
+    decision = canPostAnonymously(policyUser, toPolicyGroup(group), toPolicyMembership(membership));
+  }
+
   if (!decision.allowed) {
     void recordAudit({
       action: 'message.denied',
@@ -100,7 +118,13 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
     senderId: user._id,
     clientId: input.clientId,
   }).lean<MessageDoc>();
-  if (existing) return { message: toMessageDTO(existing, user), created: false };
+  if (existing) return { message: toMessageDTO(existing, user, user._id), created: false };
+
+  const replyTo = input.replyToId ? await replySnapshot(group, input.replyToId) : null;
+  // Anonymous questions mention nobody (a mention would point back at the author).
+  const mentions = input.anonymous
+    ? []
+    : await mentionedMembers(group, input.mentionIds ?? [], user, input.body);
 
   let doc: MessageDoc;
   try {
@@ -110,6 +134,9 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
       kind: input.poll ? 'poll' : 'text',
       body: input.poll ? input.poll.question : input.body,
       clientId: input.clientId,
+      replyTo,
+      mentions,
+      anonymous: !!input.anonymous,
       poll: input.poll
         ? {
             question: input.poll.question,
@@ -129,7 +156,7 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
       clientId: input.clientId,
     }).lean<MessageDoc>();
     if (!raced) throw err;
-    return { message: toMessageDTO(raced, user), created: false };
+    return { message: toMessageDTO(raced, user, user._id), created: false };
   }
 
   await Promise.all([
@@ -141,14 +168,69 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
     ),
   ]);
 
-  const message = toMessageDTO(doc, user);
   // First message of a new DM: surface the thread in the recipient's sidebar.
   if (group.type === 'DIRECT' && !group.lastMessageAt && peer) {
     await notifyMembershipAdded(String(peer._id), String(group._id));
   }
-  broadcastMessage(message);
+  // The room gets the anonymous version; only the author's own copy names them.
+  broadcastMessage(toMessageDTO(doc, user));
   recordMessageSent();
-  return { message, created: true };
+  if (mentions.length) {
+    await notify(
+      mentions.map((m) => m.userId),
+      {
+        type: 'mentions',
+        title: `${user.name} mentioned you in ${group.type === 'DIRECT' ? 'a direct message' : group.name}`,
+        body: snippetOf(doc.body, 140),
+        link: `/chat/${group._id}?message=${doc._id}`,
+      },
+    );
+  }
+  return { message: toMessageDTO(doc, user, user._id), created: true };
+}
+
+const snippetOf = (text: string, max: number) =>
+  text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+
+/** What a reply shows of the message it answers. */
+async function replySnapshot(group: GroupDoc, messageId: string): Promise<ReplyRefDoc> {
+  const original = await Message.findOne({
+    _id: toObjectId(messageId),
+    groupId: group._id,
+  }).lean<MessageDoc>();
+  if (!original || original.deletedAt) {
+    throw badRequest('The message you are replying to is no longer in this chat.');
+  }
+  const author = original.anonymous
+    ? ANONYMOUS_SENDER.name
+    : ((await User.findById(original.senderId).select('name').lean())?.name ?? 'Former member');
+  return {
+    messageId: original._id,
+    senderName: author,
+    snippet: snippetOf(original.kind === 'poll' ? `Poll: ${original.body}` : original.body, 140),
+    deleted: false,
+  };
+}
+
+/** Members of this chat named with @Name in the text (yourself and outsiders are ignored). */
+async function mentionedMembers(
+  group: GroupDoc,
+  ids: string[],
+  author: UserDoc,
+  body: string,
+): Promise<{ userId: Types.ObjectId; name: string }[]> {
+  const wanted = [...new Set(ids)].filter((id) => id !== String(author._id)).map(toObjectId);
+  if (!wanted.length) return [];
+  const members = await Membership.find({ groupId: group._id, userId: { $in: wanted } }).distinct(
+    'userId',
+  );
+  const people = await User.find({ _id: { $in: members }, active: true })
+    .select('name')
+    .lean<Pick<UserDoc, '_id' | 'name'>[]>();
+  // The name must still be in the text (it may have been edited out before sending).
+  return people
+    .filter((p) => new RegExp(`@${escapeRegex(p.name)}(?![\\p{L}\\p{N}])`, 'iu').test(body))
+    .map((p) => ({ userId: p._id, name: p.name }));
 }
 
 export async function listMessages(
@@ -181,7 +263,7 @@ export async function listMessages(
   >();
   const senderById = new Map(senders.map((s) => [String(s._id), s]));
   return {
-    messages: page.map((m) => toMessageDTO(m, senderById.get(String(m.senderId)))),
+    messages: page.map((m) => toMessageDTO(m, senderById.get(String(m.senderId)), user._id)),
     hasMore,
   };
 }
@@ -198,7 +280,24 @@ export async function deleteMessage(user: UserDoc, messageId: string) {
   );
   await Message.updateOne(
     { _id: message._id },
-    { $set: { deletedAt: new Date(), deletedById: user._id, body: '', poll: null } },
+    {
+      $set: {
+        deletedAt: new Date(),
+        deletedById: user._id,
+        body: '',
+        poll: null,
+        reactions: [],
+        mentions: [],
+        pinnedAt: null,
+        pinnedById: null,
+        pinnedByName: null,
+      },
+    },
+  );
+  // Replies keep their place but no longer quote it.
+  await Message.updateMany(
+    { 'replyTo.messageId': message._id },
+    { $set: { 'replyTo.deleted': true, 'replyTo.snippet': '' } },
   );
   const groupId = String(group._id);
   broadcastMessageDeleted(groupId, messageId);
@@ -232,4 +331,113 @@ export async function markRead(user: UserDoc, groupId: string, messageId: string
   if (result.modifiedCount) {
     broadcastReadReceipt(groupId, String(user._id), messageId, group.type === 'DIRECT');
   }
+}
+
+// ---- Reactions and pins ----
+
+/** A message the person may see (any member of its chat). */
+async function loadReadable(user: UserDoc, messageId: string) {
+  const message = await Message.findById(toObjectId(messageId)).lean<MessageDoc>();
+  if (!message || message.deletedAt) throw notFound('This message no longer exists.');
+  const { group, membership } = await loadGroupContext(user, String(message.groupId));
+  const context = {
+    user: toPolicyUser(user),
+    group: toPolicyGroup(group),
+    membership: toPolicyMembership(membership),
+  };
+  assertAllowed(canRead(context.user, context.group, context.membership));
+  return { message, group, context };
+}
+
+/** Adds your reaction, or takes it back if you had already reacted with that emoji. */
+export async function reactToMessage(user: UserDoc, input: ReactInput): Promise<ReactionDTO[]> {
+  const { message } = await loadReadable(user, input.messageId);
+  const id = message._id;
+  const mine = await Message.exists({
+    _id: id,
+    reactions: { $elemMatch: { emoji: input.emoji, userIds: user._id } },
+  });
+  if (mine) {
+    await Message.updateOne(
+      { _id: id },
+      { $pull: { 'reactions.$[r].userIds': user._id } },
+      { arrayFilters: [{ 'r.emoji': input.emoji }] },
+    );
+    await Message.updateOne({ _id: id }, { $pull: { reactions: { userIds: { $size: 0 } } } });
+  } else {
+    const addTo = () =>
+      Message.updateOne(
+        { _id: id, 'reactions.emoji': input.emoji },
+        { $addToSet: { 'reactions.$.userIds': user._id } },
+      );
+    if (!(await addTo()).matchedCount) {
+      const pushed = await Message.updateOne(
+        { _id: id, 'reactions.emoji': { $ne: input.emoji } },
+        { $push: { reactions: { emoji: input.emoji, userIds: [user._id] } } },
+      );
+      // Someone else started this emoji at the same moment: join theirs.
+      if (!pushed.matchedCount) await addTo();
+    }
+  }
+  const fresh = await Message.findById(id)
+    .select('reactions')
+    .lean<Pick<MessageDoc, 'reactions'>>();
+  const reactions = toReactionsDTO(fresh?.reactions);
+  broadcastMessageUpdated({ groupId: String(message.groupId), messageId: String(id), reactions });
+  return reactions;
+}
+
+export async function pinMessage(user: UserDoc, input: PinInput): Promise<PinDTO | null> {
+  const { message, context } = await loadReadable(user, input.messageId);
+  assertAllowed(canPin(context.user, context.group, context.membership));
+  if (input.pinned && !message.pinnedAt) {
+    const pinned = await Message.countDocuments({
+      groupId: message.groupId,
+      pinnedAt: { $ne: null },
+      deletedAt: null,
+    });
+    if (pinned >= MAX_PINS) {
+      throw badRequest(`A chat can have at most ${MAX_PINS} pinned messages. Unpin one first.`);
+    }
+    await Message.updateOne(
+      { _id: message._id },
+      { $set: { pinnedAt: new Date(), pinnedById: user._id, pinnedByName: user.name } },
+    );
+  } else if (!input.pinned) {
+    await Message.updateOne(
+      { _id: message._id },
+      { $set: { pinnedAt: null, pinnedById: null, pinnedByName: null } },
+    );
+  }
+  const fresh = await Message.findById(message._id)
+    .select('pinnedAt pinnedByName')
+    .lean<Pick<MessageDoc, 'pinnedAt' | 'pinnedByName'>>();
+  const pin = fresh?.pinnedAt
+    ? { at: fresh.pinnedAt.toISOString(), byName: fresh.pinnedByName ?? user.name }
+    : null;
+  broadcastMessageUpdated({
+    groupId: String(message.groupId),
+    messageId: String(message._id),
+    pinned: pin,
+  });
+  return pin;
+}
+
+/** A chat's pinned messages, most recently pinned first. */
+export async function listPins(user: UserDoc, groupId: string): Promise<MessageDTO[]> {
+  const { group, membership } = await loadGroupContext(user, groupId);
+  assertAllowed(canRead(toPolicyUser(user), toPolicyGroup(group), toPolicyMembership(membership)));
+  const pinned = await Message.find({
+    groupId: group._id,
+    pinnedAt: { $ne: null },
+    deletedAt: null,
+  })
+    .sort({ pinnedAt: -1 })
+    .limit(MAX_PINS)
+    .lean<MessageDoc[]>();
+  const senders = await User.find({ _id: { $in: pinned.map((m) => m.senderId) } }).lean<
+    UserDoc[]
+  >();
+  const byId = new Map(senders.map((s) => [String(s._id), s]));
+  return pinned.map((m) => toMessageDTO(m, byId.get(String(m.senderId)), user._id));
 }

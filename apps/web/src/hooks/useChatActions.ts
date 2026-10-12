@@ -1,4 +1,4 @@
-import type { Ack, MessageDTO, PollInput } from '@cui/shared';
+import type { Ack, MessageDTO, PollInput, Reaction, ReplyRefDTO } from '@cui/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
@@ -7,19 +7,24 @@ import { ACK_TIMEOUT_MS, getSocket, withAck } from '@/lib/socket';
 import { randomId } from '@/lib/utils';
 import { useCurrentUser } from './queries';
 
+export interface SendExtras {
+  /** Reuse a failed message's id when retrying (the server ignores duplicates). */
+  clientId?: string;
+  poll?: PollInput;
+  replyTo?: ReplyRefDTO | null;
+  mentions?: { id: string; name: string }[];
+  anonymous?: boolean;
+}
+
 /** Optimistic send: the message appears instantly, then is confirmed or marked failed. */
 export function useSendMessage() {
   const qc = useQueryClient();
   const me = useCurrentUser();
 
   return useCallback(
-    async (
-      groupId: string,
-      body: string,
-      retryClientId?: string,
-      poll?: PollInput,
-    ): Promise<Ack<MessageDTO>> => {
-      const clientId = retryClientId ?? randomId();
+    async (groupId: string, body: string, extras: SendExtras = {}): Promise<Ack<MessageDTO>> => {
+      const { poll, replyTo = null, mentions = [], anonymous = false } = extras;
+      const clientId = extras.clientId ?? randomId();
       const optimistic: ClientMessage = {
         id: `local-${clientId}`,
         groupId,
@@ -37,6 +42,11 @@ export function useSendMessage() {
         createdAt: new Date().toISOString(),
         clientId,
         deleted: false,
+        replyTo,
+        reactions: [],
+        pinned: null,
+        mentions,
+        anonymous,
         status: 'sending',
         sender: {
           id: me.id,
@@ -58,6 +68,9 @@ export function useSendMessage() {
             body,
             clientId,
             ...(poll ? { poll: { ...poll, multiple: poll.multiple ?? false } } : {}),
+            ...(replyTo ? { replyToId: replyTo.id } : {}),
+            ...(mentions.length ? { mentionIds: mentions.map((m) => m.id) } : {}),
+            ...(anonymous ? { anonymous: true } : {}),
           }),
       );
       if (res.ok) {
@@ -77,6 +90,40 @@ export function useSendMessage() {
       return res;
     },
     [qc, me],
+  );
+}
+
+/** Adds or takes back your reaction; the chat sees it through `message:updated`. */
+export function useReact() {
+  const qc = useQueryClient();
+  return useCallback(
+    async (groupId: string, messageId: string, emoji: Reaction) => {
+      const res = await withAck(
+        getSocket().timeout(ACK_TIMEOUT_MS).emitWithAck('message:react', { messageId, emoji }),
+      );
+      if (res.ok) patchMessage(qc, groupId, (m) => m.id === messageId, { reactions: res.data });
+      else toast.error(res.message);
+    },
+    [qc],
+  );
+}
+
+export function usePin() {
+  const qc = useQueryClient();
+  return useCallback(
+    async (groupId: string, messageId: string, pinned: boolean) => {
+      const res = await withAck(
+        getSocket().timeout(ACK_TIMEOUT_MS).emitWithAck('message:pin', { messageId, pinned }),
+      );
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
+      patchMessage(qc, groupId, (m) => m.id === messageId, { pinned: res.data });
+      void qc.invalidateQueries({ queryKey: keys.pins(groupId) });
+      toast.success(pinned ? 'Pinned to this chat' : 'Unpinned');
+    },
+    [qc],
   );
 }
 

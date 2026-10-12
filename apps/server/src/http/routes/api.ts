@@ -23,7 +23,7 @@ import {
   toAdminGroupDTO,
 } from '../../services/groups';
 import { toPolicyGroup, toPolicyMembership, toPolicyUser } from '../../services/mappers';
-import { listMessages } from '../../services/messages';
+import { listMessages, listPins } from '../../services/messages';
 import { addMember, removeMember, setMemberRole, updateGroup } from '../../services/moderation';
 import { searchEverything, searchMessages } from '../../services/search';
 
@@ -95,6 +95,10 @@ apiRouter.delete('/groups/:groupId/members/:userId', async (req, res) => {
 apiRouter.get('/groups/:groupId/messages', async (req, res) => {
   const query = parse(historyQuerySchema, req.query);
   res.json(await listMessages(currentUser(req), param(req, 'groupId'), query));
+});
+
+apiRouter.get('/groups/:groupId/pins', async (req, res) => {
+  res.json(await listPins(currentUser(req), param(req, 'groupId')));
 });
 
 /** People the viewer may start a direct message with. */

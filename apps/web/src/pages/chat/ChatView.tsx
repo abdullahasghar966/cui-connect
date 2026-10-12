@@ -7,7 +7,7 @@ import {
   toPolicyMembership,
   toPolicyUser,
 } from '@cui/shared';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   DoorOpen,
@@ -15,11 +15,12 @@ import {
   Lock,
   LockOpen,
   Megaphone,
+  Pin,
   SearchX,
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { EmptyState, Spinner } from '@/components/feedback';
 import { GroupIcon } from '@/components/group-meta';
@@ -29,11 +30,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
   Tooltip,
 } from '@/components/ui/menu';
 import { useCurrentUser, useGroup, useGroups, useMembers } from '@/hooks/queries';
-import { patchGroup, removeGroup } from '@/lib/cache';
+import { api } from '@/lib/api';
+import { keys, patchGroup, removeGroup } from '@/lib/cache';
 import { ACK_TIMEOUT_MS, getSocket, withAck } from '@/lib/socket';
 import { cn } from '@/lib/utils';
 import { useRealtime } from '@/state/realtime';
@@ -98,6 +101,39 @@ function MembersButton({
         <span className="text-[13px] font-semibold tabular-nums">{group.memberCount}</span>
       </button>
     </Tooltip>
+  );
+}
+
+/** The chat's pinned messages; picking one scrolls to it. */
+function PinnedButton({ group }: { group: GroupDTO }) {
+  const [, setParams] = useSearchParams();
+  const { data: pins } = useQuery({
+    queryKey: keys.pins(group.id),
+    queryFn: () => api.pins(group.id),
+  });
+  if (!pins?.length) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="secondary" size="md" aria-label={`Pinned messages (${pins.length})`}>
+          <Pin />
+          <span className="tabular-nums">{pins.length}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-80">
+        <DropdownMenuLabel>Pinned in this chat</DropdownMenuLabel>
+        {pins.map((m) => (
+          <DropdownMenuItem
+            key={m.id}
+            onSelect={() => setParams({ message: m.id }, { replace: true })}
+          >
+            <span className="min-w-0 truncate">
+              <b>{m.sender.name}:</b> {m.body}
+            </span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -201,6 +237,7 @@ function ChatHeader({
           </Button>
         </Tooltip>
       )}
+      <PinnedButton group={group} />
       {!isDirect && <MembersButton group={group} open={membersOpen} onClick={onToggleMembers} />}
       {leavable && (
         <DropdownMenu>

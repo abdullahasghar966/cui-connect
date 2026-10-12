@@ -295,6 +295,37 @@ export function canModerate(
   return deny('NOT_MODERATOR', 'Only group moderators can do this.');
 }
 
+/** Pin or unpin messages: a group's moderators; either person in a direct message. */
+export function canPin(
+  user: PolicyUser,
+  group: PolicyGroup,
+  membership: PolicyMembership | null | undefined,
+): Decision {
+  if (!user.active) return deny('INACTIVE', 'Your account is deactivated.');
+  if (!membership) return deny('NOT_MEMBER', 'You are not a member of this group.');
+  if (group.type === 'DIRECT') return ALLOW;
+  if (canModerate(user, group, membership).allowed) return ALLOW;
+  return deny('NOT_MODERATOR', 'Only moderators can pin messages here.');
+}
+
+/**
+ * Ask a question with your name hidden: students in their course chat, where they may post
+ * anyway. The server keeps the author (for moderation and limits) but never sends it to others.
+ */
+export function canPostAnonymously(
+  user: PolicyUser,
+  group: PolicyGroup,
+  membership: PolicyMembership | null | undefined,
+  now = new Date(),
+): Decision {
+  const post = canPost(user, group, membership, now);
+  if (!post.allowed) return post;
+  if (group.type !== 'COURSE' || user.role !== 'student') {
+    return deny('NOT_ALLOWED', 'Anonymous questions are only for students in course chats.');
+  }
+  return ALLOW;
+}
+
 /** Add/remove members and change member roles. */
 export function canManageMembers(
   user: PolicyUser,

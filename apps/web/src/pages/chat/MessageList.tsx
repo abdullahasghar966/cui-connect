@@ -1,5 +1,7 @@
 import {
   canDeleteMessage,
+  canPin,
+  canPost,
   describePostPolicy,
   type GroupDTO,
   toPolicyGroup,
@@ -8,7 +10,18 @@ import {
   type UserDTO,
 } from '@cui/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, CheckCheck, Ellipsis, RefreshCw, Trash2, TriangleAlert } from 'lucide-react';
+import {
+  Check,
+  CheckCheck,
+  Ellipsis,
+  Pin,
+  PinOff,
+  RefreshCw,
+  Reply,
+  Trash2,
+  TriangleAlert,
+  VenetianMask,
+} from 'lucide-react';
 import {
   Fragment,
   type ReactNode,
@@ -31,40 +44,15 @@ import {
   Tooltip,
 } from '@/components/ui/menu';
 import { useCurrentUser, useMessages } from '@/hooks/queries';
-import { useDeleteMessage, useMarkRead, useSendMessage } from '@/hooks/useChatActions';
+import { useDeleteMessage, useMarkRead, usePin, useSendMessage } from '@/hooks/useChatActions';
 import { type ClientMessage, removeMessage } from '@/lib/cache';
 import { cn, formatDayLabel, formatTime, isSameDay } from '@/lib/utils';
+import { useUi } from '@/state/ui';
+import { MessageText, ReactionPicker, Reactions, ReplyQuote } from './message-extras';
 import { PollCard } from './PollCard';
 
 const GROUP_WINDOW_MS = 5 * 60 * 1000;
-const URL_PATTERN = /(https?:\/\/[^\s<]+[^\s<.,:;"')\]])/g;
 const shortTime = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
-
-/** Renders text with http(s) links made clickable; everything else stays plain text (XSS-safe). */
-function Linkified({ text }: { text: string }) {
-  const parts = text.split(URL_PATTERN);
-  return (
-    <>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <a
-            // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and immutable
-            key={i}
-            href={part}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-link underline-offset-2 hover:underline"
-          >
-            {part}
-          </a>
-        ) : (
-          // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and immutable
-          <Fragment key={i}>{part}</Fragment>
-        ),
-      )}
-    </>
-  );
-}
 
 interface RowProps {
   message: ClientMessage;
@@ -80,36 +68,81 @@ function useMessageControls(message: ClientMessage, group: GroupDTO, me: UserDTO
   const qc = useQueryClient();
   const deleteMessage = useDeleteMessage();
   const send = useSendMessage();
+  const pin = usePin();
+  const setReplyTo = useUi((s) => s.setReplyTo);
+  const user = toPolicyUser(me);
+  const policyGroup = toPolicyGroup(group);
+  const membership = toPolicyMembership(group);
+  const settled = !message.deleted && !message.status;
   const canDelete =
-    !message.deleted &&
-    !message.status &&
-    canDeleteMessage(toPolicyUser(me), toPolicyGroup(group), toPolicyMembership(group), {
+    settled &&
+    canDeleteMessage(user, policyGroup, membership, {
       senderId: message.sender.id,
       createdAt: message.createdAt,
     }).allowed;
   return {
     canDelete,
+    canReply: settled && canPost(user, policyGroup, membership).allowed,
+    canPin: settled && canPin(user, policyGroup, membership).allowed,
+    canReact: settled,
     remove: () => void deleteMessage(message.id),
+    reply: () => {
+      setReplyTo(group.id, message);
+      document.querySelector<HTMLTextAreaElement>('[data-composer]')?.focus();
+    },
+    togglePin: () => void pin(group.id, message.id, !message.pinned),
     retry: () =>
-      void send(
-        group.id,
-        message.body,
-        message.clientId ?? undefined,
-        message.poll
+      void send(group.id, message.body, {
+        clientId: message.clientId ?? undefined,
+        poll: message.poll
           ? {
               question: message.poll.question,
               options: message.poll.options.map((o) => o.text),
               multiple: message.poll.multiple,
             }
           : undefined,
-      ),
+        replyTo: message.replyTo,
+        mentions: message.mentions,
+        anonymous: message.anonymous,
+      }),
     discard: () => removeMessage(qc, group.id, (m) => m.id === message.id),
   };
 }
 
+const TOOL =
+  'flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground';
+
+/** Who wrote it. An anonymous question shows a mask to everyone but its author. */
+function SenderName({ message, me }: { message: ClientMessage; me: UserDTO }) {
+  if (message.anonymous && message.sender.id !== me.id) {
+    return (
+      <span className="flex items-center gap-1 text-[15px] font-bold">
+        <VenetianMask className="size-4 text-muted-foreground" aria-hidden />
+        {message.sender.name}
+      </span>
+    );
+  }
+  return (
+    <>
+      <span className="text-[15px] font-bold">{message.sender.name}</span>
+      {message.anonymous ? (
+        <span className="inline-flex items-center gap-1 rounded-[4px] border border-border px-1.5 text-[11px] leading-[18px] font-semibold text-muted-foreground">
+          <VenetianMask className="size-3" aria-hidden /> Anonymous to others
+        </span>
+      ) : (
+        <RoleBadge person={message.sender} />
+      )}
+    </>
+  );
+}
+
 function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) {
   const controls = useMessageControls(message, group, me);
+  const [, setParams] = useSearchParams();
   const created = new Date(message.createdAt);
+  const masked = message.anonymous && message.sender.id !== me.id;
+  const mentionsMe = message.mentions.some((m) => m.id === me.id);
+  const hasTools = controls.canReact || controls.canReply || controls.canPin || controls.canDelete;
 
   return (
     <div
@@ -118,6 +151,7 @@ function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) 
         'group/message relative flex gap-2.5 px-5 transition-colors duration-700 hover:bg-surface-2 has-[[data-state=open]]:bg-surface-2',
         grouped ? 'py-0.5' : 'mt-1.5 pt-1.5 pb-0.5',
         message.status === 'sending' && 'opacity-60',
+        mentionsMe && 'border-l-2 border-warning bg-warning-soft/40 pl-[18px]',
         highlight && 'bg-warning-soft hover:bg-warning-soft',
       )}
     >
@@ -129,6 +163,13 @@ function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) 
           >
             {shortTime.format(created)}
           </time>
+        ) : masked ? (
+          <span
+            aria-hidden
+            className="mt-0.5 flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground"
+          >
+            <VenetianMask className="size-5" />
+          </span>
         ) : (
           <Avatar name={message.sender.name} className="mt-0.5" />
         )}
@@ -136,14 +177,24 @@ function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) 
       <div className="min-w-0 flex-1">
         {!grouped && (
           <div className="flex flex-wrap items-baseline gap-x-1.5">
-            <span className="text-[15px] font-bold">{message.sender.name}</span>
-            <RoleBadge person={message.sender} />
+            <SenderName message={message} me={me} />
             <Tooltip content={created.toLocaleString()}>
               <time dateTime={message.createdAt} className="text-[12px] text-muted-foreground">
                 {formatTime(message.createdAt)}
               </time>
             </Tooltip>
           </div>
+        )}
+        {message.pinned && (
+          <p className="flex items-center gap-1 text-[12px] text-muted-foreground">
+            <Pin className="size-3" aria-hidden /> Pinned by {message.pinned.byName}
+          </p>
+        )}
+        {message.replyTo && (
+          <ReplyQuote
+            reply={message.replyTo}
+            onJump={() => setParams({ message: message.replyTo?.id ?? '' }, { replace: true })}
+          />
         )}
         <div
           className={cn(
@@ -154,12 +205,13 @@ function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) 
           {message.deleted ? (
             'This message was deleted.'
           ) : message.kind === 'poll' && message.poll ? null : (
-            <Linkified text={message.body} />
+            <MessageText message={message} me={me} />
           )}
         </div>
         {!message.deleted && message.kind === 'poll' && message.poll && (
           <PollCard message={message} poll={message.poll} group={group} me={me} />
         )}
+        {!message.deleted && <Reactions message={message} group={group} me={me} />}
         {message.status === 'failed' && (
           <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[12.5px] text-danger">
             <TriangleAlert className="size-3.5" aria-hidden />
@@ -194,24 +246,42 @@ function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) 
           </p>
         )}
       </div>
-      {controls.canDelete && (
+      {hasTools && (
         <div className="absolute -top-3.5 right-5 hidden rounded-lg border bg-surface p-0.5 shadow-sm group-focus-within/message:flex group-hover/message:flex pointer-coarse:flex has-[[data-state=open]]:flex">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {controls.canReact && <ReactionPicker message={message} group={group} className={TOOL} />}
+          {controls.canReply && (
+            <Tooltip content="Reply">
+              <button type="button" aria-label="Reply" className={TOOL} onClick={controls.reply}>
+                <Reply className="size-4" />
+              </button>
+            </Tooltip>
+          )}
+          {controls.canPin && (
+            <Tooltip content={message.pinned ? 'Unpin' : 'Pin to this chat'}>
               <button
                 type="button"
-                aria-label="Message options"
-                className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label={message.pinned ? 'Unpin message' : 'Pin message'}
+                className={TOOL}
+                onClick={controls.togglePin}
               >
-                <Ellipsis className="size-4" />
+                {message.pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem danger onSelect={controls.remove}>
-                <Trash2 /> Delete message
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </Tooltip>
+          )}
+          {controls.canDelete && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" aria-label="Message options" className={TOOL}>
+                  <Ellipsis className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem danger onSelect={controls.remove}>
+                  <Trash2 /> Delete message
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       )}
     </div>
@@ -414,6 +484,8 @@ export function MessageList({ group }: { group: GroupDTO }) {
         !newDay &&
         !isFirstNew &&
         !!prev &&
+        !prev.anonymous &&
+        !message.anonymous &&
         prev.sender.id === message.sender.id &&
         new Date(message.createdAt).getTime() - new Date(prev.createdAt).getTime() <
           GROUP_WINDOW_MS;

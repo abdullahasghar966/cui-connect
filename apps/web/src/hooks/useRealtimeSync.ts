@@ -8,6 +8,7 @@ import type {
   MemberDTO,
   MemberUpdateEvent,
   MessageDTO,
+  MessageUpdateEvent,
   NotificationDTO,
   PollDTO,
   TypingEvent,
@@ -18,7 +19,9 @@ import { useMatch, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import {
   findGroup,
+  findMessage,
   keys,
+  type MessagesData,
   patchGroup,
   patchMessage,
   removeGroup,
@@ -90,13 +93,19 @@ export function useRealtimeSync(): void {
     };
 
     const onMessage = (message: MessageDTO) => {
+      // My own anonymous question comes back nameless: recognise it by its client id.
+      const ownAnonymous =
+        message.anonymous &&
+        !!message.clientId &&
+        findMessage(qc, message.groupId, (m) => m.clientId === message.clientId)?.sender.id ===
+          me.id;
       upsertMessage(qc, message);
       const group = findGroup(qc, message.groupId);
       if (!group) {
         void qc.invalidateQueries({ queryKey: keys.groups });
         return;
       }
-      const mine = message.sender.id === me.id;
+      const mine = ownAnonymous || message.sender.id === me.id;
       const viewing =
         activeGroupId.current === message.groupId && document.visibilityState === 'visible';
       patchGroup(qc, message.groupId, (g) => ({
@@ -124,8 +133,42 @@ export function useRealtimeSync(): void {
       patchMessage(qc, groupId, (m) => m.id === messageId, { poll });
     };
 
+    const onMessageUpdated = (event: MessageUpdateEvent) => {
+      const patch: Partial<MessageDTO> = {};
+      if (event.reactions) patch.reactions = event.reactions;
+      if (event.pinned !== undefined) {
+        patch.pinned = event.pinned;
+        void qc.invalidateQueries({ queryKey: keys.pins(event.groupId) });
+      }
+      patchMessage(qc, event.groupId, (m) => m.id === event.messageId, patch);
+    };
+
     const onMessageDeleted = ({ groupId, messageId }: { groupId: string; messageId: string }) => {
-      patchMessage(qc, groupId, (m) => m.id === messageId, { deleted: true, body: '', poll: null });
+      patchMessage(qc, groupId, (m) => m.id === messageId, {
+        deleted: true,
+        body: '',
+        poll: null,
+        reactions: [],
+        mentions: [],
+        pinned: null,
+      });
+      // Replies keep their place but stop quoting it.
+      qc.setQueryData<MessagesData>(keys.messages(groupId), (data) =>
+        data
+          ? {
+              ...data,
+              pages: data.pages.map((page) => ({
+                ...page,
+                messages: page.messages.map((m) =>
+                  m.replyTo?.id === messageId
+                    ? { ...m, replyTo: { ...m.replyTo, deleted: true, snippet: '' } }
+                    : m,
+                ),
+              })),
+            }
+          : data,
+      );
+      void qc.invalidateQueries({ queryKey: keys.pins(groupId) });
       patchGroup(qc, groupId, (g) =>
         g.lastMessage?.id === messageId
           ? { lastMessage: { ...g.lastMessage, deleted: true, body: '' } }
@@ -240,6 +283,7 @@ export function useRealtimeSync(): void {
     socket.on('connect_error', onConnectError);
     socket.on('message:new', onMessage);
     socket.on('message:deleted', onMessageDeleted);
+    socket.on('message:updated', onMessageUpdated);
     socket.on('poll:updated', onPollUpdated);
     socket.on('typing', onTyping);
     socket.on('presence:update', onPresence);
@@ -268,6 +312,7 @@ export function useRealtimeSync(): void {
       socket.off('connect_error', onConnectError);
       socket.off('message:new', onMessage);
       socket.off('message:deleted', onMessageDeleted);
+      socket.off('message:updated', onMessageUpdated);
       socket.off('poll:updated', onPollUpdated);
       socket.off('typing', onTyping);
       socket.off('presence:update', onPresence);

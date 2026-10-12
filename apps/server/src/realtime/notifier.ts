@@ -9,6 +9,7 @@ import type {
   LiveStatsDTO,
   MemberUpdateEvent,
   MessageDTO,
+  MessageUpdateEvent,
   NotificationDTO,
   PollDTO,
   QuizStateEvent,
@@ -87,6 +88,11 @@ export async function sendQuizPresence(quizId: string): Promise<number> {
   const joined = await quizJoinedCount(quizId);
   io?.to(quizHostRoom(quizId)).emit('quiz:presence', { quizId, joined });
   return joined;
+}
+
+/** Reactions or a pin changed: everyone in the chat updates that message. */
+export function broadcastMessageUpdated(event: MessageUpdateEvent): void {
+  io?.to(groupRoom(event.groupId)).emit('message:updated', event);
 }
 
 export function broadcastMessageDeleted(groupId: string, messageId: string): void {

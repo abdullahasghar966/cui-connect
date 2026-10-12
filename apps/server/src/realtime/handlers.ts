@@ -6,9 +6,11 @@ import {
   messageRefSchema,
   muteMemberSchema,
   openDmSchema,
+  pinSchema,
   pollVoteSchema,
   quizAnswerSchema,
   quizRefSchema,
+  reactSchema,
   readReceiptSchema,
   sendMessageSchema,
 } from '@cui/shared';
@@ -17,7 +19,13 @@ import { AppError, parse, rateLimited, unauthorized } from '../lib/errors';
 import { logger } from '../lib/logger';
 import { Membership, User, type UserDoc } from '../models';
 import { openDirect } from '../services/direct';
-import { deleteMessage, markRead, sendMessage } from '../services/messages';
+import {
+  deleteMessage,
+  markRead,
+  pinMessage,
+  reactToMessage,
+  sendMessage,
+} from '../services/messages';
 import { joinGroup, leaveGroup, muteMember, setLocked } from '../services/moderation';
 import { closePoll, votePoll } from '../services/polls';
 import { answerQuiz, quizAccess } from '../services/quizzes';
@@ -144,6 +152,17 @@ export function registerConnection(io: IoServer, socket: IoSocket): void {
       if (!voteBucket.take()) throw rateLimited('You are voting too quickly. Slow down.');
       return votePoll(await liveUser(socket), parse(pollVoteSchema, payload));
     }),
+  );
+
+  socket.on('message:react', (payload, ack) =>
+    respond(ack, async () => {
+      if (!voteBucket.take()) throw rateLimited('You are reacting too quickly. Slow down.');
+      return reactToMessage(await liveUser(socket), parse(reactSchema, payload));
+    }),
+  );
+
+  socket.on('message:pin', (payload, ack) =>
+    respond(ack, async () => pinMessage(await liveUser(socket), parse(pinSchema, payload))),
   );
 
   socket.on('poll:close', (payload, ack) =>

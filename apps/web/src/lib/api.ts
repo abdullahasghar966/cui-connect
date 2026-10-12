@@ -60,6 +60,7 @@ import type {
   MaterialInput,
   MemberDTO,
   MemberRole,
+  MessageDTO,
   MessageHitDTO,
   MessagesPage,
   MyAttendanceCourseDTO,
@@ -183,6 +184,7 @@ export const api = {
   updateGroup: (groupId: string, input: UpdateGroupInput) =>
     send<{ ok: true }>(`/api/groups/${groupId}`, 'PATCH', input),
   members: (groupId: string) => request<MemberDTO[]>(`/api/groups/${groupId}/members`),
+  pins: (groupId: string) => request<MessageDTO[]>(`/api/groups/${groupId}/pins`),
   addMember: (groupId: string, input: AddMemberInput) =>
     send<MemberDTO>(`/api/groups/${groupId}/members`, 'POST', input),
   setMemberRole: (groupId: string, userId: string, role: MemberRole) =>

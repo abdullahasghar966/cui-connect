@@ -122,7 +122,10 @@ export async function searchMessages(
         group?.type === 'DIRECT'
           ? (peerNames.get(String(m.groupId)) ?? 'Direct message')
           : (group?.name ?? 'Chat'),
-      sender: nameOf.get(String(m.senderId)) ?? 'Someone',
+      sender:
+        m.anonymous && String(m.senderId) !== String(user._id)
+          ? 'Anonymous student'
+          : (nameOf.get(String(m.senderId)) ?? 'Someone'),
       snippet: snippetOf(m.body, q),
       createdAt: m.createdAt.toISOString(),
     };

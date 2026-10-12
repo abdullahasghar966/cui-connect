@@ -1,5 +1,5 @@
 /** React Query cache updates driven by Socket.IO events and optimistic sends. */
-import type { GroupDTO, MessageDTO, MessagesPage } from '@cui/shared';
+import { ANONYMOUS_ID, type GroupDTO, type MessageDTO, type MessagesPage } from '@cui/shared';
 import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 
 export type ClientMessage = MessageDTO & { status?: 'sending' | 'failed'; error?: string };
@@ -13,6 +13,7 @@ export const keys = {
   groups: ['groups'] as const,
   messages: (groupId: string) => ['messages', groupId] as const,
   members: (groupId: string) => ['members', groupId] as const,
+  pins: (groupId: string) => ['pins', groupId] as const,
   directory: (q: string) => ['directory', q] as const,
   discover: ['discover'] as const,
   notifications: ['notifications'] as const,
@@ -61,7 +62,9 @@ export function upsertMessage(qc: QueryClient, message: ClientMessage): void {
         const sameOptimistic = !!message.clientId && m.clientId === message.clientId;
         if (m.id === message.id || sameOptimistic) {
           replaced = true;
-          return message;
+          // My anonymous question: the room's copy hides my name, but I keep seeing it's mine.
+          const keepMine = message.sender.id === ANONYMOUS_ID && m.sender.id !== ANONYMOUS_ID;
+          return keepMine ? { ...message, sender: m.sender } : message;
         }
         return m;
       }),
@@ -141,6 +144,19 @@ export function removeGroup(qc: QueryClient, groupId: string): void {
   qc.setQueryData<GroupDTO[]>(keys.groups, (groups) => groups?.filter((g) => g.id !== groupId));
   qc.removeQueries({ queryKey: keys.messages(groupId) });
   qc.removeQueries({ queryKey: keys.members(groupId) });
+}
+
+export function findMessage(
+  qc: QueryClient,
+  groupId: string,
+  match: (m: ClientMessage) => boolean,
+): ClientMessage | undefined {
+  const data = qc.getQueryData<MessagesData>(keys.messages(groupId));
+  for (const page of data?.pages ?? []) {
+    const found = page.messages.find(match);
+    if (found) return found;
+  }
+  return undefined;
 }
 
 export function findGroup(qc: QueryClient, groupId: string): GroupDTO | undefined {

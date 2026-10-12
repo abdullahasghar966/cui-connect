@@ -3,7 +3,16 @@ import type { AttendanceCountsDTO, NotificationDTO, RosterEntryDTO } from './aca
 import type { QuizAnswerInput, QuizRefInput } from './academic-schemas';
 import type { ErrorCode, MemberRole, Role } from './constants';
 import type { QuizStatus } from './coursework';
-import type { AuditDTO, GroupDTO, LiveStatsDTO, MemberDTO, MessageDTO, PollDTO } from './dto';
+import type {
+  AuditDTO,
+  GroupDTO,
+  LiveStatsDTO,
+  MemberDTO,
+  MessageDTO,
+  PinDTO,
+  PollDTO,
+  ReactionDTO,
+} from './dto';
 import type { GroupSettings } from './policy';
 import type {
   GroupRefInput,
@@ -11,7 +20,9 @@ import type {
   MessageRefInput,
   MuteMemberInput,
   OpenDmInput,
+  PinInput,
   PollVoteInput,
+  ReactInput,
   ReadReceiptInput,
   SendMessageInput,
 } from './schemas';
@@ -60,6 +71,9 @@ export interface ClientToServerEvents {
   'presence:list': (ack: AckCallback<string[]>) => void;
   'poll:vote': (payload: PollVoteInput, ack: AckCallback<PollDTO>) => void;
   'poll:close': (payload: MessageRefInput, ack: AckCallback<PollDTO>) => void;
+  /** Toggles your reaction (anyone who can read the chat). */
+  'message:react': (payload: ReactInput, ack: AckCallback<ReactionDTO[]>) => void;
+  'message:pin': (payload: PinInput, ack: AckCallback<PinDTO | null>) => void;
   /** Open a live quiz page: students of the course and its instructor. */
   'quiz:join': (payload: QuizRefInput, ack: AckCallback<{ joined: number }>) => void;
   'quiz:leave': (payload: QuizRefInput) => void;
@@ -74,6 +88,8 @@ export interface ServerToClientEvents {
   'message:deleted': (payload: { groupId: string; messageId: string }) => void;
   /** Votes changed or the poll closed (sent to the chat's room). */
   'poll:updated': (payload: { groupId: string; messageId: string; poll: PollDTO }) => void;
+  /** Reactions or the pin of a message changed (sent to the chat's room). */
+  'message:updated': (payload: MessageUpdateEvent) => void;
   typing: (payload: TypingEvent) => void;
   'presence:update': (payload: { userId: string; online: boolean }) => void;
   'read:update': (payload: { groupId: string; userId: string; messageId: string }) => void;
@@ -112,6 +128,14 @@ export interface QuizTallyEvent {
   questionId: string;
   counts: number[];
   answered: number;
+}
+
+export interface MessageUpdateEvent {
+  groupId: string;
+  messageId: string;
+  reactions?: ReactionDTO[];
+  /** Present when the pin changed: the pin, or null when unpinned. */
+  pinned?: PinDTO | null;
 }
 
 export interface AttendanceUpdateEvent {

@@ -81,7 +81,7 @@ export async function buildGroupDTOs(userId: Id, onlyGroupIds?: Id[]): Promise<G
     if (!group) return;
     const last = lastByGroup.get(gid);
     const lastMessage: MessageDTO | null = last
-      ? toMessageDTO(last, userById.get(String(last.senderId)))
+      ? toMessageDTO(last, userById.get(String(last.senderId)), uid)
       : null;
     const peerMembership = peerByGroup.get(gid);
     const peerUser = peerMembership ? userById.get(String(peerMembership.userId)) : undefined;

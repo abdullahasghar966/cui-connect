@@ -64,6 +64,31 @@ export interface MessageDTO {
   sender: MessageSenderDTO;
   /** Set when `kind` is `poll` (null once deleted). */
   poll: PollDTO | null;
+  /** The message this one answers (a snapshot; emptied if that one is deleted). */
+  replyTo: ReplyRefDTO | null;
+  reactions: ReactionDTO[];
+  pinned: PinDTO | null;
+  /** Members mentioned with @Name. */
+  mentions: { id: string; name: string }[];
+  /** Asked with the name hidden: `sender` is the anonymous placeholder for everyone but the author. */
+  anonymous: boolean;
+}
+
+export interface ReplyRefDTO {
+  id: string;
+  senderName: string;
+  snippet: string;
+  deleted: boolean;
+}
+
+export interface ReactionDTO {
+  emoji: string;
+  userIds: string[];
+}
+
+export interface PinDTO {
+  at: string;
+  byName: string;
 }
 
 export interface MessagesPage {

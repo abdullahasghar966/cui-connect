@@ -2,10 +2,12 @@
 import { z } from 'zod';
 import {
   JOIN_POLICIES,
+  MAX_MENTIONS,
   MEMBER_ROLES,
   MESSAGE_MAX_LENGTH,
   OFFICES,
   POST_POLICIES,
+  REACTIONS,
   ROLES,
 } from './constants';
 
@@ -210,7 +212,16 @@ export const sendMessageSchema = z.object({
   clientId: z.string().min(8).max(64),
   /** Makes the message a poll (the body repeats the question). */
   poll: pollInputSchema.optional(),
+  /** Answers this earlier message of the same chat. */
+  replyToId: objectIdSchema.optional(),
+  /** Members mentioned with @Name (they are notified). */
+  mentionIds: z.array(objectIdSchema).max(MAX_MENTIONS).optional(),
+  /** A student's question in a course chat with their name hidden. */
+  anonymous: z.boolean().optional(),
 });
+
+export const reactSchema = z.object({ messageId: objectIdSchema, emoji: z.enum(REACTIONS) });
+export const pinSchema = z.object({ messageId: objectIdSchema, pinned: z.boolean() });
 
 export const pollVoteSchema = z.object({
   messageId: objectIdSchema,
@@ -251,3 +262,5 @@ export type GroupRefInput = z.infer<typeof groupRefSchema>;
 export type LockGroupInput = z.infer<typeof lockGroupSchema>;
 export type MuteMemberInput = z.infer<typeof muteMemberSchema>;
 export type OpenDmInput = z.infer<typeof openDmSchema>;
+export type ReactInput = z.infer<typeof reactSchema>;
+export type PinInput = z.infer<typeof pinSchema>;

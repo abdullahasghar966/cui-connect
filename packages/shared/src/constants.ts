@@ -63,6 +63,15 @@ export const MESSAGE_MAX_LENGTH = 4000;
 export const MESSAGE_DELETE_WINDOW_MS = 15 * 60 * 1000;
 export const SESSION_COOKIE = 'cui_session';
 
+/** Quick reactions on messages (a fixed set keeps them meaningful and cheap to store). */
+export const REACTIONS = ['👍', '❤️', '😂', '🎉', '😮', '🙏'] as const;
+export type Reaction = (typeof REACTIONS)[number];
+/** Pinned messages per chat. */
+export const MAX_PINS = 20;
+export const MAX_MENTIONS = 20;
+/** Sender id shown for anonymous questions (the real author is never sent to others). */
+export const ANONYMOUS_ID = 'anonymous';
+
 export const ROLE_LABELS: Record<Role, string> = {
   admin: 'Admin',
   faculty: 'Faculty',
