@@ -15,6 +15,7 @@ import type { BookingStatus } from './bookings';
 import type { NotificationType } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
+import type { ComplaintCategory, IdCardReason, RequestKind, RequestStatus } from './requests';
 
 export interface TermDTO {
   id: string;
@@ -815,4 +816,44 @@ export interface TeacherSlotsDTO {
   /** Why booking isn't possible, in plain words. */
   reason: string | null;
   days: { date: string; slots: BookingSlotDTO[] }[];
+}
+
+// ---- Requests and complaints ----
+
+/** What the student filled in (only the fields of its kind are set). */
+export interface RequestDetailsDTO {
+  from?: string;
+  to?: string;
+  reason?: string;
+  purpose?: string;
+  copies?: number;
+  cardReason?: IdCardReason;
+  category?: ComplaintCategory;
+  subject?: string;
+  description?: string;
+}
+
+export interface RequestEventDTO {
+  at: string;
+  /** Null for the system (e.g. the request being sent). */
+  by: { id: string; name: string } | null;
+  kind: 'created' | 'status' | 'reply';
+  status: RequestStatus | null;
+  body: string | null;
+}
+
+export interface ServiceRequestDTO {
+  id: string;
+  kind: RequestKind;
+  title: string;
+  status: RequestStatus;
+  student: { id: string; name: string; regNo: string | null; sectionName: string | null };
+  /** "Your batch advisor, Dr. Imran Haider" or "Examination Office". */
+  handledBy: string;
+  details: RequestDetailsDTO;
+  events: RequestEventDTO[];
+  createdAt: string;
+  updatedAt: string;
+  /** The viewer can move it on (see `nextStatuses`). */
+  canHandle: boolean;
 }

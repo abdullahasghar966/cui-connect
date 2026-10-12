@@ -48,6 +48,7 @@ import {
   SECTIONS,
   STAFF,
 } from './data';
+import { seedRequests } from './requests';
 
 export interface SeedSummary {
   users: number;
@@ -185,6 +186,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   await seedExams([...courses.values()], academic.currentTerm);
   await seedOfficeHours();
   await seedBookings();
+  await seedRequests();
 
   // Everyone joins the official groups their role, department, section and courses imply.
   for (const user of people.values()) await reconcileUser(user._id, { notify: false });

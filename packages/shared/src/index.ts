@@ -8,4 +8,5 @@ export * from './coursework';
 export * from './dto';
 export * from './events';
 export * from './policy';
+export * from './requests';
 export * from './schemas';

@@ -1,5 +1,14 @@
 import { OFFICE_LABELS, type UserDTO } from '@cui/shared';
-import { Check, KeyRound, LayoutDashboard, LogOut, Monitor, Moon, Sun } from 'lucide-react';
+import {
+  Check,
+  KeyRound,
+  Landmark,
+  LayoutDashboard,
+  LogOut,
+  Monitor,
+  Moon,
+  Sun,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
@@ -14,6 +23,7 @@ import {
 } from '@/components/ui/menu';
 import { useCurrentUser } from '@/hooks/queries';
 import { useSignOut } from '@/hooks/useSignOut';
+import { hasServices } from '@/lib/nav';
 import { type ThemePreference, useTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import { type ConnectionStatus, useRealtime } from '@/state/realtime';
@@ -102,6 +112,11 @@ export function UserMenu({ variant }: { variant: 'rail' | 'tab' }) {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
+        {hasServices(me) && (
+          <DropdownMenuItem onSelect={() => navigate('/services')}>
+            <Landmark /> Services: requests and complaints
+          </DropdownMenuItem>
+        )}
         {me.role === 'admin' && (
           <DropdownMenuItem onSelect={() => navigate('/admin')}>
             <LayoutDashboard /> Admin console

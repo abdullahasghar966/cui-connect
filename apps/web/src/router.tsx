@@ -48,6 +48,13 @@ const AssignmentPage = lazy(() => import('@/pages/academics/AssignmentPage'));
 const QuizEditorPage = lazy(() => import('@/pages/academics/QuizEditorPage'));
 const QuizPage = lazy(() => import('@/pages/academics/QuizPage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
+const ServicesLayout = lazy(() => import('@/pages/services/ServicesLayout'));
+const ServicesIndex = lazy(() =>
+  import('@/pages/services/ServicesLayout').then((m) => ({ default: m.ServicesIndex })),
+);
+const RequestsPage = lazy(() => import('@/pages/services/RequestsPage'));
+const InboxPage = lazy(() => import('@/pages/services/InboxPage'));
+const RequestPage = lazy(() => import('@/pages/services/RequestPage'));
 
 function FullScreenSpinner() {
   return (
@@ -123,6 +130,17 @@ export const router = createBrowserRouter([
       { path: '/notifications', element: <NotificationsPage /> },
       { path: '/attend/:sessionId', element: <CheckInPage /> },
       { path: '/search', element: <SearchPage /> },
+      {
+        path: '/services',
+        element: <ServicesLayout />,
+        children: [
+          { index: true, element: <ServicesIndex /> },
+          { path: 'requests', element: <RequestsPage /> },
+          { path: 'complaints', element: <RequestsPage complaints /> },
+          { path: 'inbox', element: <InboxPage /> },
+          { path: 'requests/:requestId', element: <RequestPage /> },
+        ],
+      },
       {
         path: '/academics',
         element: <AcademicsLayout />,

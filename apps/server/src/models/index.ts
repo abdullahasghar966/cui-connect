@@ -27,6 +27,7 @@ import { Room } from './Room';
 import { SeatAssignment } from './SeatAssignment';
 import { Section } from './Section';
 import { ServerKey } from './ServerKey';
+import { ServiceRequest } from './ServiceRequest';
 import { StoredFile } from './StoredFile';
 import { Submission } from './Submission';
 import { Term } from './Term';
@@ -61,6 +62,7 @@ export * from './Room';
 export * from './SeatAssignment';
 export * from './Section';
 export * from './ServerKey';
+export * from './ServiceRequest';
 export * from './StoredFile';
 export * from './Submission';
 export * from './Term';
@@ -100,6 +102,7 @@ export const ALL_MODELS = [
   Booking,
   PushSubscription,
   ServerKey,
+  ServiceRequest,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

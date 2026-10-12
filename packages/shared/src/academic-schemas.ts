@@ -13,6 +13,13 @@ import {
   toMinutes,
 } from './academics';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
+import {
+  COMPLAINT_CATEGORIES,
+  ID_CARD_REASONS,
+  LEAVE_MAX_DAYS,
+  leaveDays,
+  REQUEST_STATUSES,
+} from './requests';
 import { objectIdSchema } from './schemas';
 
 export const courseCodeSchema = z
@@ -436,6 +443,58 @@ export const quizAnswerSchema = z.object({
     .max(QUIZ_LIMITS.maxOptions - 1),
 });
 
+// ---- Requests and complaints ----
+
+const purpose = z.string().trim().min(3, 'Say what it is for').max(300);
+
+export const newRequestSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('leave'),
+      from: dateSchema,
+      to: dateSchema,
+      reason: z.string().trim().min(10, 'Give a reason (a sentence or two)').max(1000),
+    })
+    .refine((r) => r.from <= r.to, {
+      message: 'The leave must end on or after it starts',
+      path: ['to'],
+    })
+    .refine((r) => leaveDays(r.from, r.to) <= LEAVE_MAX_DAYS, {
+      message: `One application can cover at most ${LEAVE_MAX_DAYS} days`,
+      path: ['to'],
+    }),
+  z.object({
+    kind: z.literal('transcript'),
+    copies: z.number().int().min(1).max(5),
+    purpose,
+  }),
+  z.object({ kind: z.literal('bonafide'), purpose }),
+  z.object({
+    kind: z.literal('idcard'),
+    cardReason: z.enum(ID_CARD_REASONS),
+    description: z.string().trim().max(500).nullish(),
+  }),
+  z.object({
+    kind: z.literal('complaint'),
+    category: z.enum(COMPLAINT_CATEGORIES),
+    subject: z.string().trim().min(3, 'Give it a short subject').max(120),
+    description: z.string().trim().min(10, 'Describe what happened').max(3000),
+  }),
+]);
+
+export const requestStatusSchema = z.object({
+  status: z.enum(REQUEST_STATUSES),
+  note: z.string().trim().max(1000).nullish(),
+});
+
+export const requestReplySchema = z.object({
+  body: z.string().trim().min(1, 'Write a reply').max(2000),
+});
+
+export const requestListSchema = z.object({
+  box: z.enum(['mine', 'inbox']).default('mine'),
+});
+
 // ---- Office-hour appointments ----
 
 export const bookingSchema = z.object({
@@ -475,4 +534,7 @@ export type QuizInput = z.input<typeof quizSchema>;
 export type QuizRefInput = z.infer<typeof quizRefSchema>;
 export type QuizAnswerInput = z.infer<typeof quizAnswerSchema>;
 export type BookingInput = z.infer<typeof bookingSchema>;
+export type NewRequestInput = z.input<typeof newRequestSchema>;
+export type RequestStatusInput = z.infer<typeof requestStatusSchema>;
+export type RequestReplyInput = z.infer<typeof requestReplySchema>;
 export type CancelBookingInput = z.infer<typeof cancelBookingSchema>;

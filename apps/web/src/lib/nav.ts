@@ -2,6 +2,7 @@ import type { UserDTO } from '@cui/shared';
 import {
   GraduationCap,
   House,
+  Landmark,
   LayoutDashboard,
   type LucideIcon,
   MessagesSquare,
@@ -15,6 +16,16 @@ export interface AppArea {
   /** Path prefixes that belong to this area. */
   matches: string[];
 }
+
+/** Teachers (batch advisors) and the offices that receive requests have an inbox. */
+export const handlesRequests = (me: Pick<UserDTO, 'role' | 'office'>) =>
+  me.role === 'faculty' ||
+  (me.role === 'staff' &&
+    (me.office === 'EXAM' || me.office === 'STUDENT_AFFAIRS' || me.office === 'DEPARTMENT'));
+
+/** Students use Services; so does everyone who handles their requests. */
+export const hasServices = (me: Pick<UserDTO, 'role' | 'office'>) =>
+  me.role === 'student' || handlesRequests(me);
 
 /** The top-level areas of the app a person can open, depending on their role. */
 export function areasFor(me: UserDTO): AppArea[] {
@@ -35,6 +46,15 @@ export function areasFor(me: UserDTO): AppArea[] {
       matches: ['/academics'],
     },
   ];
+  if (hasServices(me)) {
+    areas.push({
+      to: '/services',
+      label: 'Services',
+      hint: 'Requests and complaints',
+      icon: Landmark,
+      matches: ['/services'],
+    });
+  }
   if (me.role === 'admin') {
     areas.push({
       to: '/admin',

@@ -68,6 +68,7 @@ import type {
   MyAttendanceCourseDTO,
   MyExamDTO,
   MyResultsDTO,
+  NewRequestInput,
   NotificationsPage,
   OfficeInput,
   ProgramDTO,
@@ -76,6 +77,7 @@ import type {
   PushSubscriptionInput,
   QuizInput,
   QuizViewDTO,
+  RequestStatusInput,
   Role,
   RoomDTO,
   RoomFinderDTO,
@@ -84,6 +86,7 @@ import type {
   SeatingChartDTO,
   SectionDTO,
   SectionRefDTO,
+  ServiceRequestDTO,
   SlotCheckDTO,
   StartAttendanceInput,
   StudentRecordRefDTO,
@@ -353,6 +356,20 @@ export const api = {
       send<QuizViewDTO>(`/api/teaching/quizzes/${id}/${step}`, 'POST'),
     saveQuizMarks: (id: string) =>
       send<{ assessmentId: string; saved: number }>(`/api/teaching/quizzes/${id}/marks`, 'POST'),
+  },
+
+  services: {
+    requests: (box: 'mine' | 'inbox') =>
+      request<ServiceRequestDTO[]>(`/api/services/requests${query({ box })}`),
+    request: (id: string) => request<ServiceRequestDTO>(`/api/services/requests/${id}`),
+    create: (input: NewRequestInput) =>
+      send<ServiceRequestDTO>('/api/services/requests', 'POST', input),
+    setStatus: (id: string, input: RequestStatusInput) =>
+      send<ServiceRequestDTO>(`/api/services/requests/${id}/status`, 'POST', input),
+    reply: (id: string, body: string) =>
+      send<ServiceRequestDTO>(`/api/services/requests/${id}/replies`, 'POST', { body }),
+    withdraw: (id: string) =>
+      send<ServiceRequestDTO>(`/api/services/requests/${id}/withdraw`, 'POST'),
   },
 
   coursework: {

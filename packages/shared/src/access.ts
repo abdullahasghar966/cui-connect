@@ -151,3 +151,29 @@ export function canManageStudentAffairs(user: PolicyUser): Decision {
     ? ALLOW
     : officeOnly('STUDENT_AFFAIRS', 'do that');
 }
+
+/** Where a request was sent: a person (a batch advisor) or an office (of a department). */
+export interface RequestRoute {
+  office: Office | null;
+  departmentId: string | null;
+  userId: string | null;
+}
+
+/**
+ * Handle a student's request or complaint: the person it was sent to, or staff of the office it
+ * was sent to (a department office only for its own department). IT administrators are not
+ * included: leave reasons and complaints are personal.
+ */
+export function canHandleRequest(user: PolicyUser, route: RequestRoute): Decision {
+  if (!user.active) return inactive;
+  if (route.userId && route.userId === user.id) return ALLOW;
+  if (
+    route.office &&
+    inOffice(user, route.office) &&
+    (route.office !== 'DEPARTMENT' ||
+      (!!route.departmentId && user.departmentId === route.departmentId))
+  ) {
+    return ALLOW;
+  }
+  return deny('NOT_ALLOWED', 'This request is handled by someone else.');
+}

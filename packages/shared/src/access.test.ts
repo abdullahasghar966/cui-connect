@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canHandleRequest,
   canManageCalendar,
   canManageCampus,
   canManageCatalog,
@@ -120,5 +121,30 @@ describe('offices and setup', () => {
     for (const check of [canManageExams, canManageFees, canManageCalendar, canManageCampus]) {
       expect(allowed(check(admin))).toBe(true);
     }
+  });
+});
+
+describe('requests and complaints', () => {
+  it('go to the person or office they were sent to, and nobody else', () => {
+    const toAdvisor = { office: null, departmentId: CS, userId: 'imran' };
+    expect(canHandleRequest(imran, toAdvisor).allowed).toBe(true);
+    expect(canHandleRequest(fatima, toAdvisor).allowed).toBe(false);
+    expect(canHandleRequest(hira, toAdvisor).allowed).toBe(false);
+    // IT runs the system, but leave reasons and complaints are personal.
+    expect(canHandleRequest(admin, toAdvisor).allowed).toBe(false);
+
+    const toExams = { office: 'EXAM' as const, departmentId: null, userId: null };
+    expect(canHandleRequest(examOffice, toExams).allowed).toBe(true);
+    expect(canHandleRequest(affairs, toExams).allowed).toBe(false);
+
+    const toCsOffice = { office: 'DEPARTMENT' as const, departmentId: CS, userId: null };
+    expect(canHandleRequest(csOffice, toCsOffice).allowed).toBe(true);
+    const eeOffice = user({
+      id: 'ee-office',
+      role: 'staff',
+      office: 'DEPARTMENT',
+      departmentId: EE,
+    });
+    expect(canHandleRequest(eeOffice, toCsOffice).allowed).toBe(false);
   });
 });

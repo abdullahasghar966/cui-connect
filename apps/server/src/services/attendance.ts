@@ -76,6 +76,7 @@ import {
   type StudentLite,
   studentRef,
 } from './offering-context';
+import { studentsOnLeave } from './requests';
 import { getCampusSettings } from './settings';
 import { currentTerm } from './terms';
 import { offeringFacts } from './timetable';
@@ -356,12 +357,14 @@ async function close(
   const missing = ctx.offering.studentIds.filter((id) => !marked.has(String(id)));
   if (missing.length) {
     const now = new Date();
+    // An approved leave covering the day means "leave", not "absent".
+    const onLeave = await studentsOnLeave(missing, session.date);
     await AttendanceRecord.insertMany(
       missing.map((studentId) => ({
         sessionId: session._id,
         offeringId: ctx.offering._id,
         studentId,
-        status: 'absent',
+        status: onLeave.has(String(studentId)) ? 'leave' : 'absent',
         method: 'auto',
         markedById: null,
         markedAt: now,
