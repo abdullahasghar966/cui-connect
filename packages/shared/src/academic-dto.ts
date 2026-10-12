@@ -4,6 +4,7 @@ import type {
   AttendanceMethod,
   AttendanceStatus,
   AttendanceSummary,
+  CalendarKind,
   ClassKind,
   CourseStanding,
   ExamKind,
@@ -157,6 +158,8 @@ export interface ClassOccurrenceDTO {
   movedFrom: { date: string; start: string } | null;
   /** The instructor (and IT) can cancel, move or restore this class. */
   canChange: boolean;
+  /** Cancelled by a holiday or exam period on the academic calendar (not by the teacher). */
+  suspended: boolean;
 }
 
 export interface TimetableWeekDTO {
@@ -356,6 +359,36 @@ export interface MyResultsDTO {
   creditsEarned: number;
   /** Newest first. */
   history: TermResultDTO[];
+}
+
+// ---- Calendar ----
+
+export interface CalendarEventDTO {
+  id: string;
+  title: string;
+  kind: CalendarKind;
+  startsOn: string;
+  endsOn: string;
+  description: string | null;
+}
+
+/** One entry on a person's own calendar: a class, a paper, or an academic calendar entry. */
+export interface CalendarItemDTO {
+  id: string;
+  kind: 'class' | 'exam' | 'academic';
+  title: string;
+  detail: string | null;
+  date: string;
+  /** Null for all-day entries. */
+  start: string | null;
+  end: string | null;
+  link: string | null;
+  /** Classes: cancelled (also on holidays) or moved here from another date. */
+  status: 'cancelled' | 'moved' | null;
+  /** Academic entries: what kind of date it is. */
+  category: CalendarKind | null;
+  /** Academic entries that span several days: the last one (repeated on each day it covers). */
+  endsOn: string | null;
 }
 
 // ---- Student records: transcript and degree progress ----

@@ -1,4 +1,4 @@
-import { expect, PEOPLE, test } from './fixtures';
+import { expect, goToClearWeek, PEOPLE, test } from './fixtures';
 
 test('a student lands on Home with their term and semester', async ({ person }) => {
   const hira = await person(PEOPLE.hira);
@@ -18,7 +18,7 @@ test('a teacher cancels a class and the student sees it live', async ({ person }
   const hira = await person(PEOPLE.hira);
   for (const page of [imran, hira]) {
     await page.goto('/academics/timetable');
-    await page.getByRole('button', { name: 'Next week' }).click();
+    await goToClearWeek(page);
   }
   const awt = /^CSC337 Advanced Web Technologies · BCS-7A/;
   await imran.getByRole('button', { name: awt }).first().click();

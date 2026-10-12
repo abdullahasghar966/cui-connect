@@ -9,6 +9,7 @@ import { resetPresence } from './realtime/presence';
 import type { IoServer } from './realtime/types';
 import { seedDatabase } from './seed/seed';
 import { ensureAcademicDefaults } from './services/academic-setup';
+import { startReminderScheduler } from './services/reminders';
 
 export interface StartOptions {
   port: number;
@@ -18,6 +19,8 @@ export interface StartOptions {
   autoSeed?: boolean;
   /** Wipe and re-seed on every start (used by end-to-end tests). */
   resetSeed?: boolean;
+  /** Send due reminders once a minute (off in unit tests, which call them directly). */
+  reminders?: boolean;
 }
 
 export interface RunningServer {
@@ -48,12 +51,14 @@ export async function startServer(options: StartOptions): Promise<RunningServer>
     httpServer.listen(options.port, () => resolve());
   });
   const { port } = httpServer.address() as AddressInfo;
+  const stopReminders = options.reminders === false ? () => {} : startReminderScheduler();
 
   return {
     url: `http://localhost:${port}`,
     port,
     io: realtime.io,
     close: async () => {
+      stopReminders();
       await realtime.close();
       resetPresence();
       await mongoose.disconnect();

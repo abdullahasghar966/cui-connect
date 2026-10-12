@@ -9,6 +9,7 @@ import {
   BLOCKING_CLASHES,
   campusClock,
   campusInstant,
+  coversDate,
   DEFAULT_MIN_ATTENDANCE,
   defaultTermDates,
   EXAM_SLOTS,
@@ -31,6 +32,7 @@ import {
   type AttendanceRecordDoc,
   AttendanceSession,
   type AttendanceSessionDoc,
+  CalendarEvent,
   CatalogCourse,
   type CatalogCourseDoc,
   ClassSlot,
@@ -54,7 +56,15 @@ import {
   User,
   type UserDoc,
 } from '../models';
-import { CATALOG, PROGRAMS, ROOMS, SEED_CURRENT_TERM, SEED_TERMS } from './academic-data';
+import { CALENDAR, CATALOG, PROGRAMS, ROOMS, SEED_CURRENT_TERM, SEED_TERMS } from './academic-data';
+
+const isHoliday = (date: string) =>
+  CALENDAR.some((e) => e.kind === 'holiday' && coversDate(e, date));
+
+/** Holidays and exam weeks: no regular classes (so no attendance). */
+const noClasses = (date: string) =>
+  CALENDAR.some((e) => (e.kind === 'holiday' || e.kind === 'exams') && coversDate(e, date));
+
 import type { DeptCode } from './data';
 
 export interface AcademicSeed {
@@ -78,6 +88,7 @@ export async function seedAcademicStructure(
   if (!currentTerm) throw new Error('Seed data error: missing current term');
 
   await Room.insertMany(ROOMS.map((r) => ({ examRows: 0, examCols: 0, ...r })));
+  await CalendarEvent.insertMany(CALENDAR.map((e) => ({ description: null, ...e })));
   await CatalogCourse.insertMany(
     CATALOG.map((c) => ({
       code: c.code,
@@ -412,9 +423,10 @@ export async function seedExams(offerings: CourseOfferingDoc[], term: TermDoc): 
     ['sessional2', 11],
   ] as const) {
     const monday = mondayOf(addDays(term.startsOn, (week - 1) * 7));
-    const slots = [0, 1, 2, 3, 4, 5].flatMap((d) =>
-      EXAM_SLOTS.map(([start, end]) => ({ date: addDays(monday, d), start, end })),
-    );
+    const slots = [0, 1, 2, 3, 4, 5]
+      .map((d) => addDays(monday, d))
+      .filter((date) => !isHoliday(date))
+      .flatMap((date) => EXAM_SLOTS.map(([start, end]) => ({ date, start, end })));
     const used = slots.map(() => ({ students: new Set<string>(), rooms: new Set<string>() }));
     for (const code of codes) {
       const list = byCode.get(code) ?? [];
@@ -482,18 +494,36 @@ const ATTENDANCE_STORIES: Record<string, { course: string; state: 'short' | 'war
 };
 
 /**
- * How many of `total` classes to miss to land in a state, whatever the date of the seed:
- * short = below the minimum; warning = at least the minimum but within the warning margin.
+ * How many of `total` classes to miss (and take approved leave for, which doesn't count) to land
+ * in a state whatever the date of the seed: short = below the minimum; warning = at least the
+ * minimum but within the warning margin. Some totals need a leave day to hit the warning band
+ * (12/14 is 85.7%, 11/14 is 78.6%; with one leave, 11/13 is 84.6%).
  */
-function absencesFor(total: number, state: 'short' | 'warning'): number {
+function storyPlan(total: number, state: 'short' | 'warning'): { absent: number; leave: number } {
   // Whole-number percentages: 0.2 * 10 is 1.9999… in floating point.
   const minimum = DEFAULT_MIN_ATTENDANCE;
   const warnUntil = DEFAULT_MIN_ATTENDANCE + ATTENDANCE_WARNING_MARGIN;
-  if (state === 'short') return Math.min(total, Math.floor((total * (100 - minimum)) / 100) + 1);
-  // Fewest absences that drop below the warning line, if that still meets the minimum.
-  const k = Math.floor((total * (100 - warnUntil)) / 100) + 1;
-  return (total - k) * 100 >= minimum * total ? k : Math.floor((total * (100 - minimum)) / 100);
+  for (let leave = 0; leave <= Math.min(3, total - 1); leave++) {
+    const held = total - leave;
+    for (let absent = 0; absent <= held; absent++) {
+      const attended = (held - absent) * 100;
+      const fits =
+        state === 'short'
+          ? attended < minimum * held
+          : attended >= minimum * held && attended < warnUntil * held;
+      if (fits) return { absent, leave };
+    }
+  }
+  return { absent: 0, leave: 0 };
 }
+
+/** `count` positions spread evenly over `total` (offset so two spreads don't collide). */
+const spread = (count: number, total: number, offset: number) =>
+  new Set(
+    Array.from({ length: count }, (_, j) =>
+      Math.floor(((j + offset) * total) / Math.max(1, count)),
+    ),
+  );
 
 /**
  * Attendance for every class of the term that has already happened (closed sessions), mostly
@@ -517,6 +547,7 @@ export async function seedAttendance(
     const own = slots.filter((s) => String(s.offeringId) === String(offering._id));
     const dates: { date: string; slot: ClassSlotDoc }[] = [];
     for (let date = term.startsOn; date < today && date <= term.endsOn; date = addDays(date, 1)) {
+      if (noClasses(date)) continue; // holidays and exam weeks: no classes, no attendance
       for (const slot of own) if (slot.day === weekdayOf(date)) dates.push({ date, slot });
     }
     dates.sort((a, b) => a.date.localeCompare(b.date) || a.slot.start.localeCompare(b.slot.start));
@@ -554,12 +585,18 @@ export async function seedAttendance(
       const story = ATTENDANCE_STORIES[regNo];
       let status: AttendanceStatus;
       if (story?.course === meeting.offering.code) {
-        // Spread a fixed number of absences evenly across the term.
-        const absences = absencesFor(total, story.state);
-        const absentAt = new Set(
-          Array.from({ length: absences }, (_, j) => Math.floor(((j + 0.5) * total) / absences)),
-        );
-        status = absentAt.has(meeting.index) ? 'absent' : 'present';
+        // Spread a fixed number of absences (and any leave) evenly across the term.
+        const plan = storyPlan(total, story.state);
+        const absentAt = spread(plan.absent, total, 0.5);
+        // Leave on the first classes that aren't absences (never on the same day).
+        const leaveAt = Array.from({ length: total }, (_, i) => i)
+          .filter((i) => !absentAt.has(i))
+          .slice(0, plan.leave);
+        status = absentAt.has(meeting.index)
+          ? 'absent'
+          : leaveAt.includes(meeting.index)
+            ? 'leave'
+            : 'present';
       } else {
         const r = roll(`${regNo}:${meeting.offering.code}:${meeting.date}:${meeting.start}`);
         status = r < 4 ? 'absent' : r < 9 ? 'late' : r < 10 ? 'leave' : 'present';

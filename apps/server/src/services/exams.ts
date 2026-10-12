@@ -33,6 +33,7 @@ import {
   parse,
 } from '../lib/errors';
 import {
+  CalendarEvent,
   CourseOffering,
   type CourseOfferingDoc,
   Exam,
@@ -251,15 +252,28 @@ function checkPlan(plan: Plan, ctx: TermExams, examId?: string): ExamCheckDTO {
 
 /** Timetabled classes in the chosen rooms at that time: the paper takes the room over them. */
 async function classesInRooms(actor: UserDoc, plan: Plan): Promise<string[]> {
-  if (!plan.rooms.length) return [];
+  const holiday = await CalendarEvent.findOne({
+    kind: 'holiday',
+    startsOn: { $lte: plan.data.date },
+    endsOn: { $gte: plan.data.date },
+  }).lean();
+  const notes = holiday
+    ? [
+        `${formatShortDate(plan.data.date)} is a holiday on the academic calendar (${holiday.title}).`,
+      ]
+    : [];
+  if (!plan.rooms.length) return notes;
   const rooms = new Set(plan.rooms.map((r) => String(r._id)));
   const classes = await classesOn(actor, plan.data.date);
-  return classes
-    .filter((c) => c.room && rooms.has(c.room.id) && eventsOverlap(plan.data, c))
-    .map(
-      (c) =>
-        `${c.room?.name} normally has ${c.slot.code} · ${c.slot.sectionName ?? ''} then (${formatTimeRange(c.start, c.end)}); the paper takes the room.`,
-    );
+  return [
+    ...notes,
+    ...classes
+      .filter((c) => c.room && rooms.has(c.room.id) && eventsOverlap(plan.data, c))
+      .map(
+        (c) =>
+          `${c.room?.name} normally has ${c.slot.code} · ${c.slot.sectionName ?? ''} then (${formatTimeRange(c.start, c.end)}); the paper takes the room.`,
+      ),
+  ];
 }
 
 export async function checkExam(

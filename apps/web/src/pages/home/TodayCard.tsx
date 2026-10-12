@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
 import { cn, hueFor } from '@/lib/utils';
-import { useCampusClock } from '@/pages/academics/TimetablePage';
+import { BreakNotice, useCampusClock } from '@/pages/academics/TimetablePage';
 import { HomeCard } from './HomeCard';
 
 function until(o: ClassOccurrenceDTO, now: Date): string {
@@ -88,6 +88,7 @@ export function TodayCard() {
         <div className="h-24" />
       ) : (
         <div className="space-y-3 p-4">
+          <BreakNotice occurrences={data.today} className="" />
           {data.current && (
             <Highlight
               label="Now"

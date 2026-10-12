@@ -36,6 +36,7 @@ const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly string[]>> = 
   results: keys.results,
   attendance: keys.myAttendance,
   exams: keys.myExams,
+  events: ['academics', 'calendar'],
 };
 
 export function useRealtimeSync(): void {
@@ -207,8 +208,11 @@ export function useRealtimeSync(): void {
 
     const onSessionRevoked = ({ reason }: { reason: string }) => endSession(reason);
 
+    // Classes moved, cancelled or a holiday added: everything built from the timetable refreshes.
     const onTimetableChanged = () => {
       void qc.invalidateQueries({ queryKey: keys.timetable });
+      void qc.invalidateQueries({ queryKey: ['academics', 'calendar'] });
+      void qc.invalidateQueries({ queryKey: ['academics', 'rooms', 'finder'] });
     };
 
     const onNotification = (notification: NotificationDTO) => {

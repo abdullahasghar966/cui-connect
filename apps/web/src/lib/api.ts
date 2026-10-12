@@ -10,6 +10,9 @@ import type {
   AttendanceSheetDTO,
   AttendanceStatus,
   AuditDTO,
+  CalendarEventDTO,
+  CalendarEventInput,
+  CalendarItemDTO,
   CampusSettingsDTO,
   CampusSettingsInput,
   CatalogCourseDTO,
@@ -224,6 +227,16 @@ export const api = {
     restoreClass: (slotId: string, date: string) =>
       send<{ ok: true }>(`/api/academics/timetable/slots/${slotId}/changes/${date}`, 'DELETE'),
     settings: () => request<CampusSettingsDTO>('/api/academics/settings'),
+    calendar: (from: string, to: string) =>
+      request<CalendarEventDTO[]>(`/api/academics/calendar${query({ from, to })}`),
+    myCalendar: (from: string, to: string) =>
+      request<CalendarItemDTO[]>(`/api/academics/calendar/mine${query({ from, to })}`),
+    saveCalendarEvent: (input: CalendarEventInput, eventId?: string) =>
+      eventId
+        ? send<CalendarEventDTO>(`/api/academics/calendar/${eventId}`, 'PUT', input)
+        : send<CalendarEventDTO>('/api/academics/calendar', 'POST', input),
+    deleteCalendarEvent: (eventId: string) =>
+      send<{ ok: true }>(`/api/academics/calendar/${eventId}`, 'DELETE'),
     myAttendance: () => request<MyAttendanceCourseDTO[]>('/api/academics/attendance'),
     results: () => request<MyResultsDTO>('/api/academics/results'),
     transcript: (studentId?: string) =>

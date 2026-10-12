@@ -7,8 +7,8 @@
 > - the ordered list of remaining tasks;
 > - the conventions (including **push to GitHub after every completed task**).
 >
-> **Last updated:** Sunday 2026-10-11, about 07:30 Pakistan time.
-> **Current work:** the **university features build** (§1a). Stage A, all of Stage B and C1–C4 are pushed. Next: C5 in the §1a.2 checklist (docs and the demo-site question come at the end).
+> **Last updated:** Monday 2026-10-12 (Pakistan time).
+> **Current work:** the **university features build** (§1a). Stage A, all of Stage B and C1–C5 are pushed. Next: C6 → C10, then the docs and the demo-site question.
 > The assignment deadline (Fri 2026-10-09) has passed; this is now an extension project.
 > **Repository:** https://github.com/abdullahasghar966/cui-connect (public), branch `main`.
 > **Live site:** https://cui-connect.onrender.com. It **auto-deploys on every push to `main`**, so never push failing code.
@@ -17,10 +17,12 @@
 
 ```
 Read PROJECT_CONTEXT.md first, especially §1a (university features build). Continue the
-checklist in §1a.2 in order from the first unticked item (B2 → B6, then C1 → C10), using the
-build → test → verify loop. After each feature: run all gates (lint, typecheck, npm test,
-npm run e2e, npm audit), commit, push to origin main, and tick it off in §1a.2.
-Plans for these features are pre-approved; explain anything I need to decide in simple terms.
+checklist in §1a.2 from the first unticked item (if an entry says "written, not committed",
+finish it from the state described there), then the docs and the demo-site question, using
+the build → test → verify loop. After each feature: run all gates (lint, typecheck, npm test,
+npm run e2e, npm audit), commit, push to origin main, and tick it off in §1a.2. Plans for these
+features are pre-approved; explain anything I need to decide in simple terms. Do not use cloud
+sessions; work only in this local session.
 ```
 
 ---
@@ -37,9 +39,9 @@ Plans for these features are pre-approved; explain anything I need to decide in 
 | GUI first run + deployment (user request 2026-10-09: "everything through GUI", one link) | **Code done** (`a8a6d4a`): browser setup page guarded by `SETUP_CODE`, 5-step admin checklist, self-service change password, `TRUST_PROXY`, `render.yaml` (Render free, Singapore + MongoDB Atlas). Vercel rejected: free-plan WebSockets end after 5 min and don't broadcast across instances. **Deployed 2026-10-09: https://cui-connect.onrender.com** (Render free, Singapore; Atlas M0, AWS Mumbai). The first deploy crashed on a wrong `MONGODB_URI`; startup now explains Mongo connection errors in plain words (`b19b9e9`). Verified from outside: health OK, setup closed, demo accounts 404, HSTS on. The user created the admin through the setup page. `docs/USER_GUIDE.md` covers every feature plus a 10-step viva demo |
 | Final verification | **Done.** All gates green, `npm run build` + `npm start` smoke test as two users (localhost + 127.0.0.1): live message and live delete |
 | Lint (Biome) / typecheck (TS 7) | Green |
-| Unit + integration tests (Vitest) | **208 passing after C4** |
-| End-to-end tests (Playwright) | **24 passing after C4**; 3 utility specs are skipped by design |
-| University features | Stage A, B1–B6 and C1–C4 pushed. See §1a |
+| Unit + integration tests (Vitest) | **215 passing after C5** |
+| End-to-end tests (Playwright) | **25 passing after C5**; 3 utility specs are skipped by design |
+| University features | Stage A, B1–B6 and C1–C5 pushed. See §1a |
 | `npm audit` | 0 vulnerabilities |
 | GitHub | Public repo `abdullahasghar966/cui-connect`. All work up to this file is pushed |
 
@@ -92,7 +94,7 @@ Plans for these features are pre-approved; explain anything I need to decide in 
 - [x] **C2 Directory and search.** Pushed. `User.officeLocation` + `officeHours[]` (seeded clear of each teacher's classes by `seedOfficeHours`). `GET /api/academics/teachers/directory?q&departmentId` (office, hours, this term's courses, `canMessage` from `messageableIds()` in `services/direct.ts`, the same DM rules) and `PUT /api/academics/me/office` (faculty only). `GET /api/search?q` (courses, teachers, rooms, messages) and `/api/search/messages?q` (50): messages only from `readableGroups()` (memberships filtered by `canRead`; IT can't see DMs); ranked by a new text index on `Message.body`, then a word-prefix regex; snippets around the match; DMs named after the other person. Web: `/academics/teachers` (cards, in-office-hours badge, Message, Edit my office), Ctrl+K is now "Search CUI Connect" (conversations first, then courses, teachers, rooms, messages, "Search all messages"), `/search?q=` page, and `/chat/:id?message=` loads older pages until the message is there, then scrolls to and highlights it.
 - [x] **C3** (attendance) was fully covered by B3.
 - [x] **C4 What-do-I-need, transcript, degree progress.** Pushed. `services/records.ts`: `GET /api/academics/transcript?studentId` (terms oldest first, term GPA, CGPA, credits earned / required), `GET /api/academics/progress?studentId` (plan by semester: passed / failed / current / planned by the latest attempt, outside-plan passes, credits in progress, current semester) and `GET /api/academics/records/students?q` (who the viewer may open: everyone for Exam Office/IT, the department for HODs, taught/advised students for teachers, nobody for students). Access via `canViewStudentRecord` with teaches/advises facts. Web: `pages/academics/records-ui.tsx` (`RecordTabs`, `StudentPicker`, `WhatIfPanel` = `gradeTargets` + a what-if slider on Results), `/academics/transcript` (printable via `data-print`) and `/academics/progress`; "Student records" in the Academics sidebar for teachers, the Exam Office and IT.
-- [ ] C5 Academic calendar, My calendar, reminders
+- [x] **C5 Academic calendar, My calendar, reminders.** Pushed. Shared `CALENDAR_KINDS` (holiday, exams, registration, deadline, event; exams = "Exam period (no classes)"), `coversDate`, `CalendarEventDTO`, `CalendarItemDTO` (academic entries repeat on each day they cover, with `endsOn` for multi-day ones), `ClassOccurrenceDTO.suspended`, schemas `calendarEventSchema`, `calendarQuerySchema` (≤ 93 days, My calendar) and `academicCalendarQuerySchema` (≤ 400 days). Model `CalendarEvent`; `services/calendar.ts` (save/delete need `canManageCalendar` = Director's Office or IT; a new or moved holiday notifies all students and teachers, type `events`, and broadcasts `timetable:changed`; `myCalendar` merges academic entries, the viewer's classes (suspended ones skipped) and published papers with seats). Routes `GET /api/academics/calendar`, `GET /calendar/mine`, `POST /calendar`, `PUT/DELETE /calendar/:id`. **Holidays and exam periods suspend classes:** `loadTerm()` loads `NO_CLASS_KINDS` into `TermContext.holidays` (a public holiday wins over an exam week on the same day); `expand()` marks those days' classes `cancelled`, `canChange: false`, `suspended: true` with a note ("Holiday: Iqbal Day" / "Sessional II week: no regular classes"), including a class moved onto a day that later became a holiday; `changeClass` refuses moving a class onto such a day; the date-sheet check warns about papers on holidays. `services/reminders.ts`: `runReminders(now)` at/after 18:00 campus time sends "Tomorrow: CSC337 Sessional II at 9:00 AM" (with seat) and "Tomorrow is a holiday", at/after 08:00 "Today: <deadline/registration>"; keys `remind:…` plus an in-memory set; `startReminderScheduler()` runs it every minute from `server.ts` (`StartOptions.reminders`, off in tests). Seed `CALENDAR` (FA26: Sessional I week 5–10 Oct, fee deadline 30 Oct, Iqbal Day Mon 9 Nov, Sessional II week 9–14 Nov, registration 14–19 Dec, Quaid-e-Azam Day Fri 25 Dec, terminal exams 11–22 Jan…); attendance and exam seeds skip those days. Web: `/academics/calendar` (`CalendarPage.tsx`: My calendar month grid, day panel and Coming up; Academic calendar list with Add/Edit/Remove for the Director's Office and IT); `BreakNotice` (exported from `TimetablePage.tsx`) explains suspended days on the timetable and Home's Today card. Tests: `calendar.test.ts` (7), `clearWeekMonday()` / `goToClearWeek()` keep date-sensitive tests off holidays and exam weeks.
 - [ ] C6 Assignments + submissions (GridFS), course materials, live quizzes
 - [ ] C7 @mentions, pinned messages, reactions, replies, anonymous questions, office-hour booking, web push
 - [ ] C8 Requests/applications, fee status, course registration, teacher evaluation, complaints
@@ -263,6 +265,12 @@ Plans for these features are pre-approved; explain anything I need to decide in 
   - **C10 Profile:** profile with a GridFS photo; ID card with a signed QR leading to a public `/verify/:token` page; notification settings per type and for push.
 
 ### 1a.6 Environment notes learned in this build (Windows, this machine)
+- **The user does not want cloud sessions used.** Work only in the local session.
+- **GitHub branch `wip/timetable`** is an old backup of unfinished B1, now obsolete (B1 is on `main`). Offer to delete it (`git push origin --delete wip/timetable`); don't delete without a yes.
+- **Editing files from Bash:** heredocs that contain both quotes and `$` sometimes fail to parse, and JSON patch files can't hold regex escapes like a backslash-d. Prefer the Edit/Write tools; Bash works for `node` scripts written to the scratchpad.
+- **Node scripts that edit text:** never pass a replacement *string* containing `$` to `String.replace` (`` $` `` and `$&` are special: one such edit pasted the whole file into the middle of this file). Use `slice()` or a replacement function.
+- **Mongoose 9** refuses update pipelines (arrays) unless the query passes `{ updatePipeline: true }`.
+- **Tests and dates:** server tests use `clearWeekMonday()` and browser tests `goToClearWeek()` so they never land on a holiday or exam week.
 - **Never use PowerShell `.Replace()` scripts for TypeScript template literals.** PowerShell treats the backtick as its escape character and swallowed them. Use the Edit tool for anything with backticks or `${…}`.
 - **Bulk text edits:** use `[IO.File]::ReadAllText` / `WriteAllText(..., (New-Object Text.UTF8Encoding $false))` (no BOM). `Get-Content` shows UTF-8 like `·` and `…` as mojibake, but the files are fine.
 - **Biome a11y:** `aria-label` on a plain `<span>` fails lint. Use an `sr-only` child instead.

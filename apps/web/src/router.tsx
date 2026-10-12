@@ -41,6 +41,7 @@ const RoomFinderPage = lazy(() => import('@/pages/academics/RoomFinderPage'));
 const TeachersPage = lazy(() => import('@/pages/academics/TeachersPage'));
 const TranscriptPage = lazy(() => import('@/pages/academics/TranscriptPage'));
 const ProgressPage = lazy(() => import('@/pages/academics/ProgressPage'));
+const CalendarPage = lazy(() => import('@/pages/academics/CalendarPage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
 
 function FullScreenSpinner() {
@@ -137,6 +138,7 @@ export const router = createBrowserRouter([
           { path: 'teachers', element: <TeachersPage /> },
           { path: 'transcript', element: <TranscriptPage /> },
           { path: 'progress', element: <ProgressPage /> },
+          { path: 'calendar', element: <CalendarPage /> },
         ],
       },
       {

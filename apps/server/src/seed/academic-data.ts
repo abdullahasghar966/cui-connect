@@ -10,6 +10,50 @@ import type { DeptCode } from './data';
 export const SEED_TERMS = ['FA23', 'SP24', 'FA24', 'SP25', 'FA25', 'SP26', 'FA26'] as const;
 export const SEED_CURRENT_TERM = 'FA26';
 
+/** The Fall 2026 academic calendar (two real public holidays: Iqbal Day and Quaid-e-Azam Day). */
+export const CALENDAR: {
+  title: string;
+  kind: 'holiday' | 'exams' | 'registration' | 'deadline' | 'event';
+  startsOn: string;
+  endsOn: string;
+  description?: string;
+}[] = [
+  { title: 'Classes begin', kind: 'event', startsOn: '2026-09-01', endsOn: '2026-09-01' },
+  {
+    title: 'Last day to add or drop courses',
+    kind: 'deadline',
+    startsOn: '2026-09-14',
+    endsOn: '2026-09-14',
+    description: 'Changes after today need the HOD’s approval.',
+  },
+  { title: 'Sessional I week', kind: 'exams', startsOn: '2026-10-05', endsOn: '2026-10-10' },
+  {
+    title: 'Fee deadline (second instalment)',
+    kind: 'deadline',
+    startsOn: '2026-10-30',
+    endsOn: '2026-10-30',
+    description: 'A late fee applies from tomorrow.',
+  },
+  { title: 'Iqbal Day', kind: 'holiday', startsOn: '2026-11-09', endsOn: '2026-11-09' },
+  { title: 'Sessional II week', kind: 'exams', startsOn: '2026-11-09', endsOn: '2026-11-14' },
+  {
+    title: 'Course registration for Spring 2027',
+    kind: 'registration',
+    startsOn: '2026-12-14',
+    endsOn: '2026-12-19',
+    description: 'Register on the portal; your batch advisor approves.',
+  },
+  {
+    title: 'Quaid-e-Azam Day',
+    kind: 'holiday',
+    startsOn: '2026-12-25',
+    endsOn: '2026-12-25',
+  },
+  { title: 'Last day of classes', kind: 'event', startsOn: '2027-01-08', endsOn: '2027-01-08' },
+  { title: 'Terminal exams', kind: 'exams', startsOn: '2027-01-11', endsOn: '2027-01-22' },
+  { title: 'Results announced', kind: 'event', startsOn: '2027-01-29', endsOn: '2027-01-29' },
+];
+
 export interface SeedRoom {
   name: string;
   block: string;

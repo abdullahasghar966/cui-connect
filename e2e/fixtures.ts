@@ -70,6 +70,18 @@ export async function openConversation(page: Page, name: string) {
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
 }
 
+/**
+ * On the timetable, moves to the next week with no cancelled classes (holidays cancel a whole
+ * day), so tests that cancel a class start from a normal week.
+ */
+export async function goToClearWeek(page: Page) {
+  for (let i = 0; i < 6; i++) {
+    await page.getByRole('button', { name: 'Next week' }).click();
+    await expect(page.getByRole('button', { name: /^[A-Z]{3}\d{3} / }).first()).toBeVisible();
+    if (!(await page.getByRole('button', { name: /cancelled$/ }).count())) return;
+  }
+}
+
 export function composer(page: Page) {
   return page.getByRole('textbox', { name: /^Message / });
 }

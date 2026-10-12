@@ -12,7 +12,15 @@ import {
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { ClassSlot, CourseOffering, Section } from '../src/models';
 import { todayFor } from '../src/services/timetable';
-import { ACCOUNTS, nextEvent, noEvent, startTestApp, type TestApp, userBy } from './helpers';
+import {
+  ACCOUNTS,
+  clearWeekMonday,
+  nextEvent,
+  noEvent,
+  startTestApp,
+  type TestApp,
+  userBy,
+} from './helpers';
 
 let app: TestApp;
 
@@ -43,7 +51,8 @@ async function sectionSlots(cookie: string, sectionName: string): Promise<ClassS
 }
 
 /** The date of `day` (1 = Monday) in the week after this one. */
-const nextWeek = (day: number) => addDays(mondayOf(campusClock().date), 7 + day - 1);
+/** The date of `day` (1 = Monday) in the next week without a holiday. */
+const nextWeek = (day: number) => addDays(clearWeekMonday(), day - 1);
 
 describe('the seeded timetable', () => {
   it('has no double-booked room, teacher or section', async () => {

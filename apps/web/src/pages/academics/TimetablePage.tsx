@@ -29,6 +29,50 @@ import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
 import { cn, courseHues } from '@/lib/utils';
 
+/** The holidays and exam periods that suspend these classes, each with the dates it covers. */
+export function classBreaks(occurrences: ClassOccurrenceDTO[]): { note: string; dates: string }[] {
+  const byNote = new Map<string, string[]>();
+  for (const o of occurrences) {
+    if (!o.suspended || !o.note) continue;
+    const dates = byNote.get(o.note) ?? [];
+    if (!dates.includes(o.date)) dates.push(o.date);
+    byNote.set(o.note, dates);
+  }
+  return [...byNote].map(([note, dates]) => {
+    const sorted = dates.sort();
+    const first = formatShortDate(sorted[0] ?? '');
+    const last = formatShortDate(sorted[sorted.length - 1] ?? '');
+    return { note, dates: first === last ? first : `${first} – ${last}` };
+  });
+}
+
+/** A strip explaining why classes are cancelled (a holiday or an exam period). */
+export function BreakNotice({
+  occurrences,
+  className = 'mb-3',
+}: {
+  occurrences: ClassOccurrenceDTO[];
+  className?: string;
+}) {
+  const breaks = classBreaks(occurrences);
+  if (!breaks.length) return null;
+  return (
+    <div
+      role="note"
+      className={cn(
+        'space-y-0.5 rounded-lg border border-warning/25 bg-warning-soft px-3 py-2 text-[13.5px] text-warning',
+        className,
+      )}
+    >
+      {breaks.map((b) => (
+        <p key={b.note}>
+          <span className="font-semibold">{b.note}</span> · {b.dates}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 /** Re-renders every minute so "now" lines and countdowns stay current. */
 export function useCampusClock() {
   const [clock, setClock] = useState(() => campusClock());
@@ -237,7 +281,7 @@ export default function TimetablePage() {
   const thisWeek = mondayOf(clock.date);
   const count =
     data?.days.reduce(
-      (n, d) => n + d.occurrences.filter((o) => o.status !== 'moved-out').length,
+      (n, d) => n + d.occurrences.filter((o) => o.status !== 'moved-out' && !o.suspended).length,
       0,
     ) ?? 0;
 
@@ -321,6 +365,7 @@ export default function TimetablePage() {
         <EmptyState icon={CalendarDays} title="Nothing to show" />
       ) : (
         <>
+          <BreakNotice occurrences={data.days.flatMap((d) => d.occurrences)} />
           <div className="hidden md:block">
             <WeekGrid
               columns={data.days.map((d) => ({

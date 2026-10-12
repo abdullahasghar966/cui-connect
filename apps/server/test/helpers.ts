@@ -1,7 +1,14 @@
-import type { ClientToServerEvents, ServerToClientEvents } from '@cui/shared';
+import {
+  addDays,
+  type ClientToServerEvents,
+  campusClock,
+  mondayOf,
+  type ServerToClientEvents,
+} from '@cui/shared';
 import { io as connectClient, type Socket } from 'socket.io-client';
 import { inject } from 'vitest';
 import { Group, type GroupDoc, User, type UserDoc } from '../src/models';
+import { CALENDAR } from '../src/seed/academic-data';
 import { DEMO_PASSWORD } from '../src/seed/data';
 import { type RunningServer, startServer } from '../src/server';
 
@@ -33,6 +40,7 @@ export async function startTestApp({ seed = true } = {}): Promise<TestApp> {
     mongoUri: inject('mongoUri'),
     dbName,
     resetSeed: seed,
+    reminders: false,
   });
   const sockets: ClientSocket[] = [];
 
@@ -136,6 +144,23 @@ export function noEvent<E extends keyof ServerToClientEvents>(
     }, ms);
     socket.on(event, handler as never);
   });
+}
+
+/**
+ * Monday of the next teaching week without a seeded holiday or exam week (from next week on), so
+ * tests that cancel or move classes never land on a day whose classes are already suspended.
+ */
+export function clearWeekMonday(): string {
+  const holidayIn = (monday: string) =>
+    CALENDAR.some(
+      (e) =>
+        (e.kind === 'holiday' || e.kind === 'exams') &&
+        e.startsOn <= addDays(monday, 5) &&
+        e.endsOn >= monday,
+    );
+  let monday = addDays(mondayOf(campusClock().date), 7);
+  while (holidayIn(monday)) monday = addDays(monday, 7);
+  return monday;
 }
 
 export const clientId = () => `c-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;

@@ -59,7 +59,8 @@ describe('attendance summaries', () => {
     const cloud = mine.find((c) => c.course.code === 'CSC455');
     expect(cloud?.summary.state).toBe('warning');
     expect(cloud?.minimum).toBe(80);
-    expect(cloud?.sessions.length).toBe(cloud?.summary.held);
+    // Approved leave isn't counted as a held class.
+    expect(cloud?.sessions.length).toBe((cloud?.summary.held ?? 0) + (cloud?.summary.leave ?? 0));
 
     const ahmed = await app.login(ACCOUNTS.ahmed);
     const his: MyAttendanceCourseDTO[] = await (

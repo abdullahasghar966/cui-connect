@@ -520,6 +520,23 @@ export function findClashes<T extends SlotLike>(
   return clashes;
 }
 
+// ---- Academic calendar ----
+
+export const CALENDAR_KINDS = ['holiday', 'exams', 'registration', 'deadline', 'event'] as const;
+export type CalendarKind = (typeof CALENDAR_KINDS)[number];
+
+export const CALENDAR_KIND_LABELS: Record<CalendarKind, string> = {
+  holiday: 'Holiday (no classes)',
+  exams: 'Exam period (no classes)',
+  registration: 'Registration',
+  deadline: 'Deadline',
+  event: 'Event',
+};
+
+/** Whether a date falls inside a calendar entry (inclusive). */
+export const coversDate = (entry: { startsOn: string; endsOn: string }, date: string) =>
+  entry.startsOn <= date && date <= entry.endsOn;
+
 // ---- Exams ----
 
 export const EXAM_KINDS = ['sessional1', 'sessional2', 'terminal'] as const;

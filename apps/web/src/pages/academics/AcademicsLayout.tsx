@@ -2,6 +2,7 @@ import {
   BookOpen,
   CalendarCog,
   CalendarDays,
+  CalendarRange,
   ClipboardCheck,
   DoorOpen,
   FileClock,
@@ -20,6 +21,7 @@ export default function AcademicsLayout() {
   const me = useCurrentUser();
   const sections: AreaSection[] = [
     { to: '/academics/timetable', label: 'Timetable', icon: CalendarDays, end: true },
+    { to: '/academics/calendar', label: 'Calendar', icon: CalendarRange },
     { to: '/academics/courses', label: 'Courses', icon: BookOpen },
     { to: '/academics/teachers', label: 'Teachers', icon: Users },
     { to: '/academics/rooms', label: 'Room finder', icon: DoorOpen },

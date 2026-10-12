@@ -8,6 +8,7 @@
  */
 import {
   addDays,
+  type CalendarKind,
   type Clash,
   type ClassChangeInput,
   type ClassOccurrenceDTO,
@@ -17,6 +18,7 @@ import {
   canManageOffering,
   canManageTimetable,
   classSlotSchema,
+  coversDate,
   findClashes,
   formatClock,
   formatShortDate,
@@ -37,6 +39,7 @@ import {
 } from '@cui/shared';
 import { AppError, assertAllowed, badRequest, notFound, parse } from '../lib/errors';
 import {
+  CalendarEvent,
   ClassChange,
   type ClassChangeDoc,
   ClassSlot,
@@ -59,6 +62,12 @@ import { currentTerm } from './terms';
 
 // ---- Loading the current term ----
 
+/** Calendar entries that suspend regular classes. */
+export const NO_CLASS_KINDS: CalendarKind[] = ['holiday', 'exams'];
+
+const breakNote = (entry: { title: string; kind: string }) =>
+  entry.kind === 'holiday' ? `Holiday: ${entry.title}` : `${entry.title}: no regular classes`;
+
 interface TermContext {
   term: TermDoc;
   offerings: Map<string, CourseOfferingDoc>;
@@ -67,16 +76,25 @@ interface TermContext {
   instructors: Map<string, Pick<UserDoc, '_id' | 'name'>>;
   groupByOffering: Map<string, string>;
   org: OrgLookup;
+  /** Holidays and exam periods of the term: no regular classes on these dates. */
+  holidays: { title: string; kind: string; startsOn: string; endsOn: string }[];
 }
 
 async function loadTerm(): Promise<TermContext> {
   const term = await currentTerm();
-  const [offerings, slots, rooms, groups, org] = await Promise.all([
+  const [offerings, slots, rooms, groups, org, holidays] = await Promise.all([
     CourseOffering.find({ termId: term._id }).lean<CourseOfferingDoc[]>(),
     ClassSlot.find({ termId: term._id }).lean<ClassSlotDoc[]>(),
     Room.find().lean<RoomDoc[]>(),
     Group.find({ type: 'COURSE' }).select('_id courseId').lean(),
     getOrgLookup(),
+    CalendarEvent.find({
+      kind: { $in: NO_CLASS_KINDS },
+      startsOn: { $lte: term.endsOn },
+      endsOn: { $gte: term.startsOn },
+    })
+      .select('title kind startsOn endsOn')
+      .lean<{ title: string; kind: string; startsOn: string; endsOn: string }[]>(),
   ]);
   const instructors = await User.find({ _id: { $in: offerings.map((o) => o.instructorId) } })
     .select('name')
@@ -89,6 +107,8 @@ async function loadTerm(): Promise<TermContext> {
     instructors: new Map(instructors.map((u) => [String(u._id), u])),
     groupByOffering: new Map(groups.map((g) => [String(g.courseId), String(g._id)])),
     org,
+    // A public holiday inside an exam period is described as the holiday.
+    holidays: holidays.sort((a, b) => Number(b.kind === 'holiday') - Number(a.kind === 'holiday')),
   };
 }
 
@@ -166,6 +186,7 @@ function expand(
     byDate.set(date, byDate.get(date) ?? []);
     if (!inTerm(ctx.term, date)) continue;
     const weekday = weekdayOf(date);
+    const holiday = ctx.holidays.find((h) => coversDate(h, date));
     for (const slot of slots) {
       if (slot.day !== weekday) continue;
       const dto = toSlotDTO(slot, ctx, viewer);
@@ -180,8 +201,18 @@ function expand(
         movedTo: null,
         movedFrom: null,
         canChange: canChangeSlot(user, slot, ctx),
+        suspended: false,
       };
-      if (!change) push({ ...base, status: 'scheduled' });
+      if (!change && holiday) {
+        // A holiday or exam period suspends classes; there is nothing for a teacher to undo.
+        push({
+          ...base,
+          status: 'cancelled',
+          note: breakNote(holiday),
+          canChange: false,
+          suspended: true,
+        });
+      } else if (!change) push({ ...base, status: 'scheduled' });
       else if (change.kind === 'cancelled') push({ ...base, status: 'cancelled' });
       else {
         push({
@@ -205,17 +236,21 @@ function expand(
     const slot = slotById.get(String(change.slotId));
     if (!slot) continue;
     const dto = toSlotDTO(slot, ctx, viewer);
+    // A holiday declared after the move still suspends it.
+    const newDate = change.newDate;
+    const holiday = ctx.holidays.find((h) => coversDate(h, newDate));
     push({
       slot: dto,
       date: change.newDate,
       start: change.newStart ?? slot.start,
       end: change.newEnd ?? slot.end,
       room: change.newRoomId ? roomRef(ctx.rooms.get(String(change.newRoomId))) : dto.room,
-      status: 'moved-in',
-      note: change.note,
+      status: holiday ? 'cancelled' : 'moved-in',
+      note: holiday ? breakNote(holiday) : change.note,
       movedTo: null,
       movedFrom: { date: change.date, start: slot.start },
-      canChange: canChangeSlot(user, slot, ctx),
+      canChange: !holiday && canChangeSlot(user, slot, ctx),
+      suspended: !!holiday,
     });
   }
 
@@ -597,6 +632,14 @@ export async function changeClass(
     if (!inTerm(ctx.term, input.newDate) || weekdayOf(input.newDate) > 6) {
       throw badRequest('Choose a teaching day (Monday to Saturday) within the term.');
     }
+    const holiday = ctx.holidays.find((h) => coversDate(h, input.newDate));
+    if (holiday) {
+      throw badRequest(
+        holiday.kind === 'holiday'
+          ? `${formatShortDate(input.newDate)} is a holiday (${holiday.title}).`
+          : `${formatShortDate(input.newDate)} is in the ${holiday.title}: no regular classes.`,
+      );
+    }
     const newRoom = input.newRoomId ? ctx.rooms.get(input.newRoomId) : undefined;
     if (input.newRoomId && !newRoom) throw notFound('Room not found.');
     roomName = newRoom?.name ?? null;
@@ -697,6 +740,20 @@ export async function restoreClass(actor: UserDoc, slotId: string, date: string)
     { except: actor },
   );
   broadcastTimetableChanged([String(offering._id)]);
+}
+
+/** The viewer's own classes from `from` for `days` days (cancelled ones included, marked). */
+export async function myOccurrences(
+  viewer: UserDoc,
+  from: string,
+  days: number,
+): Promise<ClassOccurrenceDTO[]> {
+  const ctx = await loadTerm();
+  const { slots } = slotsFor(ctx, viewer, 'me', undefined);
+  const changes = await changesBetween(ctx.term, from, addDays(from, days - 1));
+  return [...expand(slots, changes, from, days, ctx, viewer).values()]
+    .flat()
+    .filter((o) => o.status !== 'moved-out');
 }
 
 /** Every class actually happening on a date (after cancellations and moves), campus-wide. */

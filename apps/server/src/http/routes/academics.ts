@@ -1,5 +1,7 @@
 /** University records everyone signed in can browse (terms, rooms, catalog, programmes). */
 import {
+  academicCalendarQuerySchema,
+  calendarQuerySchema,
   catalogCsvSchema,
   catalogQuerySchema,
   classChangeSchema,
@@ -18,6 +20,12 @@ import { currentUser } from '../../auth/middleware';
 import { forbidden, parse } from '../../lib/errors';
 import { CourseOffering, User, type UserDoc } from '../../models';
 import { checkIn, myAttendance } from '../../services/attendance';
+import {
+  deleteCalendarEvent,
+  listCalendar,
+  myCalendar,
+  saveCalendarEvent,
+} from '../../services/calendar';
 import {
   courseDetail,
   deleteCatalogCourse,
@@ -89,6 +97,31 @@ academicsRouter.get('/attendance', async (req, res) => {
 
 academicsRouter.post('/attendance/check-in', async (req, res) => {
   res.json(await checkIn(currentUser(req), req.body));
+});
+
+// ---- Calendar ----
+
+academicsRouter.get('/calendar', async (req, res) => {
+  const { from, to } = parse(academicCalendarQuerySchema, req.query);
+  res.json(await listCalendar(from, to));
+});
+
+academicsRouter.get('/calendar/mine', async (req, res) => {
+  const { from, to } = parse(calendarQuerySchema, req.query);
+  res.json(await myCalendar(currentUser(req), from, to));
+});
+
+academicsRouter.post('/calendar', async (req, res) => {
+  res.status(201).json(await saveCalendarEvent(currentUser(req), null, req.body));
+});
+
+academicsRouter.put('/calendar/:eventId', async (req, res) => {
+  res.json(await saveCalendarEvent(currentUser(req), id(req, 'eventId'), req.body));
+});
+
+academicsRouter.delete('/calendar/:eventId', async (req, res) => {
+  await deleteCalendarEvent(currentUser(req), id(req, 'eventId'));
+  res.json({ ok: true });
 });
 
 academicsRouter.get('/terms', async (_req, res) => {

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   ASSESSMENT_TYPES,
   ATTENDANCE_STATUSES,
+  CALENDAR_KINDS,
   CLASS_KINDS,
   DATE_PATTERN,
   EXAM_KINDS,
@@ -257,6 +258,36 @@ export const teacherDirectoryQuerySchema = z.object({
   departmentId: objectIdSchema.optional(),
 });
 
+export const calendarEventSchema = z
+  .object({
+    title: z.string().trim().min(3, 'Give the date a title').max(120),
+    kind: z.enum(CALENDAR_KINDS),
+    startsOn: dateSchema,
+    endsOn: dateSchema,
+    description: z.string().trim().max(500).nullish(),
+  })
+  .refine((e) => e.startsOn <= e.endsOn, {
+    message: 'The end date must be on or after the start date',
+    path: ['endsOn'],
+  });
+
+export const calendarQuerySchema = z
+  .object({ from: dateSchema, to: dateSchema })
+  .refine((q) => q.from <= q.to, { message: 'from must be before to', path: ['to'] })
+  .refine((q) => (new Date(q.to).getTime() - new Date(q.from).getTime()) / 86_400_000 <= 93, {
+    message: 'Ask for at most three months at a time',
+    path: ['to'],
+  });
+
+/** The academic calendar can be listed a whole year at a time. */
+export const academicCalendarQuerySchema = z
+  .object({ from: dateSchema, to: dateSchema })
+  .refine((q) => q.from <= q.to, { message: 'from must be before to', path: ['to'] })
+  .refine((q) => (new Date(q.to).getTime() - new Date(q.from).getTime()) / 86_400_000 <= 400, {
+    message: 'Ask for at most a year at a time',
+    path: ['to'],
+  });
+
 export const roomFinderQuerySchema = z.object({
   date: dateSchema.optional(),
   time: timeSchema.optional(),
@@ -315,3 +346,4 @@ export type MarksInput = z.input<typeof marksSchema>;
 export type CourseGradingInput = z.input<typeof courseGradingSchema>;
 export type ExamInput = z.input<typeof examSchema>;
 export type OfficeInput = z.infer<typeof officeSchema>;
+export type CalendarEventInput = z.input<typeof calendarEventSchema>;

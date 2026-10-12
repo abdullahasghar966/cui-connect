@@ -1,7 +1,7 @@
-import { addDays, campusClock, mondayOf, type RoomFinderDTO } from '@cui/shared';
+import { addDays, campusClock, type RoomFinderDTO } from '@cui/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ClassSlot, CourseOffering, Exam, Room, User } from '../src/models';
-import { ACCOUNTS, startTestApp, type TestApp } from './helpers';
+import { ACCOUNTS, clearWeekMonday, startTestApp, type TestApp } from './helpers';
 
 let app: TestApp;
 
@@ -19,7 +19,7 @@ const finder = async (cookie: string, date: string, time: string): Promise<RoomF
 describe('room finder', () => {
   it('shows who is in a room now, frees it when the class is cancelled, and counts exams', async () => {
     const hira = await app.login(ACCOUNTS.hira);
-    const monday = addDays(mondayOf(campusClock().date), 7);
+    const monday = clearWeekMonday();
     const slot = await ClassSlot.findOne({ day: 1, start: '08:30', roomId: { $ne: null } }).lean();
     const room = await Room.findById(slot?.roomId).lean();
     const offering = await CourseOffering.findById(slot?.offeringId).lean();
@@ -55,7 +55,7 @@ describe('room finder', () => {
 
   it('warns the Exam Office when a paper takes a room from a timetabled class', async () => {
     // A Tuesday class (the first test cancelled a Monday one) in a room with exam seating.
-    const tuesday = addDays(mondayOf(campusClock().date), 8);
+    const tuesday = addDays(clearWeekMonday(), 1);
     const examRooms = await Room.find({ examRows: { $gt: 0 } })
       .select('_id')
       .lean();

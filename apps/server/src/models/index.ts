@@ -2,6 +2,7 @@ import { Assessment } from './Assessment';
 import { AttendanceRecord } from './AttendanceRecord';
 import { AttendanceSession } from './AttendanceSession';
 import { AuditLog } from './AuditLog';
+import { CalendarEvent } from './CalendarEvent';
 import { CampusSettings } from './CampusSettings';
 import { CatalogCourse } from './CatalogCourse';
 import { ClassChange } from './ClassChange';
@@ -26,6 +27,7 @@ export * from './Assessment';
 export * from './AttendanceRecord';
 export * from './AttendanceSession';
 export * from './AuditLog';
+export * from './CalendarEvent';
 export * from './CampusSettings';
 export * from './CatalogCourse';
 export * from './ClassChange';
@@ -70,6 +72,7 @@ export const ALL_MODELS = [
   Result,
   Exam,
   SeatAssignment,
+  CalendarEvent,
 ] as const;
 
 /** Models whose index definitions changed since launch: stale indexes are dropped and rebuilt. */
