@@ -2,9 +2,9 @@ import { defaultGroupSettings, type GroupSettings, type MemberRole } from '@cui/
 import { Types } from 'mongoose';
 import { hashPassword } from '../auth/password';
 import {
-  ALL_MODELS,
   CourseOffering,
   type CourseOfferingDoc,
+  DATA_MODELS,
   Department,
   type DepartmentDoc,
   Group,
@@ -36,6 +36,7 @@ import {
   seedOfficeHours,
   seedTimetable,
 } from './academic';
+import { seedBookings } from './bookings';
 import { seedCoursework } from './coursework';
 import {
   COURSES,
@@ -64,7 +65,7 @@ function must<T>(value: T | undefined | null, what: string): T {
  * admin services) so the audit log isn't flooded with one entry per seeded account.
  */
 export async function seedDatabase(): Promise<SeedSummary> {
-  await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
+  await Promise.all(DATA_MODELS.map((model) => model.collection.deleteMany({})));
   await clearStoredFiles();
   invalidateOrgLookup();
   invalidateTermCache();
@@ -183,6 +184,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   await seedCoursework(must(courses.get('awt7a'), 'course awt7a'), academic.currentTerm);
   await seedExams([...courses.values()], academic.currentTerm);
   await seedOfficeHours();
+  await seedBookings();
 
   // Everyone joins the official groups their role, department, section and courses imply.
   for (const user of people.values()) await reconcileUser(user._id, { notify: false });

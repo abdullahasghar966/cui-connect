@@ -1,6 +1,6 @@
 import { createUserSchema } from '@cui/shared';
 import { hashPassword } from '../auth/password';
-import { ALL_MODELS, AuditLog, User, type UserDoc } from '../models';
+import { AuditLog, DATA_MODELS, User, type UserDoc } from '../models';
 import { recordAudit } from '../services/audit';
 import { clearStoredFiles } from '../services/files';
 import { invalidateOrgLookup } from '../services/mappers';
@@ -43,7 +43,7 @@ export async function createFirstAdmin(input: SetupInput): Promise<UserDoc> {
 /** `npm run setup`: wipes every collection, then creates the first admin. */
 export async function setupFreshCampus(input: SetupInput): Promise<UserDoc> {
   parseAdmin(input); // validate before deleting anything
-  await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
+  await Promise.all(DATA_MODELS.map((model) => model.collection.deleteMany({})));
   await clearStoredFiles();
   invalidateOrgLookup();
   invalidateTermCache();

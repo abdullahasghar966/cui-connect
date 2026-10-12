@@ -42,6 +42,7 @@ const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly (readonly str
   exams: [keys.myExams],
   events: [['academics', 'calendar']],
   coursework: [keys.coursework],
+  bookings: [keys.bookings, ['academics', 'slots'], ['academics', 'calendar']],
 };
 
 export function useRealtimeSync(): void {

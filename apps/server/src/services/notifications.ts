@@ -1,7 +1,7 @@
 /**
  * Notification centre: one place every feature uses to tell people something happened (marks
- * published, a class cancelled, a seat assigned…). Saved for the bell's history and pushed
- * live to every open tab of the recipient.
+ * published, a class cancelled, a seat assigned…). Saved for the bell's history, pushed live to
+ * every open tab of the recipient, and sent to their phone if they turned push notifications on.
  */
 import type {
   MarkNotificationsInput,
@@ -14,6 +14,7 @@ import { logger } from '../lib/logger';
 import { Notification, type NotificationDoc, type UserDoc } from '../models';
 import { pushNotification } from '../realtime/notifier';
 import { type Id, toObjectId } from './mappers';
+import { sendPush } from './push';
 
 export interface NotificationInput {
   type: NotificationType;
@@ -66,6 +67,13 @@ export async function notify(userIds: readonly Id[], input: NotificationInput): 
     saved = docs.filter((d) => ok.has(String(d._id)));
   }
   for (const doc of saved) pushNotification(String(doc.userId), toNotificationDTO(doc));
+  if (saved.length) {
+    // Phones and desktops with notifications on (never waits, never throws).
+    void sendPush(
+      saved.map((d) => d.userId),
+      { title: input.title, body: input.body, url: input.link, tag: input.key ?? null },
+    );
+  }
   return saved.length;
 }
 

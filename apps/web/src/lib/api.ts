@@ -14,6 +14,8 @@ import type {
   AttendanceSheetDTO,
   AttendanceStatus,
   AuditDTO,
+  BookingDTO,
+  BookingInput,
   CalendarEventDTO,
   CalendarEventInput,
   CalendarItemDTO,
@@ -71,6 +73,7 @@ import type {
   ProgramDTO,
   ProgramInput,
   PublicUserDTO,
+  PushSubscriptionInput,
   QuizInput,
   QuizViewDTO,
   Role,
@@ -87,6 +90,7 @@ import type {
   SubmissionDTO,
   SubmissionInput,
   TeacherDTO,
+  TeacherSlotsDTO,
   TeachingCourseDTO,
   TermDTO,
   TimetableView,
@@ -228,6 +232,12 @@ export const api = {
       request<TeacherDTO[]>(`/api/academics/teachers/directory${query(params)}`),
     updateOffice: (input: OfficeInput) =>
       send<TeacherDTO>('/api/academics/me/office', 'PUT', input),
+    teacherSlots: (teacherId: string) =>
+      request<TeacherSlotsDTO>(`/api/academics/teachers/${teacherId}/slots`),
+    bookings: () => request<BookingDTO[]>('/api/academics/bookings'),
+    book: (input: BookingInput) => send<BookingDTO>('/api/academics/bookings', 'POST', input),
+    cancelBooking: (bookingId: string, reason: string | null) =>
+      send<BookingDTO>(`/api/academics/bookings/${bookingId}/cancel`, 'POST', { reason }),
     timetable: (params: { view?: TimetableView; id?: string; week?: string }) =>
       request<TimetableWeekDTO>(`/api/academics/timetable${query(params)}`),
     today: () => request<TodayDTO>('/api/academics/timetable/today'),
@@ -355,6 +365,15 @@ export const api = {
     withdraw: (id: string) =>
       send<{ ok: true }>(`/api/coursework/assignments/${id}/submission`, 'DELETE'),
     quiz: (id: string) => request<QuizViewDTO>(`/api/coursework/quizzes/${id}`),
+  },
+
+  push: {
+    key: () => request<{ publicKey: string }>('/api/push/key'),
+    subscribe: (input: PushSubscriptionInput) =>
+      send<{ ok: true }>('/api/push/subscriptions', 'POST', input),
+    unsubscribe: (endpoint: string) =>
+      send<{ ok: true }>('/api/push/subscriptions', 'DELETE', { endpoint }),
+    test: () => send<{ sent: number }>('/api/push/test', 'POST'),
   },
 
   files: {

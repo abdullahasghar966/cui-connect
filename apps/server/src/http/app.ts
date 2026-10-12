@@ -17,6 +17,7 @@ import { courseworkRouter } from './routes/coursework';
 import { examsRouter } from './routes/exams';
 import { filesRouter } from './routes/files';
 import { notificationsRouter } from './routes/notifications';
+import { pushRouter } from './routes/push';
 import { teachingRouter } from './routes/teaching';
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
@@ -72,6 +73,7 @@ export function createApp() {
   app.use('/api/exams', requireAuth, examsRouter);
   app.use('/api/coursework', requireAuth, courseworkRouter);
   app.use('/api/files', requireAuth, filesRouter);
+  app.use('/api/push', requireAuth, pushRouter);
   app.use('/api', requireAuth, apiRouter);
   app.use('/api', () => {
     throw notFound('No such API endpoint.');

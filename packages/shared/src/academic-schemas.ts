@@ -436,6 +436,19 @@ export const quizAnswerSchema = z.object({
     .max(QUIZ_LIMITS.maxOptions - 1),
 });
 
+// ---- Office-hour appointments ----
+
+export const bookingSchema = z.object({
+  teacherId: objectIdSchema,
+  date: dateSchema,
+  start: timeSchema,
+  topic: z.string().trim().min(3, 'Say what you want to discuss').max(200),
+});
+
+export const cancelBookingSchema = z.object({
+  reason: z.string().trim().max(200).nullish(),
+});
+
 export type CreateTermInput = z.infer<typeof createTermSchema>;
 export type RoomInput = z.input<typeof roomSchema>;
 export type CatalogCourseInput = z.input<typeof catalogCourseSchema>;
@@ -461,3 +474,5 @@ export type QuizQuestionInput = z.input<typeof quizQuestionSchema>;
 export type QuizInput = z.input<typeof quizSchema>;
 export type QuizRefInput = z.infer<typeof quizRefSchema>;
 export type QuizAnswerInput = z.infer<typeof quizAnswerSchema>;
+export type BookingInput = z.infer<typeof bookingSchema>;
+export type CancelBookingInput = z.infer<typeof cancelBookingSchema>;

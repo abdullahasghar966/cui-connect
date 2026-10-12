@@ -11,11 +11,21 @@ import {
   type Weekday,
 } from '@cui/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Clock, MapPin, MessageSquare, Pencil, Plus, Search, Users, X } from 'lucide-react';
+import {
+  CalendarPlus,
+  Clock,
+  MapPin,
+  MessageSquare,
+  Pencil,
+  Plus,
+  Search,
+  Users,
+  X,
+} from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { EmptyState, Spinner } from '@/components/feedback';
-import { PageHeader } from '@/components/page';
+import { PageHeader, Tabs } from '@/components/page';
 import { Avatar } from '@/components/people';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +37,7 @@ import { useSubmit } from '@/hooks/useSubmit';
 import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
 import { useOpenDirect } from '@/pages/chat/dialogs';
+import { Appointments, BookingDialog, isUpcoming } from './bookings-ui';
 
 const inOfficeHours = (hours: OfficeHourDTO[]) => {
   const clock = campusClock();
@@ -138,10 +149,13 @@ function TeacherCard({
   teacher,
   mine,
   onEdit,
+  onBook,
 }: {
   teacher: TeacherDTO;
   mine: boolean;
   onEdit: () => void;
+  /** Students who may contact this teacher can book their office hours. */
+  onBook?: () => void;
 }) {
   const openDirect = useOpenDirect();
   const [opening, setOpening] = useState(false);
@@ -187,7 +201,12 @@ function TeacherCard({
           </p>
         )}
       </div>
-      <div className="flex shrink-0 gap-2">
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {onBook && (
+          <Button variant="outline" onClick={onBook}>
+            <CalendarPlus /> Book office hours
+          </Button>
+        )}
         {mine ? (
           <Button variant="outline" onClick={onEdit}>
             <Pencil /> Edit my office
@@ -220,6 +239,16 @@ export default function TeachersPage() {
   const departmentId = params.get('department') ?? '';
   const search = useDebounced(q.trim(), 250);
   const [editing, setEditing] = useState<TeacherDTO | null>(null);
+  const [booking, setBooking] = useState<TeacherDTO | null>(null);
+  // Students and teachers have appointments; everyone else only browses the directory.
+  const hasAppointments = me.role === 'student' || me.role === 'faculty';
+  const tab =
+    hasAppointments && params.get('tab') === 'appointments' ? 'appointments' : 'directory';
+  const appointments = useQuery({
+    queryKey: keys.bookings,
+    queryFn: api.academics.bookings,
+    enabled: hasAppointments,
+  });
   const departments = useQuery({
     queryKey: keys.departments,
     queryFn: api.academics.departments,
@@ -244,60 +273,88 @@ export default function TeachersPage() {
     <>
       <PageHeader
         title="Teachers"
-        description="Where to find each teacher and when. The Message button appears when the campus rules let you start a conversation."
+        description="Where to find each teacher and when. Message and Book appear when the campus rules let you contact them."
       />
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative min-w-60 flex-1 sm:max-w-sm">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            type="search"
-            aria-label="Search teachers"
-            placeholder="Search by name or office"
-            className="pl-9"
-            value={q}
-            onChange={(e) => update({ q: e.target.value })}
-          />
-        </div>
-        <Select
-          aria-label="Department"
-          className="sm:w-60"
-          value={departmentId}
-          onChange={(e) => update({ department: e.target.value })}
-        >
-          <option value="">All departments</option>
-          {(departments.data ?? []).map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name}
-            </option>
-          ))}
-        </Select>
-      </div>
-      {list.isPending ? (
-        <div className="flex justify-center py-16">
-          <Spinner />
-        </div>
-      ) : !list.data?.length ? (
-        <EmptyState
-          icon={Users}
-          title="No teachers found"
-          className="rounded-lg border bg-surface"
+      {hasAppointments && (
+        <Tabs
+          label="Teachers"
+          value={tab}
+          onChange={(value) => update({ tab: value === 'directory' ? '' : value })}
+          options={[
+            { value: 'directory', label: 'Directory' },
+            {
+              value: 'appointments',
+              label: 'Appointments',
+              // No badge for none.
+              count: appointments.data?.filter(isUpcoming).length || undefined,
+            },
+          ]}
         />
+      )}
+      {tab === 'appointments' ? (
+        <Appointments />
       ) : (
-        <ul aria-label="Teachers" className="space-y-2">
-          {list.data.map((t) => (
-            <TeacherCard
-              key={t.user.id}
-              teacher={t}
-              mine={t.user.id === me.id}
-              onEdit={() => setEditing(t)}
+        <>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="relative min-w-60 flex-1 sm:max-w-sm">
+              <Search
+                className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                type="search"
+                aria-label="Search teachers"
+                placeholder="Search by name or office"
+                className="pl-9"
+                value={q}
+                onChange={(e) => update({ q: e.target.value })}
+              />
+            </div>
+            <Select
+              aria-label="Department"
+              className="sm:w-60"
+              value={departmentId}
+              onChange={(e) => update({ department: e.target.value })}
+            >
+              <option value="">All departments</option>
+              {(departments.data ?? []).map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          {list.isPending ? (
+            <div className="flex justify-center py-16">
+              <Spinner />
+            </div>
+          ) : !list.data?.length ? (
+            <EmptyState
+              icon={Users}
+              title="No teachers found"
+              className="rounded-lg border bg-surface"
             />
-          ))}
-        </ul>
+          ) : (
+            <ul aria-label="Teachers" className="space-y-2">
+              {list.data.map((t) => (
+                <TeacherCard
+                  key={t.user.id}
+                  teacher={t}
+                  mine={t.user.id === me.id}
+                  onEdit={() => setEditing(t)}
+                  onBook={
+                    me.role === 'student' && t.canMessage && t.officeHours.length
+                      ? () => setBooking(t)
+                      : undefined
+                  }
+                />
+              ))}
+            </ul>
+          )}
+        </>
       )}
       {editing && <OfficeDialog teacher={editing} onClose={() => setEditing(null)} />}
+      {booking && <BookingDialog teacher={booking} onClose={() => setBooking(null)} />}
     </>
   );
 }

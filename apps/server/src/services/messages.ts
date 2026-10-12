@@ -35,6 +35,7 @@ import {
   broadcastReadReceipt,
   notifyMembershipAdded,
 } from '../realtime/notifier';
+import { isOnline } from '../realtime/presence';
 import { recordMessageSent } from '../realtime/stats';
 import { recordAudit } from './audit';
 import { computeDMFacts } from './direct';
@@ -48,6 +49,7 @@ import {
   toReactionsDTO,
 } from './mappers';
 import { notify } from './notifications';
+import { sendPush } from './push';
 
 async function loadGroupContext(user: UserDoc, groupId: string) {
   const [group, membership] = await Promise.all([
@@ -175,6 +177,15 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
   // The room gets the anonymous version; only the author's own copy names them.
   broadcastMessage(toMessageDTO(doc, user));
   recordMessageSent();
+  // A direct message to someone who isn't online goes to their phone (one notification per chat).
+  if (group.type === 'DIRECT' && peer && !isOnline(String(peer._id))) {
+    void sendPush([peer._id], {
+      title: user.name,
+      body: snippetOf(doc.kind === 'poll' ? `Poll: ${doc.body}` : doc.body, 140),
+      url: `/chat/${group._id}`,
+      tag: `dm:${group._id}`,
+    });
+  }
   if (mentions.length) {
     await notify(
       mentions.map((m) => m.userId),

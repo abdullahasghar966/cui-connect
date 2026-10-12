@@ -46,6 +46,15 @@ function ThemedToaster() {
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 
+// The service worker shows push notifications; tapping one opens its page inside the app.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.addEventListener('message', (event: MessageEvent) => {
+    const data = event.data as { type?: string; path?: string } | null;
+    if (data?.type === 'open' && data.path?.startsWith('/')) void router.navigate(data.path);
+  });
+}
+
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

@@ -5,11 +5,14 @@ import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
 import { closeSocket } from '@/lib/socket';
 import { useRealtime } from '@/state/realtime';
+import { stopPushOnThisDevice } from './usePush';
 
 export function useSignOut() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   return useCallback(async () => {
+    // Before the session ends: this browser stops getting the person's notifications.
+    await stopPushOnThisDevice().catch(() => {});
     await api.logout().catch(() => {});
     closeSocket();
     useRealtime.getState().reset();

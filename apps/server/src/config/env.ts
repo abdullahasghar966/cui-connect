@@ -52,6 +52,16 @@ const schema = z.object({
   MESSAGE_BURST: z.coerce.number().int().min(1).default(8),
   MESSAGE_RATE_PER_SEC: z.coerce.number().min(0.1).default(2),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+  /**
+   * Who push services can contact about this server's notifications (a mailto: or https:
+   * address). Defaults to the site's own address on Render, else the project's page.
+   */
+  PUSH_CONTACT: z
+    .string()
+    .trim()
+    .regex(/^(mailto:|https:\/\/)/, 'Use a mailto: or https:// address')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
 });
 
 const parsed = schema.safeParse(process.env);

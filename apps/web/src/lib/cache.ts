@@ -27,6 +27,8 @@ export const keys = {
   programs: ['academics', 'programs'] as const,
   sections: ['academics', 'sections'] as const,
   teachers: ['academics', 'teachers'] as const,
+  bookings: ['academics', 'bookings'] as const,
+  slots: (teacherId: string) => ['academics', 'slots', teacherId] as const,
   timetable: ['academics', 'timetable'] as const,
   today: ['academics', 'timetable', 'today'] as const,
   settings: ['academics', 'settings'] as const,

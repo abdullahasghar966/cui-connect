@@ -2,6 +2,7 @@ export * from './academic-dto';
 export * from './academic-schemas';
 export * from './academics';
 export * from './access';
+export * from './bookings';
 export * from './constants';
 export * from './coursework';
 export * from './dto';

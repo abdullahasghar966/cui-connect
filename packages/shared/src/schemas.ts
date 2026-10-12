@@ -221,6 +221,37 @@ export const sendMessageSchema = z.object({
 });
 
 export const reactSchema = z.object({ messageId: objectIdSchema, emoji: z.enum(REACTIONS) });
+
+/**
+ * Push services browsers use. The server sends to the endpoint it's given, so only these hosts
+ * are accepted: anything else could make the server call internal addresses (SSRF).
+ */
+export const PUSH_SERVICE_HOSTS = [
+  'fcm.googleapis.com',
+  'android.googleapis.com',
+  'push.services.mozilla.com',
+  'notify.windows.com',
+  'push.apple.com',
+] as const;
+
+export const isPushServiceUrl = (value: string) => {
+  // https://host[:port] followed by a path: no user@ part, no other scheme.
+  const host = /^https:\/\/([a-z0-9.-]+)(?::\d{1,5})?(?:[/?#]|$)/i.exec(value)?.[1]?.toLowerCase();
+  return !!host && PUSH_SERVICE_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
+};
+
+export const pushSubscriptionSchema = z.object({
+  endpoint: z
+    .string()
+    .max(1000)
+    .refine(isPushServiceUrl, 'This browser uses a push service that is not supported'),
+  keys: z.object({
+    p256dh: z.string().min(16).max(200),
+    auth: z.string().min(8).max(100),
+  }),
+});
+
+export const pushEndpointSchema = z.object({ endpoint: z.string().max(1000) });
 export const pinSchema = z.object({ messageId: objectIdSchema, pinned: z.boolean() });
 
 export const pollVoteSchema = z.object({
@@ -264,3 +295,4 @@ export type MuteMemberInput = z.infer<typeof muteMemberSchema>;
 export type OpenDmInput = z.infer<typeof openDmSchema>;
 export type ReactInput = z.infer<typeof reactSchema>;
 export type PinInput = z.infer<typeof pinSchema>;
+export type PushSubscriptionInput = z.infer<typeof pushSubscriptionSchema>;

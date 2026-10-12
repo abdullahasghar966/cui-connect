@@ -7,6 +7,7 @@ import {
   type CalendarKind,
   calendarEventSchema,
   campusClock,
+  formatClock,
   formatShortDate,
   formatTimeRange,
   mondayOf,
@@ -103,6 +104,7 @@ function DayItems({ items, date }: { items: CalendarItemDTO[]; date: string }) {
               )}
             </span>
             {item.kind === 'exam' && <Badge tone="warning">Exam</Badge>}
+            {item.kind === 'booking' && <Badge tone="primary">Appointment</Badge>}
             {item.status === 'cancelled' && <Badge tone="danger">Cancelled</Badge>}
             {item.status === 'moved' && <Badge tone="warning">Moved here</Badge>}
           </p>
@@ -218,10 +220,16 @@ function MyCalendar() {
                         'truncate rounded border px-1 leading-4',
                         o.category
                           ? CATEGORY_TONE[o.category]
-                          : 'border-warning/25 bg-warning-soft text-warning',
+                          : o.kind === 'booking'
+                            ? 'border-primary/25 bg-primary-soft text-primary dark:text-link'
+                            : 'border-warning/25 bg-warning-soft text-warning',
                       )}
                     >
-                      {o.kind === 'exam' ? o.title.split(' ')[0] : o.title}
+                      {o.kind === 'exam'
+                        ? o.title.split(' ')[0]
+                        : o.kind === 'booking'
+                          ? `Office ${formatClock(o.start ?? '')}`
+                          : o.title}
                     </span>
                   ))}
                   {others.length > 2 && (

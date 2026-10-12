@@ -15,9 +15,17 @@ import {
   formatShortDate,
 } from '@cui/shared';
 import { assertAllowed, notFound, parse } from '../lib/errors';
-import { CalendarEvent, type CalendarEventDoc, User, type UserDoc } from '../models';
+import {
+  Booking,
+  type BookingDoc,
+  CalendarEvent,
+  type CalendarEventDoc,
+  User,
+  type UserDoc,
+} from '../models';
 import { broadcastTimetableChanged } from '../realtime/notifier';
 import { recordAudit } from './audit';
+import { bookingPeople } from './bookings';
 import { myExams } from './exams';
 import { toObjectId, toPolicyUser } from './mappers';
 import { notify } from './notifications';
@@ -129,12 +137,17 @@ export async function myCalendar(
   to: string,
 ): Promise<CalendarItemDTO[]> {
   const days = Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1;
-  const [academic, classes, exams] = await Promise.all([
+  const [academic, classes, exams, bookings] = await Promise.all([
     CalendarEvent.find(overlapping(from, to)).lean<CalendarEventDoc[]>(),
     viewer.role === 'student' || viewer.role === 'faculty'
       ? myOccurrences(viewer, from, days)
       : Promise.resolve([]),
     myExams(viewer),
+    Booking.find({
+      ...(viewer.role === 'faculty' ? { teacherId: viewer._id } : { studentId: viewer._id }),
+      status: 'booked',
+      date: { $gte: from, $lte: to },
+    }).lean<BookingDoc[]>(),
   ]);
   const items: CalendarItemDTO[] = [];
   for (const e of academic) {
@@ -189,6 +202,27 @@ export async function myCalendar(
       start: x.start,
       end: x.end,
       link: '/academics/exams',
+      status: null,
+      category: null,
+      endsOn: null,
+    });
+  }
+  const people = await bookingPeople(bookings);
+  for (const b of bookings) {
+    const teacher = people.get(String(b.teacherId));
+    const student = people.get(String(b.studentId));
+    items.push({
+      id: `booking-${b._id}`,
+      kind: 'booking',
+      title:
+        viewer.role === 'faculty'
+          ? `Office hours: ${student?.name ?? 'Student'}`
+          : `Office hours with ${teacher?.name ?? 'your teacher'}`,
+      detail: [b.topic, teacher?.officeLocation].filter(Boolean).join(' · ') || null,
+      date: b.date,
+      start: b.start,
+      end: b.end,
+      link: '/academics/teachers?tab=appointments',
       status: null,
       category: null,
       endsOn: null,

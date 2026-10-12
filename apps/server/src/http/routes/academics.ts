@@ -20,6 +20,7 @@ import { currentUser } from '../../auth/middleware';
 import { forbidden, parse } from '../../lib/errors';
 import { CourseOffering, User, type UserDoc } from '../../models';
 import { checkIn, myAttendance } from '../../services/attendance';
+import { bookSlot, cancelBooking, myBookings, teacherSlots } from '../../services/bookings';
 import {
   deleteCalendarEvent,
   listCalendar,
@@ -201,6 +202,25 @@ academicsRouter.get('/teachers/directory', async (req, res) => {
 
 academicsRouter.put('/me/office', async (req, res) => {
   res.json(await updateOffice(currentUser(req), req.body));
+});
+
+// ---- Office-hour appointments ----
+
+academicsRouter.get('/teachers/:teacherId/slots', async (req, res) => {
+  res.set('cache-control', 'no-store');
+  res.json(await teacherSlots(currentUser(req), id(req, 'teacherId')));
+});
+
+academicsRouter.get('/bookings', async (req, res) => {
+  res.json(await myBookings(currentUser(req)));
+});
+
+academicsRouter.post('/bookings', async (req, res) => {
+  res.status(201).json(await bookSlot(currentUser(req), req.body));
+});
+
+academicsRouter.post('/bookings/:bookingId/cancel', async (req, res) => {
+  res.json(await cancelBooking(currentUser(req), id(req, 'bookingId'), req.body ?? {}));
 });
 
 academicsRouter.get('/teachers', async (_req, res) => {

@@ -1,7 +1,7 @@
 /**
  * Reminders, checked once a minute inside the server: the evening before a paper or a holiday,
- * the morning of a deadline or registration window, and a day before an assignment is due (to
- * students who haven't handed it in). Each reminder has a notification key,
+ * the morning of a deadline or registration window and of office-hour appointments, and a day
+ * before an assignment is due (to students who haven't handed it in). Each reminder has a notification key,
  * so a restart (or the next minute) never sends it twice; an in-memory list skips the work.
  * (Free hosting sleeps when idle, so reminders go out while the site is awake.)
  */
@@ -18,6 +18,8 @@ import { logger } from '../lib/logger';
 import {
   Assignment,
   type AssignmentDoc,
+  Booking,
+  type BookingDoc,
   CalendarEvent,
   type CalendarEventDoc,
   CourseOffering,
@@ -28,6 +30,7 @@ import {
   Submission,
   User,
 } from '../models';
+import { bookingPeople } from './bookings';
 import { notify } from './notifications';
 
 const EVENING = 18 * 60;
@@ -132,6 +135,45 @@ async function assignmentsDueSoon(now: Date): Promise<number> {
   return sent;
 }
 
+/** The morning of office-hour appointments: each student, and each teacher's list for the day. */
+async function appointmentsToday(date: string): Promise<number> {
+  const bookings = await Booking.find({ date, status: 'booked' })
+    .sort({ start: 1 })
+    .lean<BookingDoc[]>();
+  const fresh = bookings.filter((b) => !done.has(`booking:${b._id}`));
+  if (!fresh.length) return 0;
+  const people = await bookingPeople(bookings);
+  let sent = 0;
+  for (const b of fresh) {
+    const teacher = people.get(String(b.teacherId));
+    sent += await notify([b.studentId], {
+      type: 'bookings',
+      title: `Today at ${formatClock(b.start)}: office hours with ${teacher?.name ?? 'your teacher'}`,
+      body: [teacher?.officeLocation, b.topic].filter(Boolean).join(' · '),
+      link: '/academics/teachers?tab=appointments',
+      key: `remind:booking:${b._id}`,
+    });
+    done.add(`booking:${b._id}`);
+  }
+  const byTeacher = new Map<string, BookingDoc[]>();
+  for (const b of bookings) {
+    byTeacher.set(String(b.teacherId), [...(byTeacher.get(String(b.teacherId)) ?? []), b]);
+  }
+  for (const [teacherId, list] of byTeacher) {
+    sent += await notify([teacherId], {
+      type: 'bookings',
+      title: `Office hours today: ${list.length} appointment${list.length === 1 ? '' : 's'}`,
+      body: list
+        .map((b) => `${formatClock(b.start)} ${people.get(String(b.studentId))?.name ?? 'Student'}`)
+        .join(', '),
+      link: '/academics/teachers?tab=appointments',
+      // Once a day (a booking made later that morning shows on the Appointments tab).
+      key: `remind:bookings:${teacherId}:${date}`,
+    });
+  }
+  return sent;
+}
+
 /** Sends whatever is due at `now` (campus time). Safe to call any number of times. */
 export async function runReminders(now = new Date()): Promise<number> {
   const clock = campusClock(now);
@@ -143,6 +185,7 @@ export async function runReminders(now = new Date()): Promise<number> {
   }
   if (clock.minutes >= MORNING) {
     sent += await calendarDay(clock.date, ['deadline', 'registration'], 'Today');
+    sent += await appointmentsToday(clock.date);
   }
   sent += await assignmentsDueSoon(now);
   return sent;

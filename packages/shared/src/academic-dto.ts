@@ -11,6 +11,7 @@ import type {
   GradingWeights,
   RoomKind,
 } from './academics';
+import type { BookingStatus } from './bookings';
 import type { NotificationType } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
@@ -376,7 +377,7 @@ export interface CalendarEventDTO {
 /** One entry on a person's own calendar: a class, a paper, or an academic calendar entry. */
 export interface CalendarItemDTO {
   id: string;
-  kind: 'class' | 'exam' | 'academic';
+  kind: 'class' | 'exam' | 'academic' | 'booking';
   title: string;
   detail: string | null;
   date: string;
@@ -778,4 +779,40 @@ export interface QuizViewDTO {
   assessmentId: string | null;
   /** Host: how each question went, to see what the class found hard. */
   breakdown: { questionId: string; answered: number; correct: number }[] | null;
+}
+
+// ---- Office-hour appointments ----
+
+export interface BookingDTO {
+  id: string;
+  teacher: { id: string; name: string };
+  student: { id: string; name: string; regNo: string | null };
+  date: string;
+  start: string;
+  end: string;
+  topic: string;
+  /** The teacher's office, where the meeting is. */
+  location: string | null;
+  status: BookingStatus;
+  cancelledBy: 'teacher' | 'student' | null;
+  cancelReason: string | null;
+  createdAt: string;
+}
+
+export interface BookingSlotDTO {
+  start: string;
+  end: string;
+  /** Someone has it (or it has passed). */
+  taken: boolean;
+  /** Your own appointment. */
+  mine: boolean;
+}
+
+/** A teacher's bookable office-hour slots for the next two weeks. */
+export interface TeacherSlotsDTO {
+  teacher: { id: string; name: string; officeLocation: string | null };
+  canBook: boolean;
+  /** Why booking isn't possible, in plain words. */
+  reason: string | null;
+  days: { date: string; slots: BookingSlotDTO[] }[];
 }
