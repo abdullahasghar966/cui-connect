@@ -49,6 +49,7 @@ import {
   STAFF,
 } from './data';
 import { seedEvaluation } from './evaluation';
+import { seedEvents } from './events';
 import { seedFees } from './fees';
 import { seedRegistration } from './registration';
 import { seedRequests } from './requests';
@@ -193,6 +194,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   await seedFees();
   await seedRegistration();
   await seedEvaluation();
+  await seedEvents();
 
   // Everyone joins the official groups their role, department, section and courses imply.
   for (const user of people.values()) await reconcileUser(user._id, { notify: false });

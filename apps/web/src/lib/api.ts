@@ -19,6 +19,8 @@ import type {
   CalendarEventDTO,
   CalendarEventInput,
   CalendarItemDTO,
+  CampusEventDTO,
+  CampusEventInput,
   CampusSettingsDTO,
   CampusSettingsInput,
   CatalogCourseDTO,
@@ -46,6 +48,8 @@ import type {
   EvaluationHomeDTO,
   EvaluationInput,
   EvaluationReportDTO,
+  EventDetailDTO,
+  EventsHomeDTO,
   ExamCheckDTO,
   ExamDTO,
   ExamInput,
@@ -99,6 +103,7 @@ import type {
   RoomDTO,
   RoomFinderDTO,
   RoomInput,
+  RsvpStatus,
   SearchResultsDTO,
   SeatingChartDTO,
   SectionDTO,
@@ -398,6 +403,21 @@ export const api = {
       send<FeeChallanDTO>(`/api/services/fees/challans/${id}/unpaid`, 'POST'),
     cancelChallan: (id: string) =>
       send<{ ok: true }>(`/api/services/fees/challans/${id}`, 'DELETE'),
+  },
+
+  campus: {
+    events: () => request<EventsHomeDTO>('/api/campus/events'),
+    event: (id: string) => request<EventDetailDTO>(`/api/campus/events/${id}`),
+    saveEvent: (input: CampusEventInput, id?: string) =>
+      id
+        ? send<CampusEventDTO>(`/api/campus/events/${id}`, 'PUT', input)
+        : send<CampusEventDTO>('/api/campus/events', 'POST', input),
+    decideEvent: (id: string, approve: boolean, note: string | null) =>
+      send<CampusEventDTO>(`/api/campus/events/${id}/decision`, 'POST', { approve, note }),
+    cancelEvent: (id: string, note: string | null) =>
+      send<CampusEventDTO>(`/api/campus/events/${id}/cancel`, 'POST', { note }),
+    rsvp: (id: string, status: RsvpStatus | null) =>
+      send<CampusEventDTO>(`/api/campus/events/${id}/rsvp`, 'PUT', { status }),
   },
 
   evaluation: {

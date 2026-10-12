@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   type LucideIcon,
   MessagesSquare,
+  Trees,
 } from 'lucide-react';
 
 export interface AppArea {
@@ -48,6 +49,13 @@ export function areasFor(me: UserDTO): AppArea[] {
       hint: 'Timetable and courses',
       icon: GraduationCap,
       matches: ['/academics'],
+    },
+    {
+      to: '/campus',
+      label: 'Campus',
+      hint: 'Events and campus life',
+      icon: Trees,
+      matches: ['/campus'],
     },
   ];
   if (hasServices(me)) {

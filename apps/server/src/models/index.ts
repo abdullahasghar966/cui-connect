@@ -5,6 +5,7 @@ import { AttendanceSession } from './AttendanceSession';
 import { AuditLog } from './AuditLog';
 import { Booking } from './Booking';
 import { CalendarEvent } from './CalendarEvent';
+import { CampusEvent, EventRsvp } from './CampusEvent';
 import { CampusSettings } from './CampusSettings';
 import { CatalogCourse } from './CatalogCourse';
 import { ClassChange } from './ClassChange';
@@ -44,6 +45,7 @@ export * from './AttendanceSession';
 export * from './AuditLog';
 export * from './Booking';
 export * from './CalendarEvent';
+export * from './CampusEvent';
 export * from './CampusSettings';
 export * from './CatalogCourse';
 export * from './ClassChange';
@@ -116,6 +118,8 @@ export const ALL_MODELS = [
   Registration,
   EvaluationSheet,
   EvaluationReceipt,
+  CampusEvent,
+  EventRsvp,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

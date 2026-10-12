@@ -1,5 +1,10 @@
 /** Typed Socket.IO contracts shared by the server and the web client. */
-import type { AttendanceCountsDTO, NotificationDTO, RosterEntryDTO } from './academic-dto';
+import type {
+  AttendanceCountsDTO,
+  EventRsvpEvent,
+  NotificationDTO,
+  RosterEntryDTO,
+} from './academic-dto';
 import type { QuizAnswerInput, QuizRefInput } from './academic-schemas';
 import type { ErrorCode, MemberRole, Role } from './constants';
 import type { QuizStatus } from './coursework';
@@ -101,6 +106,8 @@ export interface ServerToClientEvents {
   'notification:new': (notification: NotificationDTO) => void;
   /** A class of these course offerings was added, changed, cancelled or moved. */
   'timetable:changed': (payload: { offeringIds: string[] }) => void;
+  /** Someone answered a campus event: its going/interested counts, for every open page. */
+  'event:rsvps': (payload: EventRsvpEvent) => void;
   /** Seats were taken or freed in next term's offers (everyone registering sees it live). */
   'registration:seats': (payload: { offers: { id: string; seatsTaken: number }[] }) => void;
   /** Someone checked in or was marked (sent to the people running the session). */

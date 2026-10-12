@@ -8,6 +8,7 @@ import {
   Monitor,
   Moon,
   Sun,
+  Trees,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -112,6 +113,9 @@ export function UserMenu({ variant }: { variant: 'rail' | 'tab' }) {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => navigate('/campus')}>
+          <Trees /> Campus: events and campus life
+        </DropdownMenuItem>
         {hasServices(me) && (
           <DropdownMenuItem onSelect={() => navigate('/services')}>
             <Landmark /> Services: requests, fees and complaints

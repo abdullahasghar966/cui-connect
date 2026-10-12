@@ -1,6 +1,13 @@
-import { campusClock } from '@cui/shared';
+import { campusClock, formatClock } from '@cui/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Banknote, Bell, LayoutDashboard, MessagesSquare, PartyPopper } from 'lucide-react';
+import {
+  Banknote,
+  Bell,
+  CalendarHeart,
+  LayoutDashboard,
+  MessagesSquare,
+  PartyPopper,
+} from 'lucide-react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/feedback';
 import { GroupIcon } from '@/components/group-meta';
@@ -11,6 +18,7 @@ import { useCurrentUser, useGroups } from '@/hooks/queries';
 import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
 import { formatListTime } from '@/lib/utils';
+import { DateBlock } from '@/pages/campus/events-ui';
 import { challanTitle, FeeStatusBadge, feeSummary } from '@/pages/services/fees-ui';
 import { HomeCard } from './HomeCard';
 import { TodayCard } from './TodayCard';
@@ -102,6 +110,42 @@ function FeesDueCard() {
   );
 }
 
+/** The next few published events on campus. */
+function EventsCard() {
+  const { data } = useQuery({ queryKey: keys.campusEvents, queryFn: api.campus.events });
+  const next = (data?.upcoming ?? []).filter((e) => e.status === 'published').slice(0, 3);
+  if (!next.length) return null;
+  return (
+    <HomeCard
+      title="Coming up on campus"
+      icon={CalendarHeart}
+      action={{ to: '/campus/events', label: 'All events' }}
+    >
+      <ul className="divide-y">
+        {next.map((e) => (
+          <li key={e.id}>
+            <Link
+              to={`/campus/events/${e.id}`}
+              className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2"
+            >
+              <DateBlock date={e.date} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-semibold">{e.title}</span>
+                <span className="block truncate text-[12.5px] text-muted-foreground">
+                  {formatClock(e.start)} · {e.venue}
+                </span>
+              </span>
+              {e.myRsvp === 'going' && (
+                <span className="text-[12px] font-semibold text-success">Going</span>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </HomeCard>
+  );
+}
+
 export default function HomePage() {
   const me = useCurrentUser();
   const term = useCurrentTerm();
@@ -143,6 +187,7 @@ export default function HomePage() {
           >
             <NotificationList limit={5} />
           </HomeCard>
+          <EventsCard />
           {me.role === 'admin' && (
             <HomeCard
               title="Admin console"

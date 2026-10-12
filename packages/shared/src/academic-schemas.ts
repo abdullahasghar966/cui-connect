@@ -12,6 +12,7 @@ import {
   TIME_PATTERN,
   toMinutes,
 } from './academics';
+import { EVENT_CATEGORIES, RSVP_STATUSES } from './campus';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
 import { EVALUATION_QUESTIONS } from './evaluation';
 import { FEE_INSTALMENTS, feeTotal, LATE_FEE } from './fees';
@@ -547,6 +548,34 @@ export const registrationOffersQuerySchema = z.object({
   departmentId: objectIdSchema.optional(),
 });
 
+// ---- Campus events ----
+
+export const campusEventSchema = z
+  .object({
+    title: z.string().trim().min(3, 'Give the event a title').max(120),
+    description: z.string().trim().min(10, 'Say a little about it').max(3000),
+    category: z.enum(EVENT_CATEGORIES),
+    date: dateSchema,
+    start: timeSchema,
+    end: timeSchema,
+    venue: z.string().trim().min(2, 'Say where it is').max(120),
+    organiser: z.string().trim().min(2, 'Say who is organising it').max(80),
+    capacity: z.number().int().min(1).max(10_000).nullish(),
+  })
+  .refine((e) => toMinutes(e.end) > toMinutes(e.start), {
+    message: 'The event must end after it starts',
+    path: ['end'],
+  });
+
+export const rsvpSchema = z.object({ status: z.enum(RSVP_STATUSES).nullable() });
+
+export const eventDecisionSchema = z.object({
+  approve: z.boolean(),
+  note: z.string().trim().max(500).nullish(),
+});
+
+export const eventCancelSchema = z.object({ note: z.string().trim().max(500).nullish() });
+
 // ---- Teacher evaluation ----
 
 export const evaluationSchema = z.object({
@@ -655,6 +684,10 @@ export type RegistrationPlanInput = z.infer<typeof registrationPlanSchema>;
 export type RegistrationReturnInput = z.infer<typeof registrationReturnSchema>;
 export type RegistrationApproveInput = z.input<typeof registrationApproveSchema>;
 export type RegistrationWindowInput = z.infer<typeof registrationWindowSchema>;
+export type CampusEventInput = z.input<typeof campusEventSchema>;
+export type RsvpInput = z.infer<typeof rsvpSchema>;
+export type EventDecisionInput = z.input<typeof eventDecisionSchema>;
+export type EventCancelInput = z.input<typeof eventCancelSchema>;
 export type EvaluationInput = z.input<typeof evaluationSchema>;
 export type EvaluationWindowInput = z.infer<typeof evaluationWindowSchema>;
 export type IssueChallansInput = z.input<typeof issueChallansSchema>;

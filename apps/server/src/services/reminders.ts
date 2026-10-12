@@ -28,7 +28,10 @@ import {
   type BookingDoc,
   CalendarEvent,
   type CalendarEventDoc,
+  CampusEvent,
+  type CampusEventDoc,
   CourseOffering,
+  EventRsvp,
   Exam,
   type ExamDoc,
   FeeChallan,
@@ -182,6 +185,26 @@ async function appointmentsToday(date: string): Promise<number> {
   return sent;
 }
 
+/** The evening before a campus event: everyone going. */
+async function eventsTomorrow(date: string): Promise<number> {
+  const events = await CampusEvent.find({ status: 'published', date }).lean<CampusEventDoc[]>();
+  let sent = 0;
+  for (const event of events) {
+    const job = `event:${event._id}:${event.date}:${event.start}`;
+    if (done.has(job)) continue;
+    const going = await EventRsvp.find({ eventId: event._id, status: 'going' }).distinct('userId');
+    sent += await notify(going, {
+      type: 'events',
+      title: `Tomorrow: ${event.title} at ${formatClock(event.start)}`,
+      body: `${event.venue} · ${event.organiser}`,
+      link: `/campus/events/${event._id}`,
+      key: `remind:${job}`,
+    });
+    done.add(job);
+  }
+  return sent;
+}
+
 /** Unpaid fee challans: a few days before the due date, and the morning after it (late fee). */
 async function feeReminders(date: string): Promise<number> {
   const soon = addDays(date, FEE_REMINDER_DAYS);
@@ -220,6 +243,7 @@ export async function runReminders(now = new Date()): Promise<number> {
     const tomorrow = addDays(clock.date, 1);
     sent += await examsTomorrow(tomorrow);
     sent += await calendarDay(tomorrow, ['holiday'], 'Tomorrow is a holiday');
+    sent += await eventsTomorrow(tomorrow);
   }
   if (clock.minutes >= MORNING) {
     sent += await calendarDay(clock.date, ['deadline', 'registration'], 'Today');

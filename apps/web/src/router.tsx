@@ -53,6 +53,12 @@ const AssignmentPage = lazy(() => import('@/pages/academics/AssignmentPage'));
 const QuizEditorPage = lazy(() => import('@/pages/academics/QuizEditorPage'));
 const QuizPage = lazy(() => import('@/pages/academics/QuizPage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
+const CampusLayout = lazy(() => import('@/pages/campus/CampusLayout'));
+const CampusIndex = lazy(() =>
+  import('@/pages/campus/CampusLayout').then((m) => ({ default: m.CampusIndex })),
+);
+const EventsPage = lazy(() => import('@/pages/campus/EventsPage'));
+const EventPage = lazy(() => import('@/pages/campus/EventPage'));
 const ServicesLayout = lazy(() => import('@/pages/services/ServicesLayout'));
 const ServicesIndex = lazy(() =>
   import('@/pages/services/ServicesLayout').then((m) => ({ default: m.ServicesIndex })),
@@ -137,6 +143,15 @@ export const router = createBrowserRouter([
       { path: '/notifications', element: <NotificationsPage /> },
       { path: '/attend/:sessionId', element: <CheckInPage /> },
       { path: '/search', element: <SearchPage /> },
+      {
+        path: '/campus',
+        element: <CampusLayout />,
+        children: [
+          { index: true, element: <CampusIndex /> },
+          { path: 'events', element: <EventsPage /> },
+          { path: 'events/:eventId', element: <EventPage /> },
+        ],
+      },
       {
         path: '/services',
         element: <ServicesLayout />,

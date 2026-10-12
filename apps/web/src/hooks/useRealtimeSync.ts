@@ -3,6 +3,10 @@
  * component simply renders cached data and updates arrive without refetching.
  */
 import type {
+  CampusEventDTO,
+  EventDetailDTO,
+  EventRsvpEvent,
+  EventsHomeDTO,
   GroupDTO,
   GroupUpdateEvent,
   MemberDTO,
@@ -42,7 +46,7 @@ const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly (readonly str
   results: [keys.results, keys.coursework],
   attendance: [keys.myAttendance],
   exams: [keys.myExams],
-  events: [['academics', 'calendar']],
+  events: [['academics', 'calendar'], keys.campusEvents],
   coursework: [keys.coursework],
   requests: [keys.services],
   fees: [keys.fees],
@@ -272,6 +276,25 @@ export function useRealtimeSync(): void {
       void qc.invalidateQueries({ queryKey: keys.coursework });
     };
 
+    // Someone answered a campus event: its counts move wherever it is shown.
+    const onEventRsvps = ({ eventId, going, interested }: EventRsvpEvent) => {
+      const patch = <T extends CampusEventDTO>(event: T): T =>
+        event.id === eventId ? { ...event, going, interested } : event;
+      qc.setQueryData<EventsHomeDTO>(keys.campusEvents, (home) =>
+        home
+          ? {
+              ...home,
+              upcoming: home.upcoming.map(patch),
+              past: home.past.map(patch),
+              waiting: home.waiting.map(patch),
+            }
+          : home,
+      );
+      qc.setQueryData<EventDetailDTO>(keys.campusEvent(eventId), (event) =>
+        event ? patch(event) : event,
+      );
+    };
+
     // Someone sent or took back a course plan: seat counts move on every registration page.
     const onRegistrationSeats = ({ offers }: { offers: { id: string; seatsTaken: number }[] }) => {
       const taken = new Map(offers.map((o) => [o.id, o.seatsTaken]));
@@ -327,6 +350,7 @@ export function useRealtimeSync(): void {
     socket.on('timetable:changed', onTimetableChanged);
     socket.on('quiz:state', onQuizState);
     socket.on('registration:seats', onRegistrationSeats);
+    socket.on('event:rsvps', onEventRsvps);
 
     if (socket.connected) onConnect();
     else {
@@ -357,6 +381,7 @@ export function useRealtimeSync(): void {
       socket.off('timetable:changed', onTimetableChanged);
       socket.off('quiz:state', onQuizState);
       socket.off('registration:seats', onRegistrationSeats);
+      socket.off('event:rsvps', onEventRsvps);
     };
   }, [me.id, qc, navigate]);
 }

@@ -105,6 +105,7 @@ function DayItems({ items, date }: { items: CalendarItemDTO[]; date: string }) {
             </span>
             {item.kind === 'exam' && <Badge tone="warning">Exam</Badge>}
             {item.kind === 'booking' && <Badge tone="primary">Appointment</Badge>}
+            {item.kind === 'event' && <Badge tone="success">Campus event</Badge>}
             {item.status === 'cancelled' && <Badge tone="danger">Cancelled</Badge>}
             {item.status === 'moved' && <Badge tone="warning">Moved here</Badge>}
           </p>
@@ -222,7 +223,9 @@ function MyCalendar() {
                           ? CATEGORY_TONE[o.category]
                           : o.kind === 'booking'
                             ? 'border-primary/25 bg-primary-soft text-primary dark:text-link'
-                            : 'border-warning/25 bg-warning-soft text-warning',
+                            : o.kind === 'event'
+                              ? 'border-success/25 bg-primary-soft text-success'
+                              : 'border-warning/25 bg-warning-soft text-warning',
                       )}
                     >
                       {o.kind === 'exam'

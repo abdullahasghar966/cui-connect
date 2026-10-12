@@ -26,6 +26,7 @@ import {
 import { broadcastTimetableChanged } from '../realtime/notifier';
 import { recordAudit } from './audit';
 import { bookingPeople } from './bookings';
+import { myGoingEvents } from './events';
 import { myExams } from './exams';
 import { toObjectId, toPolicyUser } from './mappers';
 import { notify } from './notifications';
@@ -137,7 +138,7 @@ export async function myCalendar(
   to: string,
 ): Promise<CalendarItemDTO[]> {
   const days = Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1;
-  const [academic, classes, exams, bookings] = await Promise.all([
+  const [academic, classes, exams, bookings, going] = await Promise.all([
     CalendarEvent.find(overlapping(from, to)).lean<CalendarEventDoc[]>(),
     viewer.role === 'student' || viewer.role === 'faculty'
       ? myOccurrences(viewer, from, days)
@@ -148,6 +149,7 @@ export async function myCalendar(
       status: 'booked',
       date: { $gte: from, $lte: to },
     }).lean<BookingDoc[]>(),
+    myGoingEvents(viewer, from, to),
   ]);
   const items: CalendarItemDTO[] = [];
   for (const e of academic) {
@@ -223,6 +225,21 @@ export async function myCalendar(
       start: b.start,
       end: b.end,
       link: '/academics/teachers?tab=appointments',
+      status: null,
+      category: null,
+      endsOn: null,
+    });
+  }
+  for (const e of going) {
+    items.push({
+      id: `event-${e._id}`,
+      kind: 'event',
+      title: e.title,
+      detail: [e.venue, e.organiser].join(' · '),
+      date: e.date,
+      start: e.start,
+      end: e.end,
+      link: `/campus/events/${e._id}`,
       status: null,
       category: null,
       endsOn: null,

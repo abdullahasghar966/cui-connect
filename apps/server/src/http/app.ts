@@ -13,6 +13,7 @@ import { academicsRouter } from './routes/academics';
 import { adminRouter } from './routes/admin';
 import { apiRouter } from './routes/api';
 import { authRouter } from './routes/auth';
+import { campusRouter } from './routes/campus';
 import { courseworkRouter } from './routes/coursework';
 import { evaluationRouter } from './routes/evaluation';
 import { examsRouter } from './routes/exams';
@@ -80,6 +81,7 @@ export function createApp() {
   app.use('/api/files', requireAuth, filesRouter);
   app.use('/api/push', requireAuth, pushRouter);
   app.use('/api/services', requireAuth, servicesRouter);
+  app.use('/api/campus', requireAuth, campusRouter);
   app.use('/api', requireAuth, apiRouter);
   app.use('/api', () => {
     throw notFound('No such API endpoint.');

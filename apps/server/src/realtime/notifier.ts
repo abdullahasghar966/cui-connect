@@ -5,6 +5,7 @@
 import type {
   AttendanceUpdateEvent,
   AuditDTO,
+  EventRsvpEvent,
   GroupUpdateEvent,
   LiveStatsDTO,
   MemberUpdateEvent,
@@ -55,6 +56,11 @@ export function sendAttendanceUpdate(userIds: string[], update: AttendanceUpdate
 /** Timetables are public on campus, so every open timetable view refreshes. */
 export function broadcastTimetableChanged(offeringIds: string[]): void {
   io?.emit('timetable:changed', { offeringIds });
+}
+
+/** An event's going/interested counts changed: every page showing it updates. */
+export function broadcastEventRsvps(event: EventRsvpEvent): void {
+  io?.emit('event:rsvps', event);
 }
 
 /** Seats changed in next term's offers: everyone registering sees the counts move. */

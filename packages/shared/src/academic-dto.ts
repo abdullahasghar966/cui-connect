@@ -12,6 +12,7 @@ import type {
   RoomKind,
 } from './academics';
 import type { BookingStatus } from './bookings';
+import type { EventCategory, EventStatus, RsvpStatus } from './campus';
 import type { NotificationType } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
@@ -387,7 +388,7 @@ export interface CalendarEventDTO {
 /** One entry on a person's own calendar: a class, a paper, or an academic calendar entry. */
 export interface CalendarItemDTO {
   id: string;
-  kind: 'class' | 'exam' | 'academic' | 'booking';
+  kind: 'class' | 'exam' | 'academic' | 'booking' | 'event';
   title: string;
   detail: string | null;
   date: string;
@@ -955,6 +956,55 @@ export interface OfferStudentDTO {
   regNo: string | null;
   sectionName: string | null;
   status: 'submitted' | 'approved';
+}
+
+// ---- Campus events ----
+
+export interface CampusEventDTO {
+  id: string;
+  title: string;
+  description: string;
+  category: EventCategory;
+  date: string;
+  start: string;
+  end: string;
+  venue: string;
+  organiser: string;
+  /** Null when there's no limit on who can come. */
+  capacity: number | null;
+  going: number;
+  interested: number;
+  status: EventStatus;
+  createdBy: { id: string; name: string };
+  /** Student Affairs' note when it wasn't approved, or the reason it was cancelled. */
+  note: string | null;
+  /** The viewer's own answer. */
+  myRsvp: RsvpStatus | null;
+  /** The viewer created it, or moderates events (Student Affairs, IT). */
+  canEdit: boolean;
+  /** The viewer approves events (Student Affairs, IT). */
+  canModerate: boolean;
+}
+
+export interface EventsHomeDTO {
+  upcoming: CampusEventDTO[];
+  past: CampusEventDTO[];
+  /** Moderators: everything waiting; others: their own events that aren't published. */
+  waiting: CampusEventDTO[];
+  canPublish: boolean;
+  /** Student Affairs or IT: approves events. */
+  canModerate: boolean;
+}
+
+export interface EventDetailDTO extends CampusEventDTO {
+  /** Who is going (for its organiser and moderators only). */
+  attendees: { id: string; name: string; detail: string | null }[] | null;
+}
+
+export interface EventRsvpEvent {
+  eventId: string;
+  going: number;
+  interested: number;
 }
 
 // ---- Teacher evaluation ----

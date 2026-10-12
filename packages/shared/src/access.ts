@@ -166,6 +166,16 @@ export function canManageStudentAffairs(user: PolicyUser): Decision {
     : officeOnly('STUDENT_AFFAIRS', 'do that');
 }
 
+/** Offices and IT publish campus events directly; students' and teachers' events are checked first. */
+export function canPublishEvent(user: PolicyUser): Decision {
+  if (!user.active) return inactive;
+  if (isAdmin(user) || user.role === 'staff') return ALLOW;
+  return deny(
+    'NOT_ALLOWED',
+    'Events by students and teachers are checked by Student Affairs first.',
+  );
+}
+
 /** Where a request was sent: a person (a batch advisor) or an office (of a department). */
 export interface RequestRoute {
   office: Office | null;
