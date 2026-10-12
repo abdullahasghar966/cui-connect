@@ -11,9 +11,18 @@ import type {
   MessageDTO,
   NotificationDTO,
   PollDTO,
+  QuizStateEvent,
+  QuizTallyEvent,
 } from '@cui/shared';
 import { buildGroupDTO } from '../services/groups';
-import { type AdminNamespace, groupRoom, type IoServer, userRoom } from './types';
+import {
+  type AdminNamespace,
+  groupRoom,
+  type IoServer,
+  quizHostRoom,
+  quizRoom,
+  userRoom,
+} from './types';
 
 let io: IoServer | null = null;
 let adminNs: AdminNamespace | null = null;
@@ -49,6 +58,35 @@ export function broadcastTimetableChanged(offeringIds: string[]): void {
 
 export function broadcastPollUpdated(groupId: string, messageId: string, poll: PollDTO): void {
   io?.to(groupRoom(groupId)).emit('poll:updated', { groupId, messageId, poll });
+}
+
+/**
+ * A live quiz moved on: everyone on its page, and the course chat's members (whose coursework
+ * pages show what's live), refetch. The event carries no answers.
+ */
+export function broadcastQuizState(groupId: string | null, event: QuizStateEvent): void {
+  if (!io) return;
+  const rooms = [quizRoom(event.quizId), quizHostRoom(event.quizId)];
+  if (groupId) rooms.push(groupRoom(groupId));
+  io.to(rooms).emit('quiz:state', event);
+}
+
+/** Live answer counts go to the teacher only, so students can't follow the crowd. */
+export function sendQuizTally(quizId: string, tally: QuizTallyEvent): void {
+  io?.to(quizHostRoom(quizId)).emit('quiz:tally', tally);
+}
+
+/** Students with the quiz page open right now. */
+export async function quizJoinedCount(quizId: string): Promise<number> {
+  if (!io) return 0;
+  const sockets = await io.in(quizRoom(quizId)).fetchSockets();
+  return new Set(sockets.filter((s) => s.data.role === 'student').map((s) => s.data.userId)).size;
+}
+
+export async function sendQuizPresence(quizId: string): Promise<number> {
+  const joined = await quizJoinedCount(quizId);
+  io?.to(quizHostRoom(quizId)).emit('quiz:presence', { quizId, joined });
+  return joined;
 }
 
 export function broadcastMessageDeleted(groupId: string, messageId: string): void {

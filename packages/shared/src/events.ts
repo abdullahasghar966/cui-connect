@@ -1,6 +1,8 @@
 /** Typed Socket.IO contracts shared by the server and the web client. */
 import type { AttendanceCountsDTO, NotificationDTO, RosterEntryDTO } from './academic-dto';
+import type { QuizAnswerInput, QuizRefInput } from './academic-schemas';
 import type { ErrorCode, MemberRole, Role } from './constants';
+import type { QuizStatus } from './coursework';
 import type { AuditDTO, GroupDTO, LiveStatsDTO, MemberDTO, MessageDTO, PollDTO } from './dto';
 import type { GroupSettings } from './policy';
 import type {
@@ -58,6 +60,13 @@ export interface ClientToServerEvents {
   'presence:list': (ack: AckCallback<string[]>) => void;
   'poll:vote': (payload: PollVoteInput, ack: AckCallback<PollDTO>) => void;
   'poll:close': (payload: MessageRefInput, ack: AckCallback<PollDTO>) => void;
+  /** Open a live quiz page: students of the course and its instructor. */
+  'quiz:join': (payload: QuizRefInput, ack: AckCallback<{ joined: number }>) => void;
+  'quiz:leave': (payload: QuizRefInput) => void;
+  'quiz:answer': (
+    payload: QuizAnswerInput,
+    ack: AckCallback<{ questionId: string; choice: number }>,
+  ) => void;
 }
 
 export interface ServerToClientEvents {
@@ -78,6 +87,31 @@ export interface ServerToClientEvents {
   'timetable:changed': (payload: { offeringIds: string[] }) => void;
   /** Someone checked in or was marked (sent to the people running the session). */
   'attendance:update': (payload: AttendanceUpdateEvent) => void;
+  /** A live quiz moved on (started, next question, answer shown, ended): refetch it. */
+  'quiz:state': (payload: QuizStateEvent) => void;
+  /** Answers so far to the open question (sent to the quiz's host only). */
+  'quiz:tally': (payload: QuizTallyEvent) => void;
+  /** Students on the quiz page (host only). */
+  'quiz:presence': (payload: QuizPresenceEvent) => void;
+}
+
+export interface QuizStateEvent {
+  quizId: string;
+  status: QuizStatus;
+  current: number;
+  revealed: boolean;
+}
+
+export interface QuizPresenceEvent {
+  quizId: string;
+  joined: number;
+}
+
+export interface QuizTallyEvent {
+  quizId: string;
+  questionId: string;
+  counts: number[];
+  answered: number;
 }
 
 export interface AttendanceUpdateEvent {

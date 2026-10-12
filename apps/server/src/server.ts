@@ -9,6 +9,8 @@ import { resetPresence } from './realtime/presence';
 import type { IoServer } from './realtime/types';
 import { seedDatabase } from './seed/seed';
 import { ensureAcademicDefaults } from './services/academic-setup';
+import { startFileSweeper } from './services/files';
+import { stopQuizTimers } from './services/quizzes';
 import { startReminderScheduler } from './services/reminders';
 
 export interface StartOptions {
@@ -19,8 +21,11 @@ export interface StartOptions {
   autoSeed?: boolean;
   /** Wipe and re-seed on every start (used by end-to-end tests). */
   resetSeed?: boolean;
-  /** Send due reminders once a minute (off in unit tests, which call them directly). */
-  reminders?: boolean;
+  /**
+   * Background jobs: reminders once a minute and the hourly clean-up of abandoned uploads (off in
+   * unit tests, which call them directly).
+   */
+  background?: boolean;
 }
 
 export interface RunningServer {
@@ -51,14 +56,16 @@ export async function startServer(options: StartOptions): Promise<RunningServer>
     httpServer.listen(options.port, () => resolve());
   });
   const { port } = httpServer.address() as AddressInfo;
-  const stopReminders = options.reminders === false ? () => {} : startReminderScheduler();
+  const background =
+    options.background === false ? [] : [startReminderScheduler(), startFileSweeper()];
 
   return {
     url: `http://localhost:${port}`,
     port,
     io: realtime.io,
     close: async () => {
-      stopReminders();
+      for (const stop of background) stop();
+      stopQuizTimers();
       await realtime.close();
       resetPresence();
       await mongoose.disconnect();

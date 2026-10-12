@@ -17,6 +17,7 @@ import {
   type UserDoc,
 } from '../models';
 import { recordAudit } from '../services/audit';
+import { clearStoredFiles } from '../services/files';
 import { invalidateOrgLookup } from '../services/mappers';
 import {
   ensureCampusGroup,
@@ -35,6 +36,7 @@ import {
   seedOfficeHours,
   seedTimetable,
 } from './academic';
+import { seedCoursework } from './coursework';
 import {
   COURSES,
   DEMO_PASSWORD,
@@ -63,6 +65,7 @@ function must<T>(value: T | undefined | null, what: string): T {
  */
 export async function seedDatabase(): Promise<SeedSummary> {
   await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
+  await clearStoredFiles();
   invalidateOrgLookup();
   invalidateTermCache();
 
@@ -177,6 +180,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   await seedTimetable([...courses.values()], academic.currentTerm);
   await seedAttendance([...courses.values()], academic.currentTerm);
   await seedMarks([...courses.values()], academic.terms, academic.currentTerm);
+  await seedCoursework(must(courses.get('awt7a'), 'course awt7a'), academic.currentTerm);
   await seedExams([...courses.values()], academic.currentTerm);
   await seedOfficeHours();
 

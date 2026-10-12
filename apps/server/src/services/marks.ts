@@ -34,11 +34,13 @@ import { assertAllowed, badRequest, notFound, parse } from '../lib/errors';
 import {
   Assessment,
   type AssessmentDoc,
+  Assignment,
   CatalogCourse,
   CourseOffering,
   type CourseOfferingDoc,
   Mark,
   type MarkDoc,
+  Quiz,
   Result,
   type ResultDoc,
   Term,
@@ -239,9 +241,19 @@ export async function updateAssessment(
 export async function deleteAssessment(actor: UserDoc, assessmentId: string): Promise<void> {
   const { assessment, ctx } = await loadAssessment(assessmentId);
   assertAllowed(manageDecision(actor, ctx));
+  const assignment = await Assignment.findOne({ assessmentId: assessment._id })
+    .select('title')
+    .lean();
+  if (assignment) {
+    throw badRequest(
+      `These are the grades of the assignment "${assignment.title}". Delete the assignment instead.`,
+    );
+  }
   await Promise.all([
     Assessment.deleteOne({ _id: assessment._id }),
     Mark.deleteMany({ assessmentId: assessment._id }),
+    // A live quiz whose scores were saved here can be saved again later.
+    Quiz.updateMany({ assessmentId: assessment._id }, { $set: { assessmentId: null } }),
   ]);
   void recordAudit({
     action: 'assessment.deleted',
@@ -309,6 +321,8 @@ export async function publishAssessment(
   actor: UserDoc,
   assessmentId: string,
   publish: boolean,
+  /** Where the "marks are out" notification leads. */
+  link = '/academics/results',
 ): Promise<void> {
   const { assessment, ctx } = await loadAssessment(assessmentId);
   assertAllowed(manageDecision(actor, ctx));
@@ -342,7 +356,7 @@ export async function publishAssessment(
       type: 'results',
       title: `${ctx.offering.title} ${assessment.title} marks are out`,
       body: `${describeScore(marks.get(studentId) ?? null, assessment.total)}${average}`,
-      link: '/academics/results',
+      link,
       key: `results:${assessment._id}`,
     });
   }

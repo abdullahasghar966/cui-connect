@@ -1,6 +1,7 @@
 /**
  * Reminders, checked once a minute inside the server: the evening before a paper or a holiday,
- * and the morning of a deadline or registration window. Each reminder has a notification key,
+ * the morning of a deadline or registration window, and a day before an assignment is due (to
+ * students who haven't handed it in). Each reminder has a notification key,
  * so a restart (or the next minute) never sends it twice; an in-memory list skips the work.
  * (Free hosting sleeps when idle, so reminders go out while the site is awake.)
  */
@@ -10,10 +11,13 @@ import {
   campusClock,
   EXAM_KIND_LABELS,
   formatClock,
+  formatInstant,
   formatShortDate,
 } from '@cui/shared';
 import { logger } from '../lib/logger';
 import {
+  Assignment,
+  type AssignmentDoc,
   CalendarEvent,
   type CalendarEventDoc,
   CourseOffering,
@@ -21,6 +25,7 @@ import {
   type ExamDoc,
   Room,
   SeatAssignment,
+  Submission,
   User,
 } from '../models';
 import { notify } from './notifications';
@@ -100,6 +105,33 @@ async function calendarDay(date: string, kinds: CalendarKind[], word: string): P
   return sent;
 }
 
+/** Students who haven't handed in an assignment due within a day (once per due time). */
+async function assignmentsDueSoon(now: Date): Promise<number> {
+  const soon = await Assignment.find({
+    dueAt: { $gt: now, $lte: new Date(now.getTime() + 24 * 60 * 60 * 1000) },
+  }).lean<AssignmentDoc[]>();
+  let sent = 0;
+  for (const assignment of soon) {
+    const job = `assignment:${assignment._id}:${assignment.dueAt.toISOString()}`;
+    if (done.has(job)) continue;
+    const [offering, handedIn] = await Promise.all([
+      CourseOffering.findById(assignment.offeringId).select('title studentIds').lean(),
+      Submission.find({ assignmentId: assignment._id }).distinct('studentId'),
+    ]);
+    const submitted = new Set(handedIn.map(String));
+    const waiting = (offering?.studentIds ?? []).filter((id) => !submitted.has(String(id)));
+    sent += await notify(waiting, {
+      type: 'coursework',
+      title: `Due soon: ${offering?.title ?? 'Assignment'} ${assignment.title}`,
+      body: `Due ${formatInstant(assignment.dueAt.toISOString())}. You haven't handed it in yet.`,
+      link: `/academics/assignments/${assignment._id}`,
+      key: `remind:${job}`,
+    });
+    done.add(job);
+  }
+  return sent;
+}
+
 /** Sends whatever is due at `now` (campus time). Safe to call any number of times. */
 export async function runReminders(now = new Date()): Promise<number> {
   const clock = campusClock(now);
@@ -112,6 +144,7 @@ export async function runReminders(now = new Date()): Promise<number> {
   if (clock.minutes >= MORNING) {
     sent += await calendarDay(clock.date, ['deadline', 'registration'], 'Today');
   }
+  sent += await assignmentsDueSoon(now);
   return sent;
 }
 

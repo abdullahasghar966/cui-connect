@@ -1,4 +1,5 @@
 import { Assessment } from './Assessment';
+import { Assignment } from './Assignment';
 import { AttendanceRecord } from './AttendanceRecord';
 import { AttendanceSession } from './AttendanceSession';
 import { AuditLog } from './AuditLog';
@@ -12,18 +13,24 @@ import { Department } from './Department';
 import { Exam } from './Exam';
 import { Group } from './Group';
 import { Mark } from './Mark';
+import { Material } from './Material';
 import { Membership } from './Membership';
 import { Message } from './Message';
 import { Notification } from './Notification';
 import { Program } from './Program';
+import { Quiz } from './Quiz';
+import { QuizResponse } from './QuizResponse';
 import { Result } from './Result';
 import { Room } from './Room';
 import { SeatAssignment } from './SeatAssignment';
 import { Section } from './Section';
+import { StoredFile } from './StoredFile';
+import { Submission } from './Submission';
 import { Term } from './Term';
 import { User } from './User';
 
 export * from './Assessment';
+export * from './Assignment';
 export * from './AttendanceRecord';
 export * from './AttendanceSession';
 export * from './AuditLog';
@@ -37,14 +44,19 @@ export * from './Department';
 export * from './Exam';
 export * from './Group';
 export * from './Mark';
+export * from './Material';
 export * from './Membership';
 export * from './Message';
 export * from './Notification';
 export * from './Program';
+export * from './Quiz';
+export * from './QuizResponse';
 export * from './Result';
 export * from './Room';
 export * from './SeatAssignment';
 export * from './Section';
+export * from './StoredFile';
+export * from './Submission';
 export * from './Term';
 export * from './User';
 
@@ -73,6 +85,12 @@ export const ALL_MODELS = [
   Exam,
   SeatAssignment,
   CalendarEvent,
+  StoredFile,
+  Assignment,
+  Submission,
+  Material,
+  Quiz,
+  QuizResponse,
 ] as const;
 
 /** Models whose index definitions changed since launch: stale indexes are dropped and rebuilt. */

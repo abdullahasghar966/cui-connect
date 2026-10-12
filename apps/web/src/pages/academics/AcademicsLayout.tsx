@@ -9,6 +9,7 @@ import {
   FileText,
   GraduationCap,
   NotebookPen,
+  NotebookTabs,
   Users,
 } from 'lucide-react';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
@@ -16,7 +17,7 @@ import { useCurrentUser } from '@/hooks/queries';
 import { canManageExams } from './ExamsPage';
 import { canEditTimetable } from './TimetablePage';
 
-/** Everything about studying and teaching: timetable, courses, attendance, results, exams. */
+/** Everything about studying and teaching: timetable, coursework, attendance, results, exams. */
 export default function AcademicsLayout() {
   const me = useCurrentUser();
   const sections: AreaSection[] = [
@@ -27,6 +28,7 @@ export default function AcademicsLayout() {
     { to: '/academics/rooms', label: 'Room finder', icon: DoorOpen },
   ];
   if (me.role === 'student' || me.role === 'faculty') {
+    sections.push({ to: '/academics/coursework', label: 'Coursework', icon: NotebookTabs });
     sections.push({ to: '/academics/attendance', label: 'Attendance', icon: ClipboardCheck });
     sections.push(
       me.role === 'student'

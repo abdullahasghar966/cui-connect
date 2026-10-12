@@ -2,6 +2,7 @@ import { createUserSchema } from '@cui/shared';
 import { hashPassword } from '../auth/password';
 import { ALL_MODELS, AuditLog, User, type UserDoc } from '../models';
 import { recordAudit } from '../services/audit';
+import { clearStoredFiles } from '../services/files';
 import { invalidateOrgLookup } from '../services/mappers';
 import { ensureCampusGroup, reconcileUser } from '../services/provisioning';
 import { invalidateTermCache } from '../services/terms';
@@ -43,6 +44,7 @@ export async function createFirstAdmin(input: SetupInput): Promise<UserDoc> {
 export async function setupFreshCampus(input: SetupInput): Promise<UserDoc> {
   parseAdmin(input); // validate before deleting anything
   await Promise.all(ALL_MODELS.map((model) => model.collection.deleteMany({})));
+  await clearStoredFiles();
   invalidateOrgLookup();
   invalidateTermCache();
   return createFirstAdmin(input);

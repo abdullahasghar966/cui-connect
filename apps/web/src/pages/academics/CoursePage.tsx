@@ -17,6 +17,7 @@ import {
   ClipboardCheck,
   MessagesSquare,
   NotebookPen,
+  NotebookTabs,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
@@ -103,6 +104,14 @@ function SectionRow({ section }: { section: CourseSectionDTO }) {
             className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             <NotebookPen /> Marks
+          </Link>
+        )}
+        {(section.groupId || section.canViewRecords) && (
+          <Link
+            to={`/academics/coursework/${section.offeringId}`}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
+          >
+            <NotebookTabs /> Coursework
           </Link>
         )}
         {section.groupId && (

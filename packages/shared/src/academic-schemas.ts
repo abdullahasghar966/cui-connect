@@ -12,6 +12,7 @@ import {
   TIME_PATTERN,
   toMinutes,
 } from './academics';
+import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
 import { objectIdSchema } from './schemas';
 
 export const courseCodeSchema = z
@@ -330,6 +331,111 @@ export const markNotificationsSchema = z.union([
   z.object({ ids: z.array(objectIdSchema).min(1).max(100) }),
 ]);
 
+// ---- Coursework ----
+
+/** An exact moment, e.g. `2026-10-23T18:59:00.000Z`. */
+export const instantSchema = z.iso.datetime({ offset: true, message: 'Choose a date and time' });
+
+const fileIds = z.array(objectIdSchema).max(MAX_FILES_PER_ITEM, 'At most 5 files').default([]);
+
+export const assignmentSchema = z
+  .object({
+    title: z.string().trim().min(3, 'Give the assignment a title').max(60),
+    instructions: z.string().trim().max(5000).nullish(),
+    dueAt: instantSchema,
+    /** Accept late work until then (null = no late submissions). */
+    lateUntil: instantSchema.nullish(),
+    total: z.number().int('Use whole marks').min(1).max(100),
+    attachmentIds: fileIds,
+  })
+  .refine((a) => !a.lateUntil || Date.parse(a.lateUntil) > Date.parse(a.dueAt), {
+    message: 'Late work must be accepted until after the due time',
+    path: ['lateUntil'],
+  });
+
+export const submissionSchema = z
+  .object({ fileIds, note: z.string().trim().max(2000).nullish() })
+  .refine((s) => s.fileIds.length > 0 || !!s.note, {
+    message: 'Attach a file or write an answer',
+    path: ['fileIds'],
+  });
+
+export const assignmentGradesSchema = z.object({
+  grades: z
+    .array(
+      z.object({
+        studentId: objectIdSchema,
+        obtained: mark.nullable(),
+        feedback: z.string().trim().max(1000).nullish(),
+      }),
+    )
+    .min(1)
+    .max(500),
+});
+
+export const returnGradesSchema = z.object({ returned: z.boolean() });
+
+export const materialSchema = z
+  .object({
+    week: z.number().int().min(1, 'Week 1 to 18').max(18, 'Week 1 to 18'),
+    title: z.string().trim().min(2, 'Give it a title').max(120),
+    description: z.string().trim().max(500).nullish(),
+    fileId: objectIdSchema.nullish(),
+    url: z
+      .url({ protocol: /^https?$/, message: 'Use a full web address starting with https://' })
+      .max(500)
+      .nullish(),
+  })
+  .refine((m) => !!m.fileId !== !!m.url, {
+    message: 'Upload a file or give a link',
+    path: ['url'],
+  });
+
+export const quizQuestionSchema = z
+  .object({
+    /** Kept when editing, so answers stay attached to their question. */
+    id: z
+      .string()
+      .regex(/^q\d{1,3}$/)
+      .optional(),
+    text: z.string().trim().min(1, 'Write the question').max(500),
+    options: z
+      .array(z.string().trim().min(1, 'Fill in every option').max(200))
+      .min(QUIZ_LIMITS.minOptions, 'Give at least two options')
+      .max(QUIZ_LIMITS.maxOptions, 'At most six options'),
+    correct: z.number().int().min(0),
+    points: z.number().int().min(1).max(QUIZ_LIMITS.maxPoints).default(1),
+    seconds: z.number().int().min(QUIZ_LIMITS.minSeconds).max(QUIZ_LIMITS.maxSeconds).default(30),
+  })
+  .refine((q) => q.correct < q.options.length, {
+    message: 'Mark which option is right',
+    path: ['correct'],
+  })
+  .refine((q) => new Set(q.options.map((o) => o.toLowerCase())).size === q.options.length, {
+    message: 'Each option must be different',
+    path: ['options'],
+  });
+
+export const quizSchema = z.object({
+  title: z.string().trim().min(3, 'Give the quiz a title').max(60),
+  questions: z
+    .array(quizQuestionSchema)
+    .min(1, 'Add at least one question')
+    .max(QUIZ_LIMITS.questions),
+});
+
+export const quizRefSchema = z.object({ quizId: objectIdSchema });
+
+export const quizAnswerSchema = z.object({
+  quizId: objectIdSchema,
+  questionId: z.string().regex(/^q\d{1,3}$/),
+  choice: z
+    .number()
+    .int()
+    .min(0)
+    .max(QUIZ_LIMITS.maxOptions - 1),
+});
+
 export type CreateTermInput = z.infer<typeof createTermSchema>;
 export type RoomInput = z.input<typeof roomSchema>;
 export type CatalogCourseInput = z.input<typeof catalogCourseSchema>;
@@ -347,3 +453,11 @@ export type CourseGradingInput = z.input<typeof courseGradingSchema>;
 export type ExamInput = z.input<typeof examSchema>;
 export type OfficeInput = z.infer<typeof officeSchema>;
 export type CalendarEventInput = z.input<typeof calendarEventSchema>;
+export type AssignmentInput = z.input<typeof assignmentSchema>;
+export type SubmissionInput = z.input<typeof submissionSchema>;
+export type AssignmentGradesInput = z.input<typeof assignmentGradesSchema>;
+export type MaterialInput = z.input<typeof materialSchema>;
+export type QuizQuestionInput = z.input<typeof quizQuestionSchema>;
+export type QuizInput = z.input<typeof quizSchema>;
+export type QuizRefInput = z.infer<typeof quizRefSchema>;
+export type QuizAnswerInput = z.infer<typeof quizAnswerSchema>;

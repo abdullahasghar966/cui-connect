@@ -1,8 +1,8 @@
 /**
- * Running a course: attendance now, marks and coursework later. Every action is checked with
+ * Running a course: attendance, marks, assignments, materials and live quizzes. Every action is checked with
  * the access rules (the course's instructor or IT; the HOD and Exam Office may look).
  */
-import { objectIdSchema } from '@cui/shared';
+import { objectIdSchema, returnGradesSchema } from '@cui/shared';
 import { type Request, Router } from 'express';
 import { currentUser } from '../../auth/middleware';
 import { parse } from '../../lib/errors';
@@ -16,6 +16,15 @@ import {
   teachingCourses,
 } from '../../services/attendance';
 import {
+  addMaterial,
+  createAssignment,
+  deleteAssignment,
+  deleteMaterial,
+  returnAssignmentGrades,
+  saveAssignmentGrades,
+  updateAssignment,
+} from '../../services/coursework';
+import {
   createAssessment,
   deleteAssessment,
   finalizeCourse,
@@ -25,6 +34,16 @@ import {
   setGrading,
   updateAssessment,
 } from '../../services/marks';
+import {
+  createQuiz,
+  deleteQuiz,
+  endQuiz,
+  nextQuestion,
+  revealAnswer,
+  saveQuizMarks,
+  startQuiz,
+  updateQuiz,
+} from '../../services/quizzes';
 
 export const teachingRouter = Router();
 
@@ -103,4 +122,76 @@ teachingRouter.put('/attendance/:sessionId/students/:studentId', async (req, res
 
 teachingRouter.post('/attendance/:sessionId/close', async (req, res) => {
   res.json(await closeSession(currentUser(req), id(req, 'sessionId')));
+});
+
+// ---- Assignments ----
+
+teachingRouter.post('/courses/:offeringId/assignments', async (req, res) => {
+  res.status(201).json(await createAssignment(currentUser(req), id(req, 'offeringId'), req.body));
+});
+
+teachingRouter.put('/assignments/:assignmentId', async (req, res) => {
+  res.json(await updateAssignment(currentUser(req), id(req, 'assignmentId'), req.body));
+});
+
+teachingRouter.delete('/assignments/:assignmentId', async (req, res) => {
+  await deleteAssignment(currentUser(req), id(req, 'assignmentId'));
+  res.json({ ok: true });
+});
+
+teachingRouter.put('/assignments/:assignmentId/grades', async (req, res) => {
+  res.json(await saveAssignmentGrades(currentUser(req), id(req, 'assignmentId'), req.body));
+});
+
+teachingRouter.post('/assignments/:assignmentId/return', async (req, res) => {
+  const { returned } = parse(returnGradesSchema, req.body);
+  await returnAssignmentGrades(currentUser(req), id(req, 'assignmentId'), returned);
+  res.json({ ok: true });
+});
+
+// ---- Materials ----
+
+teachingRouter.post('/courses/:offeringId/materials', async (req, res) => {
+  res.status(201).json(await addMaterial(currentUser(req), id(req, 'offeringId'), req.body));
+});
+
+teachingRouter.delete('/materials/:materialId', async (req, res) => {
+  await deleteMaterial(currentUser(req), id(req, 'materialId'));
+  res.json({ ok: true });
+});
+
+// ---- Live quizzes ----
+
+teachingRouter.post('/courses/:offeringId/quizzes', async (req, res) => {
+  res.status(201).json(await createQuiz(currentUser(req), id(req, 'offeringId'), req.body));
+});
+
+teachingRouter.put('/quizzes/:quizId', async (req, res) => {
+  res.json(await updateQuiz(currentUser(req), id(req, 'quizId'), req.body));
+});
+
+teachingRouter.delete('/quizzes/:quizId', async (req, res) => {
+  await deleteQuiz(currentUser(req), id(req, 'quizId'));
+  res.json({ ok: true });
+});
+
+// Running it: start (students are told), show the next question, show the answer early, end.
+teachingRouter.post('/quizzes/:quizId/start', async (req, res) => {
+  res.json(await startQuiz(currentUser(req), id(req, 'quizId')));
+});
+
+teachingRouter.post('/quizzes/:quizId/next', async (req, res) => {
+  res.json(await nextQuestion(currentUser(req), id(req, 'quizId')));
+});
+
+teachingRouter.post('/quizzes/:quizId/reveal', async (req, res) => {
+  res.json(await revealAnswer(currentUser(req), id(req, 'quizId')));
+});
+
+teachingRouter.post('/quizzes/:quizId/end', async (req, res) => {
+  res.json(await endQuiz(currentUser(req), id(req, 'quizId')));
+});
+
+teachingRouter.post('/quizzes/:quizId/marks', async (req, res) => {
+  res.json(await saveQuizMarks(currentUser(req), id(req, 'quizId')));
 });

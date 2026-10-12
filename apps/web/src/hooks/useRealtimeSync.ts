@@ -32,11 +32,13 @@ import { useCurrentUser } from './queries';
 import { addNotification } from './useNotifications';
 
 /** Screens to refresh when a notification of a type arrives. */
-const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly string[]>> = {
-  results: keys.results,
-  attendance: keys.myAttendance,
-  exams: keys.myExams,
-  events: ['academics', 'calendar'],
+const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly (readonly string[])[]>> = {
+  // Marks also show on assignment pages (returned grades).
+  results: [keys.results, keys.coursework],
+  attendance: [keys.myAttendance],
+  exams: [keys.myExams],
+  events: [['academics', 'calendar']],
+  coursework: [keys.coursework],
 };
 
 export function useRealtimeSync(): void {
@@ -215,11 +217,17 @@ export function useRealtimeSync(): void {
       void qc.invalidateQueries({ queryKey: ['academics', 'rooms', 'finder'] });
     };
 
+    // A live quiz moved on: its page and the coursework lists ("live now") refetch.
+    const onQuizState = () => {
+      void qc.invalidateQueries({ queryKey: keys.coursework });
+    };
+
     const onNotification = (notification: NotificationDTO) => {
       addNotification(qc, notification);
       // The notification means the data behind it changed: refresh those screens.
-      const stale = REFRESH_ON[notification.type];
-      if (stale) void qc.invalidateQueries({ queryKey: stale });
+      for (const stale of REFRESH_ON[notification.type] ?? []) {
+        void qc.invalidateQueries({ queryKey: stale });
+      }
       const { link } = notification;
       toast(notification.title, {
         description: notification.body ?? undefined,
@@ -243,6 +251,7 @@ export function useRealtimeSync(): void {
     socket.on('session:revoked', onSessionRevoked);
     socket.on('notification:new', onNotification);
     socket.on('timetable:changed', onTimetableChanged);
+    socket.on('quiz:state', onQuizState);
 
     if (socket.connected) onConnect();
     else {
@@ -270,6 +279,7 @@ export function useRealtimeSync(): void {
       socket.off('session:revoked', onSessionRevoked);
       socket.off('notification:new', onNotification);
       socket.off('timetable:changed', onTimetableChanged);
+      socket.off('quiz:state', onQuizState);
     };
   }, [me.id, qc, navigate]);
 }

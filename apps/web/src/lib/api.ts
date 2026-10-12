@@ -5,6 +5,10 @@ import type {
   ApiErrorBody,
   AssessmentDTO,
   AssessmentInput,
+  AssignmentDetailDTO,
+  AssignmentDTO,
+  AssignmentGradesInput,
+  AssignmentInput,
   AttendanceQrDTO,
   AttendanceSessionDetailDTO,
   AttendanceSheetDTO,
@@ -25,6 +29,8 @@ import type {
   CourseDetailDTO,
   CourseDTO,
   CourseGradingInput,
+  CourseworkCourseDTO,
+  CourseworkOverviewDTO,
   CreateCourseInput,
   CreateDepartmentInput,
   CreateGroupInput,
@@ -40,6 +46,8 @@ import type {
   ExamInput,
   ExamKind,
   ExamOptionsDTO,
+  FileDTO,
+  FilePurpose,
   FirstAdminInput,
   GradingWeights,
   GroupDTO,
@@ -48,6 +56,8 @@ import type {
   MarkNotificationsInput,
   MarksInput,
   MarksSheetDTO,
+  MaterialDTO,
+  MaterialInput,
   MemberDTO,
   MemberRole,
   MessageHitDTO,
@@ -60,6 +70,8 @@ import type {
   ProgramDTO,
   ProgramInput,
   PublicUserDTO,
+  QuizInput,
+  QuizViewDTO,
   Role,
   RoomDTO,
   RoomFinderDTO,
@@ -71,6 +83,8 @@ import type {
   SlotCheckDTO,
   StartAttendanceInput,
   StudentRecordRefDTO,
+  SubmissionDTO,
+  SubmissionInput,
   TeacherDTO,
   TeachingCourseDTO,
   TermDTO,
@@ -134,6 +148,17 @@ const query = (params: Record<string, string | number | undefined>) => {
   const text = search.toString();
   return text ? `?${text}` : '';
 };
+
+/** Sends a file's raw bytes; the server checks its type, size and who may upload it. */
+const uploadFile = (file: File, purpose: FilePurpose, offeringId: string) =>
+  request<FileDTO>(`/api/files${query({ purpose, offeringId })}`, {
+    method: 'POST',
+    body: file,
+    headers: {
+      'content-type': 'application/octet-stream',
+      'x-file-name': encodeURIComponent(file.name),
+    },
+  });
 
 export interface DemoAccount {
   label: string;
@@ -290,6 +315,49 @@ export const api = {
       send<{ finalized: number }>(`/api/teaching/courses/${offeringId}/finalize`, 'POST'),
     closeSession: (sessionId: string) =>
       send<AttendanceSessionDetailDTO>(`/api/teaching/attendance/${sessionId}/close`, 'POST'),
+    saveAssignment: (input: AssignmentInput, target: { offeringId: string } | { id: string }) =>
+      'id' in target
+        ? send<AssignmentDTO>(`/api/teaching/assignments/${target.id}`, 'PUT', input)
+        : send<AssignmentDTO>(
+            `/api/teaching/courses/${target.offeringId}/assignments`,
+            'POST',
+            input,
+          ),
+    deleteAssignment: (id: string) =>
+      send<{ ok: true }>(`/api/teaching/assignments/${id}`, 'DELETE'),
+    gradeAssignment: (id: string, input: AssignmentGradesInput) =>
+      send<{ saved: number }>(`/api/teaching/assignments/${id}/grades`, 'PUT', input),
+    returnGrades: (id: string, returned: boolean) =>
+      send<{ ok: true }>(`/api/teaching/assignments/${id}/return`, 'POST', { returned }),
+    addMaterial: (offeringId: string, input: MaterialInput) =>
+      send<MaterialDTO>(`/api/teaching/courses/${offeringId}/materials`, 'POST', input),
+    deleteMaterial: (id: string) => send<{ ok: true }>(`/api/teaching/materials/${id}`, 'DELETE'),
+    saveQuiz: (input: QuizInput, target: { offeringId: string } | { id: string }) =>
+      'id' in target
+        ? send<QuizViewDTO>(`/api/teaching/quizzes/${target.id}`, 'PUT', input)
+        : send<QuizViewDTO>(`/api/teaching/courses/${target.offeringId}/quizzes`, 'POST', input),
+    deleteQuiz: (id: string) => send<{ ok: true }>(`/api/teaching/quizzes/${id}`, 'DELETE'),
+    quizStep: (id: string, step: 'start' | 'next' | 'reveal' | 'end') =>
+      send<QuizViewDTO>(`/api/teaching/quizzes/${id}/${step}`, 'POST'),
+    saveQuizMarks: (id: string) =>
+      send<{ assessmentId: string; saved: number }>(`/api/teaching/quizzes/${id}/marks`, 'POST'),
+  },
+
+  coursework: {
+    overview: () => request<CourseworkOverviewDTO>('/api/coursework'),
+    course: (offeringId: string) =>
+      request<CourseworkCourseDTO>(`/api/coursework/courses/${offeringId}`),
+    assignment: (id: string) => request<AssignmentDetailDTO>(`/api/coursework/assignments/${id}`),
+    submit: (id: string, input: SubmissionInput) =>
+      send<SubmissionDTO>(`/api/coursework/assignments/${id}/submission`, 'PUT', input),
+    withdraw: (id: string) =>
+      send<{ ok: true }>(`/api/coursework/assignments/${id}/submission`, 'DELETE'),
+    quiz: (id: string) => request<QuizViewDTO>(`/api/coursework/quizzes/${id}`),
+  },
+
+  files: {
+    upload: uploadFile,
+    discard: (id: string) => send<{ ok: true }>(`/api/files/${id}`, 'DELETE'),
   },
 
   exams: {

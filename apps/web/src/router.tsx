@@ -42,6 +42,11 @@ const TeachersPage = lazy(() => import('@/pages/academics/TeachersPage'));
 const TranscriptPage = lazy(() => import('@/pages/academics/TranscriptPage'));
 const ProgressPage = lazy(() => import('@/pages/academics/ProgressPage'));
 const CalendarPage = lazy(() => import('@/pages/academics/CalendarPage'));
+const CourseworkPage = lazy(() => import('@/pages/academics/CourseworkPage'));
+const CourseCourseworkPage = lazy(() => import('@/pages/academics/CourseCourseworkPage'));
+const AssignmentPage = lazy(() => import('@/pages/academics/AssignmentPage'));
+const QuizEditorPage = lazy(() => import('@/pages/academics/QuizEditorPage'));
+const QuizPage = lazy(() => import('@/pages/academics/QuizPage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
 
 function FullScreenSpinner() {
@@ -139,6 +144,11 @@ export const router = createBrowserRouter([
           { path: 'transcript', element: <TranscriptPage /> },
           { path: 'progress', element: <ProgressPage /> },
           { path: 'calendar', element: <CalendarPage /> },
+          { path: 'coursework', element: <CourseworkPage /> },
+          { path: 'coursework/:offeringId', element: <CourseCourseworkPage /> },
+          { path: 'assignments/:assignmentId', element: <AssignmentPage /> },
+          { path: 'quizzes/new', element: <QuizEditorPage /> },
+          { path: 'quizzes/:quizId', element: <QuizPage /> },
         ],
       },
       {

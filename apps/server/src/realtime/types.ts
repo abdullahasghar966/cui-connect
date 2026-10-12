@@ -38,3 +38,7 @@ export type AdminNamespace = Namespace<
 
 export const userRoom = (userId: string) => `user:${userId}`;
 export const groupRoom = (groupId: string) => `group:${groupId}`;
+/** Everyone with a live quiz open (its students and teacher). */
+export const quizRoom = (quizId: string) => `quiz:${quizId}`;
+/** The teacher running the quiz: live tallies and who has joined. */
+export const quizHostRoom = (quizId: string) => `quiz:${quizId}:host`;

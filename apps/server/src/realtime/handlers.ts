@@ -7,6 +7,8 @@ import {
   muteMemberSchema,
   openDmSchema,
   pollVoteSchema,
+  quizAnswerSchema,
+  quizRefSchema,
   readReceiptSchema,
   sendMessageSchema,
 } from '@cui/shared';
@@ -18,9 +20,11 @@ import { openDirect } from '../services/direct';
 import { deleteMessage, markRead, sendMessage } from '../services/messages';
 import { joinGroup, leaveGroup, muteMember, setLocked } from '../services/moderation';
 import { closePoll, votePoll } from '../services/polls';
+import { answerQuiz, quizAccess } from '../services/quizzes';
+import { sendQuizPresence } from './notifier';
 import { isOnline, markConnected, markDisconnected } from './presence';
 import { TokenBucket } from './rateLimit';
-import { groupRoom, type IoServer, type IoSocket, userRoom } from './types';
+import { groupRoom, type IoServer, type IoSocket, quizHostRoom, quizRoom, userRoom } from './types';
 
 function toAckError(err: unknown): AckError {
   if (err instanceof AppError) return { ok: false, code: err.code, message: err.message };
@@ -60,6 +64,7 @@ export function registerConnection(io: IoServer, socket: IoSocket): void {
   const typingBucket = new TokenBucket(10, 5);
   // Changing your mind on a poll is quick clicking, not spam: its own, roomier budget.
   const voteBucket = new TokenBucket(10, 4);
+  const quizBucket = new TokenBucket(6, 2);
 
   socket.on('message:send', (payload, ack) =>
     respond(ack, async () => {
@@ -145,6 +150,32 @@ export function registerConnection(io: IoServer, socket: IoSocket): void {
     respond(ack, async () => closePoll(await liveUser(socket), parse(messageRefSchema, payload))),
   );
 
+  // Live quizzes: the page joins the quiz's room; the teacher also joins its host room.
+  socket.on('quiz:join', (payload, ack) =>
+    respond(ack, async () => {
+      const { quizId } = parse(quizRefSchema, payload);
+      const { host } = await quizAccess(await liveUser(socket), quizId);
+      await socket.join(host ? [quizRoom(quizId), quizHostRoom(quizId)] : quizRoom(quizId));
+      return { joined: await sendQuizPresence(quizId) };
+    }),
+  );
+
+  socket.on('quiz:leave', (payload) => {
+    const parsed = quizRefSchema.safeParse(payload);
+    if (!parsed.success) return;
+    const { quizId } = parsed.data;
+    socket.leave(quizRoom(quizId));
+    socket.leave(quizHostRoom(quizId));
+    sendQuizPresence(quizId).catch(() => {});
+  });
+
+  socket.on('quiz:answer', (payload, ack) =>
+    respond(ack, async () => {
+      if (!quizBucket.take()) throw rateLimited('Slow down: one answer per question.');
+      return answerQuiz(await liveUser(socket), parse(quizAnswerSchema, payload));
+    }),
+  );
+
   socket.on('presence:list', (ack) =>
     respond(ack, async () => {
       const peers = await Membership.find({
@@ -154,7 +185,16 @@ export function registerConnection(io: IoServer, socket: IoSocket): void {
     }),
   );
 
+  // Quiz pages this socket had open: their teachers' "joined" counts drop once it has gone.
+  let openQuizzes: string[] = [];
+  socket.on('disconnecting', () => {
+    openQuizzes = [...socket.rooms]
+      .filter((room) => room.startsWith('quiz:') && !room.endsWith(':host'))
+      .map((room) => room.slice('quiz:'.length));
+  });
+
   socket.on('disconnect', () => {
+    for (const quizId of openQuizzes) sendQuizPresence(quizId).catch(() => {});
     if (!markDisconnected(userId)) return;
     if (presenceRooms.length)
       io.to(presenceRooms).emit('presence:update', { userId, online: false });

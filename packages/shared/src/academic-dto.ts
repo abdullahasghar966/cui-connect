@@ -12,6 +12,7 @@ import type {
   RoomKind,
 } from './academics';
 import type { NotificationType } from './constants';
+import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
 
 export interface TermDTO {
@@ -599,4 +600,182 @@ export interface NotificationsPage {
   notifications: NotificationDTO[];
   unread: number;
   hasMore: boolean;
+}
+
+// ---- Coursework: files, assignments, materials, live quizzes ----
+
+export interface FileDTO {
+  id: string;
+  name: string;
+  size: number;
+  /** Served type, e.g. `application/pdf`. */
+  type: string;
+  /** Download path. */
+  url: string;
+  uploadedAt: string;
+}
+
+export interface AssignmentDTO {
+  id: string;
+  course: CourseRefDTO;
+  title: string;
+  instructions: string | null;
+  /** ISO instants. */
+  dueAt: string;
+  /** Late work is accepted until then (null = not accepted). */
+  lateUntil: string | null;
+  total: number;
+  attachments: FileDTO[];
+  /** The marks-sheet column the grades go into. */
+  assessmentId: string;
+  /** Grades returned to students (the column is published). */
+  returned: boolean;
+  createdAt: string;
+}
+
+export interface SubmissionDTO {
+  files: FileDTO[];
+  note: string | null;
+  submittedAt: string;
+  late: boolean;
+}
+
+export interface SubmissionRowDTO {
+  student: { id: string; name: string; regNo: string | null };
+  submission: SubmissionDTO | null;
+  obtained: number | null;
+  feedback: string | null;
+}
+
+export interface AssignmentDetailDTO {
+  assignment: AssignmentDTO;
+  canManage: boolean;
+  /** Students: their own submission. */
+  mine: SubmissionDTO | null;
+  /** Students, once grades are returned: their mark and the teacher's comments. */
+  grade: { obtained: number | null; feedback: string | null } | null;
+  /** The instructor and those who may see the class's records: every enrolled student. */
+  submissions: SubmissionRowDTO[] | null;
+  stats: { enrolled: number; submitted: number; late: number; graded: number } | null;
+}
+
+/** Where a student stands with an assignment. */
+export type AssignmentState = 'todo' | 'submitted' | 'late' | 'missing' | 'graded';
+
+export interface AssignmentSummaryDTO {
+  id: string;
+  course: CourseRefDTO;
+  title: string;
+  dueAt: string;
+  lateUntil: string | null;
+  total: number;
+  returned: boolean;
+  /** Students only. */
+  state: AssignmentState | null;
+  obtained: number | null;
+  /** Teachers only: how many have handed in, out of how many. */
+  submitted: number | null;
+  enrolled: number | null;
+}
+
+export interface MaterialDTO {
+  id: string;
+  week: number;
+  title: string;
+  description: string | null;
+  file: FileDTO | null;
+  url: string | null;
+  createdAt: string;
+}
+
+export interface QuizSummaryDTO {
+  id: string;
+  course: CourseRefDTO;
+  title: string;
+  status: QuizStatus;
+  questionCount: number;
+  totalPoints: number;
+  startedAt: string | null;
+  endedAt: string | null;
+  /** Students: their score once the quiz has ended. */
+  myScore: number | null;
+  /** Teachers: how many students answered at least once. */
+  participants: number | null;
+  savedToMarks: boolean;
+}
+
+export interface CourseworkCourseDTO {
+  course: CourseRefDTO;
+  canManage: boolean;
+  assignments: AssignmentSummaryDTO[];
+  materials: MaterialDTO[];
+  quizzes: QuizSummaryDTO[];
+}
+
+export interface CourseworkOverviewDTO {
+  courses: {
+    course: CourseRefDTO;
+    canManage: boolean;
+    assignments: number;
+    /** Students: still to hand in; teachers: submissions waiting for a grade. */
+    pending: number;
+    materials: number;
+  }[];
+  /** Students: work still to hand in (soonest first); teachers: assignments not yet past due. */
+  upcoming: AssignmentSummaryDTO[];
+  /** Quizzes running right now in the viewer's courses. */
+  live: QuizSummaryDTO[];
+}
+
+export interface QuizQuestionDTO {
+  id: string;
+  text: string;
+  options: string[];
+  /** Index of the right option: the host always, students once it's revealed. */
+  correct: number | null;
+  points: number;
+  seconds: number;
+}
+
+export interface QuizRankDTO {
+  rank: number;
+  studentId: string;
+  name: string;
+  score: number;
+}
+
+/** A quiz as the viewer sees it right now (host or student). */
+export interface QuizViewDTO {
+  id: string;
+  course: CourseRefDTO;
+  title: string;
+  status: QuizStatus;
+  isHost: boolean;
+  questionCount: number;
+  totalPoints: number;
+  /** Host only: every question with its answer (editing and the host screen). */
+  questions: QuizQuestionDTO[] | null;
+  /** -1 before the first question. */
+  current: number;
+  question:
+    | (QuizQuestionDTO & {
+        index: number;
+        revealed: boolean;
+        /** Time left to answer when this was sent (0 once revealed). */
+        remainingMs: number;
+        /** Answers per option: the host live, everyone once revealed. */
+        counts: number[] | null;
+      })
+    | null;
+  /** Host: answers to the current question and students on the quiz page. */
+  answered: number;
+  joined: number;
+  /** Top five once a question is revealed or the quiz ended; the host sees everyone. */
+  leaderboard: QuizRankDTO[];
+  /** Students: their answers so far (question id → option), score and rank. */
+  mine: { answers: Record<string, number>; score: number; rank: number | null } | null;
+  /** Host: the marks-sheet column the scores were saved to. */
+  assessmentId: string | null;
+  /** Host: how each question went, to see what the class found hard. */
+  breakdown: { questionId: string; answered: number; correct: number }[] | null;
 }

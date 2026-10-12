@@ -37,6 +37,10 @@ export const keys = {
   teachingCourses: ['teaching', 'courses'] as const,
   attendanceSheet: (offeringId: string) => ['teaching', 'sheet', offeringId] as const,
   attendanceSession: (sessionId: string) => ['teaching', 'session', sessionId] as const,
+  coursework: ['coursework'] as const,
+  courseworkCourse: (offeringId: string) => ['coursework', 'course', offeringId] as const,
+  assignment: (id: string) => ['coursework', 'assignment', id] as const,
+  quiz: (id: string) => ['coursework', 'quiz', id] as const,
 };
 
 export function sortGroups(groups: GroupDTO[]): GroupDTO[] {

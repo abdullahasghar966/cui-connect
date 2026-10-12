@@ -40,7 +40,7 @@ export async function startTestApp({ seed = true } = {}): Promise<TestApp> {
     mongoUri: inject('mongoUri'),
     dbName,
     resetSeed: seed,
-    reminders: false,
+    background: false,
   });
   const sockets: ClientSocket[] = [];
 
