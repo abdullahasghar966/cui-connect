@@ -64,6 +64,12 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
     role: 'staff',
     note: 'Offices can message anyone; posts in the Exam Coordination Cell',
   },
+  {
+    label: 'Accounts Office',
+    identifier: 'accounts.office@comsats.edu.pk',
+    role: 'staff',
+    note: 'Issues fee challans and records payments on the fee desk',
+  },
 ];
 
 export const DEPARTMENTS = [
@@ -115,6 +121,14 @@ export const STAFF: SeedStaff[] = [
     role: 'staff',
     office: 'STUDENT_AFFAIRS',
     designation: 'Student Affairs Officer',
+  },
+  {
+    key: 'accounts',
+    name: 'Nadia Farooq',
+    email: 'accounts.office@comsats.edu.pk',
+    role: 'staff',
+    office: 'ACCOUNTS',
+    designation: 'Accounts Officer',
   },
   {
     key: 'csOffice',

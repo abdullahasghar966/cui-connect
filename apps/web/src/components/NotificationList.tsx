@@ -1,6 +1,7 @@
 import type { NotificationDTO, NotificationType } from '@cui/shared';
 import {
   AtSign,
+  Banknote,
   BellOff,
   BookOpen,
   CalendarCheck,
@@ -27,6 +28,7 @@ export const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   coursework: BookOpen,
   mentions: AtSign,
   requests: FileText,
+  fees: Banknote,
   events: PartyPopper,
   bookings: CalendarCheck,
   system: Megaphone,

@@ -12,6 +12,7 @@ import { ClassSlot } from './ClassSlot';
 import { CourseOffering } from './CourseOffering';
 import { Department } from './Department';
 import { Exam } from './Exam';
+import { FeeChallan } from './FeeChallan';
 import { Group } from './Group';
 import { Mark } from './Mark';
 import { Material } from './Material';
@@ -47,6 +48,7 @@ export * from './ClassSlot';
 export * from './CourseOffering';
 export * from './Department';
 export * from './Exam';
+export * from './FeeChallan';
 export * from './Group';
 export * from './Mark';
 export * from './Material';
@@ -103,6 +105,7 @@ export const ALL_MODELS = [
   PushSubscription,
   ServerKey,
   ServiceRequest,
+  FeeChallan,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

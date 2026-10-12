@@ -1,5 +1,6 @@
 import { campusClock } from '@cui/shared';
-import { Bell, LayoutDashboard, MessagesSquare, PartyPopper } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Banknote, Bell, LayoutDashboard, MessagesSquare, PartyPopper } from 'lucide-react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/feedback';
 import { GroupIcon } from '@/components/group-meta';
@@ -7,7 +8,10 @@ import { NotificationList } from '@/components/NotificationList';
 import { describeUser } from '@/components/UserMenu';
 import { useCurrentTerm, useStudentSemester } from '@/hooks/academics';
 import { useCurrentUser, useGroups } from '@/hooks/queries';
+import { api } from '@/lib/api';
+import { keys } from '@/lib/cache';
 import { formatListTime } from '@/lib/utils';
+import { challanTitle, FeeStatusBadge, feeSummary } from '@/pages/services/fees-ui';
 import { HomeCard } from './HomeCard';
 import { TodayCard } from './TodayCard';
 
@@ -76,6 +80,28 @@ function UnreadChats() {
   );
 }
 
+/** Unpaid fee challans (nothing shows once everything is paid). */
+function FeesDueCard() {
+  const { data } = useQuery({ queryKey: keys.myFees, queryFn: api.services.fees });
+  const unpaid = data?.challans.filter((c) => c.status !== 'paid') ?? [];
+  if (!unpaid.length) return null;
+  return (
+    <HomeCard title="Fees" icon={Banknote} action={{ to: '/services/fees', label: 'Open' }}>
+      <ul className="divide-y">
+        {unpaid.map((c) => (
+          <li key={c.id} className="flex items-center gap-3 px-4 py-2.5">
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-semibold">{challanTitle(c)}</span>
+              <span className="text-[12.5px] text-muted-foreground">{feeSummary(c)}</span>
+            </span>
+            <FeeStatusBadge status={c.status} />
+          </li>
+        ))}
+      </ul>
+    </HomeCard>
+  );
+}
+
 export default function HomePage() {
   const me = useCurrentUser();
   const term = useCurrentTerm();
@@ -102,6 +128,7 @@ export default function HomePage() {
 
         <div className="grid items-start gap-5 lg:grid-cols-2">
           {hasClasses && <TodayCard />}
+          {me.role === 'student' && <FeesDueCard />}
           <HomeCard
             title="Unread chats"
             icon={MessagesSquare}

@@ -114,7 +114,7 @@ export function UserMenu({ variant }: { variant: 'rail' | 'tab' }) {
         <DropdownMenuSeparator />
         {hasServices(me) && (
           <DropdownMenuItem onSelect={() => navigate('/services')}>
-            <Landmark /> Services: requests and complaints
+            <Landmark /> Services: requests, fees and complaints
           </DropdownMenuItem>
         )}
         {me.role === 'admin' && (

@@ -13,6 +13,7 @@ import {
   toMinutes,
 } from './academics';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
+import { FEE_INSTALMENTS, feeTotal, LATE_FEE } from './fees';
 import {
   COMPLAINT_CATEGORIES,
   ID_CARD_REASONS,
@@ -495,6 +496,53 @@ export const requestListSchema = z.object({
   box: z.enum(['mine', 'inbox']).default('mine'),
 });
 
+// ---- Fees ----
+
+export const feeItemSchema = z.object({
+  label: z.string().trim().min(2, 'Name each charge').max(60),
+  amount: z.number().int('Whole rupees only').min(0).max(5_000_000),
+});
+
+/** A challan run: one challan per active student in the chosen part of the campus. */
+export const issueChallansSchema = z
+  .object({
+    instalment: z.enum(FEE_INSTALMENTS),
+    scope: z.enum(['campus', 'department', 'section']),
+    departmentId: objectIdSchema.nullish(),
+    sectionId: objectIdSchema.nullish(),
+    dueDate: dateSchema,
+    items: z.array(feeItemSchema).min(1, 'Add at least one charge').max(15),
+    lateFee: z.number().int().min(0).max(100_000).default(LATE_FEE),
+  })
+  .refine((r) => r.scope !== 'department' || !!r.departmentId, {
+    message: 'Choose a department',
+    path: ['departmentId'],
+  })
+  .refine((r) => r.scope !== 'section' || !!r.sectionId, {
+    message: 'Choose a section',
+    path: ['sectionId'],
+  })
+  .refine((r) => feeTotal(r.items) > 0, {
+    message: 'The challan must be for more than Rs 0',
+    path: ['items'],
+  });
+
+export const markPaidSchema = z.object({
+  paidOn: dateSchema,
+  bankRef: z.string().trim().max(40).nullish(),
+});
+
+export const FEE_DESK_FILTERS = ['all', 'unpaid', 'overdue', 'paid'] as const;
+export type FeeDeskFilter = (typeof FEE_DESK_FILTERS)[number];
+
+export const feeDeskQuerySchema = z.object({
+  departmentId: objectIdSchema.optional(),
+  sectionId: objectIdSchema.optional(),
+  instalment: z.enum(FEE_INSTALMENTS).optional(),
+  status: z.enum(FEE_DESK_FILTERS).default('all'),
+  q: z.string().trim().max(60).default(''),
+});
+
 // ---- Office-hour appointments ----
 
 export const bookingSchema = z.object({
@@ -538,3 +586,6 @@ export type NewRequestInput = z.input<typeof newRequestSchema>;
 export type RequestStatusInput = z.infer<typeof requestStatusSchema>;
 export type RequestReplyInput = z.infer<typeof requestReplySchema>;
 export type CancelBookingInput = z.infer<typeof cancelBookingSchema>;
+export type IssueChallansInput = z.input<typeof issueChallansSchema>;
+export type MarkPaidInput = z.infer<typeof markPaidSchema>;
+export type FeeDeskQuery = z.input<typeof feeDeskQuerySchema>;

@@ -1,25 +1,37 @@
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, Inbox, MessageSquareWarning } from 'lucide-react';
+import { Banknote, ClipboardList, Inbox, MessageSquareWarning, Wallet } from 'lucide-react';
 import { Navigate } from 'react-router';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
 import { useCurrentUser } from '@/hooks/queries';
 import { api } from '@/lib/api';
 import { keys } from '@/lib/cache';
+import { managesFees } from '@/lib/nav';
 import { handlesRequests, isOpen } from './requests-ui';
 
-/** Campus services: students' requests and complaints, and the inbox of those who handle them. */
+/**
+ * Campus services: students' requests, complaints and fees; the inbox of those who handle
+ * requests; and the fee desk of the Accounts Office.
+ */
 export default function ServicesLayout() {
   const me = useCurrentUser();
   const handler = handlesRequests(me);
+  const student = me.role === 'student';
   const inbox = useQuery({
     queryKey: keys.requests('inbox'),
     queryFn: () => api.services.requests('inbox'),
     enabled: handler,
   });
+  const fees = useQuery({ queryKey: keys.myFees, queryFn: api.services.fees, enabled: student });
   const sections: AreaSection[] = [];
-  if (me.role === 'student') {
+  if (student) {
     sections.push({ to: '/services/requests', label: 'Requests', icon: ClipboardList });
     sections.push({ to: '/services/complaints', label: 'Complaints', icon: MessageSquareWarning });
+    sections.push({
+      to: '/services/fees',
+      label: 'Fees',
+      icon: Banknote,
+      badge: fees.data?.challans.filter((c) => c.status !== 'paid').length || undefined,
+    });
   }
   if (handler) {
     sections.push({
@@ -28,6 +40,9 @@ export default function ServicesLayout() {
       icon: Inbox,
       badge: inbox.data?.filter(isOpen).length || undefined,
     });
+  }
+  if (managesFees(me)) {
+    sections.push({ to: '/services/fee-desk', label: 'Fee desk', icon: Wallet });
   }
   return (
     <AreaLayout
@@ -39,8 +54,14 @@ export default function ServicesLayout() {
   );
 }
 
-/** `/services`: students start at their requests, everyone else at their inbox. */
+/** `/services`: students start at their requests, request handlers at their inbox, Accounts at the fee desk. */
 export function ServicesIndex() {
   const me = useCurrentUser();
-  return <Navigate to={me.role === 'student' ? '/services/requests' : '/services/inbox'} replace />;
+  const to =
+    me.role === 'student'
+      ? '/services/requests'
+      : handlesRequests(me)
+        ? '/services/inbox'
+        : '/services/fee-desk';
+  return <Navigate to={to} replace />;
 }

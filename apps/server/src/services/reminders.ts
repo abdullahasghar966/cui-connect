@@ -1,17 +1,23 @@
 /**
  * Reminders, checked once a minute inside the server: the evening before a paper or a holiday,
  * the morning of a deadline or registration window and of office-hour appointments, and a day
- * before an assignment is due (to students who haven't handed it in). Each reminder has a notification key,
+ * before an assignment is due (to students who haven't handed it in), and unpaid fee challans
+ * three days before and the day after their due date. Each reminder has a notification key,
  * so a restart (or the next minute) never sends it twice; an in-memory list skips the work.
  * (Free hosting sleeps when idle, so reminders go out while the site is awake.)
  */
 import {
   addDays,
+  amountOn,
   type CalendarKind,
   campusClock,
   EXAM_KIND_LABELS,
+  FEE_INSTALMENT_LABELS,
+  FEE_REMINDER_DAYS,
+  feeTotal,
   formatClock,
   formatInstant,
+  formatPKR,
   formatShortDate,
 } from '@cui/shared';
 import { logger } from '../lib/logger';
@@ -25,6 +31,8 @@ import {
   CourseOffering,
   Exam,
   type ExamDoc,
+  FeeChallan,
+  type FeeChallanDoc,
   Room,
   SeatAssignment,
   Submission,
@@ -174,6 +182,36 @@ async function appointmentsToday(date: string): Promise<number> {
   return sent;
 }
 
+/** Unpaid fee challans: a few days before the due date, and the morning after it (late fee). */
+async function feeReminders(date: string): Promise<number> {
+  const soon = addDays(date, FEE_REMINDER_DAYS);
+  const lateSince = addDays(date, -1);
+  const challans = await FeeChallan.find({
+    paidOn: null,
+    dueDate: { $in: [soon, lateSince] },
+  }).lean<FeeChallanDoc[]>();
+  let sent = 0;
+  for (const c of challans) {
+    const overdue = c.dueDate === lateSince;
+    const job = `fees:${overdue ? 'late' : 'soon'}:${c._id}:${c.dueDate}`;
+    if (done.has(job)) continue;
+    const what = `${FEE_INSTALMENT_LABELS[c.instalment]} (challan ${c.challanNo})`;
+    sent += await notify([c.studentId], {
+      type: 'fees',
+      title: overdue
+        ? `Fee overdue: now ${formatPKR(amountOn(c, date))}`
+        : `Fee due in ${FEE_REMINDER_DAYS} days: ${formatPKR(feeTotal(c.items))}`,
+      body: overdue
+        ? `${what} was due ${formatShortDate(c.dueDate)}.${c.lateFee ? ` A late fee of ${formatPKR(c.lateFee)} has been added.` : ''} Pay at the bank as soon as you can.`
+        : `${what}, due ${formatShortDate(c.dueDate)}.${c.lateFee ? ` A late fee of ${formatPKR(c.lateFee)} applies after that.` : ''}`,
+      link: '/services/fees',
+      key: `remind:${job}`,
+    });
+    done.add(job);
+  }
+  return sent;
+}
+
 /** Sends whatever is due at `now` (campus time). Safe to call any number of times. */
 export async function runReminders(now = new Date()): Promise<number> {
   const clock = campusClock(now);
@@ -186,6 +224,7 @@ export async function runReminders(now = new Date()): Promise<number> {
   if (clock.minutes >= MORNING) {
     sent += await calendarDay(clock.date, ['deadline', 'registration'], 'Today');
     sent += await appointmentsToday(clock.date);
+    sent += await feeReminders(clock.date);
   }
   sent += await assignmentsDueSoon(now);
   return sent;

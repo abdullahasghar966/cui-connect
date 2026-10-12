@@ -7,6 +7,7 @@ export * from './constants';
 export * from './coursework';
 export * from './dto';
 export * from './events';
+export * from './fees';
 export * from './policy';
 export * from './requests';
 export * from './schemas';

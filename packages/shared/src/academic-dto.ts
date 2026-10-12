@@ -15,6 +15,7 @@ import type { BookingStatus } from './bookings';
 import type { NotificationType } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
+import type { FeeInstalment, FeeItem, FeeStatus } from './fees';
 import type { ComplaintCategory, IdCardReason, RequestKind, RequestStatus } from './requests';
 
 export interface TermDTO {
@@ -856,4 +857,60 @@ export interface ServiceRequestDTO {
   updatedAt: string;
   /** The viewer can move it on (see `nextStatuses`). */
   canHandle: boolean;
+}
+
+// ---- Fees ----
+
+export interface FeeChallanDTO {
+  id: string;
+  challanNo: string;
+  term: { id: string; code: string; name: string };
+  instalment: FeeInstalment;
+  student: {
+    id: string;
+    name: string;
+    regNo: string | null;
+    sectionName: string | null;
+    program: string | null;
+    departmentName: string | null;
+  };
+  items: FeeItem[];
+  total: number;
+  lateFee: number;
+  dueDate: string;
+  status: FeeStatus;
+  /** What to pay today (with the late fee once overdue), or what was paid. */
+  payable: number;
+  paidOn: string | null;
+  bankRef: string | null;
+  issuedAt: string;
+}
+
+export interface MyFeesDTO {
+  /** Newest first. */
+  challans: FeeChallanDTO[];
+  /** Everything unpaid, with late fees, as of today. */
+  outstanding: number;
+}
+
+export interface FeeDeskDTO {
+  term: { id: string; code: string; name: string };
+  /** Counts and sums over the filtered challans (whatever their status). */
+  stats: {
+    challans: number;
+    paid: number;
+    due: number;
+    overdue: number;
+    collected: number;
+    outstanding: number;
+  };
+  rows: FeeChallanDTO[];
+  /** More challans matched than were sent. */
+  truncated: boolean;
+}
+
+export interface IssueChallansResultDTO {
+  issued: number;
+  /** Students who already had a challan of this kind this term. */
+  skipped: number;
 }

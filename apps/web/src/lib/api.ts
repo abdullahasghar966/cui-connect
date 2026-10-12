@@ -48,14 +48,19 @@ import type {
   ExamInput,
   ExamKind,
   ExamOptionsDTO,
+  FeeChallanDTO,
+  FeeDeskDTO,
   FileDTO,
   FilePurpose,
   FirstAdminInput,
   GradingWeights,
   GroupDTO,
   GroupType,
+  IssueChallansInput,
+  IssueChallansResultDTO,
   LoginInput,
   MarkNotificationsInput,
+  MarkPaidInput,
   MarksInput,
   MarksSheetDTO,
   MaterialDTO,
@@ -67,6 +72,7 @@ import type {
   MessagesPage,
   MyAttendanceCourseDTO,
   MyExamDTO,
+  MyFeesDTO,
   MyResultsDTO,
   NewRequestInput,
   NotificationsPage,
@@ -370,6 +376,17 @@ export const api = {
       send<ServiceRequestDTO>(`/api/services/requests/${id}/replies`, 'POST', { body }),
     withdraw: (id: string) =>
       send<ServiceRequestDTO>(`/api/services/requests/${id}/withdraw`, 'POST'),
+    fees: () => request<MyFeesDTO>('/api/services/fees'),
+    feeDesk: (filters: Record<string, string>) =>
+      request<FeeDeskDTO>(`/api/services/fees/desk${query(filters)}`),
+    issueChallans: (input: IssueChallansInput) =>
+      send<IssueChallansResultDTO>('/api/services/fees/challans', 'POST', input),
+    markPaid: (id: string, input: MarkPaidInput) =>
+      send<FeeChallanDTO>(`/api/services/fees/challans/${id}/paid`, 'POST', input),
+    markUnpaid: (id: string) =>
+      send<FeeChallanDTO>(`/api/services/fees/challans/${id}/unpaid`, 'POST'),
+    cancelChallan: (id: string) =>
+      send<{ ok: true }>(`/api/services/fees/challans/${id}`, 'DELETE'),
   },
 
   coursework: {

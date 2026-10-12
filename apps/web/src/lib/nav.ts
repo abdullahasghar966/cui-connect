@@ -23,9 +23,13 @@ export const handlesRequests = (me: Pick<UserDTO, 'role' | 'office'>) =>
   (me.role === 'staff' &&
     (me.office === 'EXAM' || me.office === 'STUDENT_AFFAIRS' || me.office === 'DEPARTMENT'));
 
-/** Students use Services; so does everyone who handles their requests. */
+/** The Accounts Office (and IT) issue fee challans and record payments. */
+export const managesFees = (me: Pick<UserDTO, 'role' | 'office'>) =>
+  me.role === 'admin' || (me.role === 'staff' && me.office === 'ACCOUNTS');
+
+/** Students use Services; so does everyone who handles their requests or fees. */
 export const hasServices = (me: Pick<UserDTO, 'role' | 'office'>) =>
-  me.role === 'student' || handlesRequests(me);
+  me.role === 'student' || handlesRequests(me) || managesFees(me);
 
 /** The top-level areas of the app a person can open, depending on their role. */
 export function areasFor(me: UserDTO): AppArea[] {
@@ -50,7 +54,7 @@ export function areasFor(me: UserDTO): AppArea[] {
     areas.push({
       to: '/services',
       label: 'Services',
-      hint: 'Requests and complaints',
+      hint: 'Requests, fees and complaints',
       icon: Landmark,
       matches: ['/services'],
     });

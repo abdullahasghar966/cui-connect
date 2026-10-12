@@ -1,8 +1,16 @@
-/** Campus services: requests and complaints (fees, registration and evaluation follow). */
+/** Campus services: requests and complaints, and fees (registration and evaluation follow). */
 import { objectIdSchema, requestListSchema } from '@cui/shared';
 import { type Request, Router } from 'express';
 import { currentUser } from '../../auth/middleware';
 import { parse } from '../../lib/errors';
+import {
+  cancelChallan,
+  feeDesk,
+  issueChallans,
+  markPaid,
+  markUnpaid,
+  myFees,
+} from '../../services/fees';
 import {
   changeRequestStatus,
   createRequest,
@@ -39,4 +47,30 @@ servicesRouter.post('/requests/:requestId/replies', async (req, res) => {
 
 servicesRouter.post('/requests/:requestId/withdraw', async (req, res) => {
   res.json(await withdrawRequest(currentUser(req), id(req, 'requestId')));
+});
+
+// ---- Fees ----
+
+servicesRouter.get('/fees', async (req, res) => {
+  res.json(await myFees(currentUser(req)));
+});
+
+servicesRouter.get('/fees/desk', async (req, res) => {
+  res.json(await feeDesk(currentUser(req), req.query));
+});
+
+servicesRouter.post('/fees/challans', async (req, res) => {
+  res.status(201).json(await issueChallans(currentUser(req), req.body));
+});
+
+servicesRouter.post('/fees/challans/:challanId/paid', async (req, res) => {
+  res.json(await markPaid(currentUser(req), id(req, 'challanId'), req.body));
+});
+
+servicesRouter.post('/fees/challans/:challanId/unpaid', async (req, res) => {
+  res.json(await markUnpaid(currentUser(req), id(req, 'challanId')));
+});
+
+servicesRouter.delete('/fees/challans/:challanId', async (req, res) => {
+  res.json(await cancelChallan(currentUser(req), id(req, 'challanId')));
 });

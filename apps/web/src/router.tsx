@@ -55,6 +55,8 @@ const ServicesIndex = lazy(() =>
 const RequestsPage = lazy(() => import('@/pages/services/RequestsPage'));
 const InboxPage = lazy(() => import('@/pages/services/InboxPage'));
 const RequestPage = lazy(() => import('@/pages/services/RequestPage'));
+const FeesPage = lazy(() => import('@/pages/services/FeesPage'));
+const FeeDeskPage = lazy(() => import('@/pages/services/FeeDeskPage'));
 
 function FullScreenSpinner() {
   return (
@@ -139,6 +141,8 @@ export const router = createBrowserRouter([
           { path: 'complaints', element: <RequestsPage complaints /> },
           { path: 'inbox', element: <InboxPage /> },
           { path: 'requests/:requestId', element: <RequestPage /> },
+          { path: 'fees', element: <FeesPage /> },
+          { path: 'fee-desk', element: <FeeDeskPage /> },
         ],
       },
       {
