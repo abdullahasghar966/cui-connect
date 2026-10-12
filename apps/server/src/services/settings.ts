@@ -18,7 +18,10 @@ export function getCampusSettings(): Promise<CampusSettingsDTO> {
   if (!cached || Date.now() - cached.at > TTL_MS) {
     const value = CampusSettings.findById('campus')
       .lean<CampusSettingsDoc>()
-      .then((doc) => ({ minAttendance: doc?.minAttendance ?? DEFAULT_MIN_ATTENDANCE }));
+      .then((doc) => ({
+        minAttendance: doc?.minAttendance ?? DEFAULT_MIN_ATTENDANCE,
+        registrationMode: doc?.registrationMode ?? 'calendar',
+      }));
     cached = { value, at: Date.now() };
     value.catch(() => {
       cached = null;

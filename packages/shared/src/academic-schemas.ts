@@ -14,6 +14,7 @@ import {
 } from './academics';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
 import { FEE_INSTALMENTS, feeTotal, LATE_FEE } from './fees';
+import { REGISTRATION_MODES } from './registration';
 import {
   COMPLAINT_CATEGORIES,
   ID_CARD_REASONS,
@@ -496,6 +497,55 @@ export const requestListSchema = z.object({
   box: z.enum(['mine', 'inbox']).default('mine'),
 });
 
+// ---- Course registration ----
+
+export const offerSlotSchema = z
+  .object({ day: z.number().int().min(1).max(6), start: timeSchema, end: timeSchema })
+  .refine((s) => minutesBetween(s.start, s.end) >= 30, {
+    message: 'A class must last at least 30 minutes and end after it starts',
+    path: ['end'],
+  })
+  .refine((s) => minutesBetween(s.start, s.end) <= 240, {
+    message: 'A class can last at most 4 hours',
+    path: ['end'],
+  })
+  .refine((s) => toMinutes(s.start) >= 7 * 60 && toMinutes(s.end) <= 20 * 60, {
+    message: 'Classes run between 7:00 AM and 8:00 PM',
+    path: ['start'],
+  });
+
+/** A course section offered for the coming term. */
+export const registrationOfferSchema = z.object({
+  code: courseCodeSchema,
+  sectionId: objectIdSchema,
+  instructorId: objectIdSchema.nullish(),
+  capacity: z.number().int().min(1).max(500),
+  slots: z.array(offerSlotSchema).max(6),
+});
+
+/** Offers for a section's (or a department's sections') next semester from the degree plans. */
+export const planOffersSchema = z
+  .object({ departmentId: objectIdSchema.nullish(), sectionId: objectIdSchema.nullish() })
+  .refine((r) => !!r.departmentId || !!r.sectionId, { message: 'Choose a department or section' });
+
+export const registrationPlanSchema = z.object({
+  offerIds: z.array(objectIdSchema).max(12, 'At most 12 courses'),
+});
+
+export const registrationReturnSchema = z.object({
+  note: z.string().trim().min(3, 'Tell the student what to change').max(1000),
+});
+
+export const registrationApproveSchema = z.object({
+  note: z.string().trim().max(1000).nullish(),
+});
+
+export const registrationWindowSchema = z.object({ mode: z.enum(REGISTRATION_MODES) });
+
+export const registrationOffersQuerySchema = z.object({
+  departmentId: objectIdSchema.optional(),
+});
+
 // ---- Fees ----
 
 export const feeItemSchema = z.object({
@@ -586,6 +636,12 @@ export type NewRequestInput = z.input<typeof newRequestSchema>;
 export type RequestStatusInput = z.infer<typeof requestStatusSchema>;
 export type RequestReplyInput = z.infer<typeof requestReplySchema>;
 export type CancelBookingInput = z.infer<typeof cancelBookingSchema>;
+export type RegistrationOfferInput = z.input<typeof registrationOfferSchema>;
+export type PlanOffersInput = z.input<typeof planOffersSchema>;
+export type RegistrationPlanInput = z.infer<typeof registrationPlanSchema>;
+export type RegistrationReturnInput = z.infer<typeof registrationReturnSchema>;
+export type RegistrationApproveInput = z.input<typeof registrationApproveSchema>;
+export type RegistrationWindowInput = z.infer<typeof registrationWindowSchema>;
 export type IssueChallansInput = z.input<typeof issueChallansSchema>;
 export type MarkPaidInput = z.infer<typeof markPaidSchema>;
 export type FeeDeskQuery = z.input<typeof feeDeskQuerySchema>;

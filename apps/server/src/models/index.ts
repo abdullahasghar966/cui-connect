@@ -23,6 +23,8 @@ import { Program } from './Program';
 import { PushSubscription } from './PushSubscription';
 import { Quiz } from './Quiz';
 import { QuizResponse } from './QuizResponse';
+import { Registration } from './Registration';
+import { RegistrationOffer } from './RegistrationOffer';
 import { Result } from './Result';
 import { Room } from './Room';
 import { SeatAssignment } from './SeatAssignment';
@@ -59,6 +61,8 @@ export * from './Program';
 export * from './PushSubscription';
 export * from './Quiz';
 export * from './QuizResponse';
+export * from './Registration';
+export * from './RegistrationOffer';
 export * from './Result';
 export * from './Room';
 export * from './SeatAssignment';
@@ -106,6 +110,8 @@ export const ALL_MODELS = [
   ServerKey,
   ServiceRequest,
   FeeChallan,
+  RegistrationOffer,
+  Registration,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

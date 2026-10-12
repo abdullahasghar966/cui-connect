@@ -16,6 +16,13 @@ import type { NotificationType } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
 import type { FeeInstalment, FeeItem, FeeStatus } from './fees';
+import type {
+  OfferSlot,
+  RegistrationIssue,
+  RegistrationMode,
+  RegistrationStatus,
+  StudentRecordLike,
+} from './registration';
 import type { ComplaintCategory, IdCardReason, RequestKind, RequestStatus } from './requests';
 
 export interface TermDTO {
@@ -586,6 +593,8 @@ export interface SeatingChartDTO {
 
 export interface CampusSettingsDTO {
   minAttendance: number;
+  /** Course registration follows the calendar, or is opened or closed by hand. */
+  registrationMode: RegistrationMode;
 }
 
 export interface NotificationDTO {
@@ -857,6 +866,92 @@ export interface ServiceRequestDTO {
   updatedAt: string;
   /** The viewer can move it on (see `nextStatuses`). */
   canHandle: boolean;
+}
+
+// ---- Course registration ----
+
+export interface TermRefDTO {
+  /** Null until the term has been created (the first offer creates it). */
+  id: string | null;
+  code: string;
+  name: string;
+}
+
+/** A course section offered for the coming term. */
+export interface RegistrationOfferDTO {
+  id: string;
+  code: string;
+  title: string;
+  credits: number;
+  labCredits: number;
+  prerequisites: string[];
+  section: { id: string; name: string };
+  departmentCode: string | null;
+  instructor: { id: string; name: string } | null;
+  capacity: number;
+  seatsTaken: number;
+  seatsLeft: number;
+  slots: OfferSlot[];
+  /** The viewer may edit or remove it (that department's office, or IT). */
+  canManage: boolean;
+}
+
+export interface RegistrationWindowDTO {
+  open: boolean;
+  mode: RegistrationMode;
+  /** The academic calendar's registration dates (now or next), if any. */
+  startsOn: string | null;
+  endsOn: string | null;
+  /** The viewer may open or close it (Director's Office or IT). */
+  canChange: boolean;
+}
+
+export interface RegistrationEventDTO {
+  at: string;
+  by: { id: string; name: string } | null;
+  kind: 'submitted' | 'withdrawn' | 'approved' | 'returned';
+  body: string | null;
+}
+
+export interface RegistrationDTO {
+  id: string;
+  term: { id: string; code: string; name: string };
+  student: { id: string; name: string; regNo: string | null; sectionName: string | null };
+  status: RegistrationStatus;
+  offers: RegistrationOfferDTO[];
+  credits: number;
+  /** Checked now (offers can change after a plan is sent). */
+  issues: RegistrationIssue[];
+  /** "Dr. Imran Haider (batch advisor)". */
+  handledBy: string;
+  events: RegistrationEventDTO[];
+  submittedAt: string | null;
+  updatedAt: string;
+  /** The viewer approves or returns it. */
+  canHandle: boolean;
+}
+
+/** Everything the registration page needs. */
+export interface RegistrationHomeDTO {
+  term: TermRefDTO;
+  window: RegistrationWindowDTO;
+  offers: RegistrationOfferDTO[];
+  /** Students: their plan (null before they save one), their record and their section. */
+  registration: RegistrationDTO | null;
+  record: StudentRecordLike | null;
+  sectionId: string | null;
+  /** Plans waiting for the viewer's decision. */
+  waiting: number;
+  /** The viewer manages offers (a department office or IT). */
+  canManageOffers: boolean;
+}
+
+export interface OfferStudentDTO {
+  id: string;
+  name: string;
+  regNo: string | null;
+  sectionName: string | null;
+  status: 'submitted' | 'approved';
 }
 
 // ---- Fees ----

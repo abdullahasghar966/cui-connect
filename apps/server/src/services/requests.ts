@@ -55,7 +55,7 @@ const handles = (viewer: UserDoc, doc: Pick<ServiceRequestDoc, 'route'>) =>
   canHandleRequest(toPolicyUser(viewer), policyRoute(doc.route)).allowed;
 
 /** Where this student's request of this kind goes. */
-async function routeFor(student: UserDoc, kind: ServiceRequestDoc['kind']): Promise<Route> {
+export async function routeFor(student: UserDoc, kind: ServiceRequestDoc['kind']): Promise<Route> {
   const target = REQUEST_ROUTES[kind];
   if (target !== 'ADVISOR') return { office: target, departmentId: null, userId: null };
   const section = student.sectionId
@@ -70,7 +70,7 @@ async function routeFor(student: UserDoc, kind: ServiceRequestDoc['kind']): Prom
 }
 
 /** The people who handle requests on this route. */
-async function handlerIds(route: Route): Promise<Types.ObjectId[]> {
+export async function handlerIds(route: Route): Promise<Types.ObjectId[]> {
   if (route.userId) return [route.userId];
   if (!route.office) return [];
   return User.find({

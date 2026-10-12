@@ -57,6 +57,11 @@ export function broadcastTimetableChanged(offeringIds: string[]): void {
   io?.emit('timetable:changed', { offeringIds });
 }
 
+/** Seats changed in next term's offers: everyone registering sees the counts move. */
+export function broadcastRegistrationSeats(offers: { id: string; seatsTaken: number }[]): void {
+  if (offers.length) io?.emit('registration:seats', { offers });
+}
+
 export function broadcastPollUpdated(groupId: string, messageId: string, poll: PollDTO): void {
   io?.to(groupRoom(groupId)).emit('poll:updated', { groupId, messageId, poll });
 }

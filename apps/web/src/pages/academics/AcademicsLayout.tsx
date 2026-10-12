@@ -8,6 +8,7 @@ import {
   FileClock,
   FileText,
   GraduationCap,
+  ListChecks,
   NotebookPen,
   NotebookTabs,
   Users,
@@ -46,6 +47,16 @@ export default function AcademicsLayout() {
   }
   if (me.role === 'student' || me.role === 'faculty' || canManageExams(me)) {
     sections.push({ to: '/academics/exams', label: 'Exams', icon: FileClock });
+  }
+  // Students register; advisors approve; department offices offer courses; the Director's
+  // Office opens the window.
+  if (
+    me.role === 'student' ||
+    me.role === 'faculty' ||
+    me.role === 'admin' ||
+    (me.role === 'staff' && (me.office === 'DEPARTMENT' || me.office === 'DIRECTOR'))
+  ) {
+    sections.push({ to: '/academics/registration', label: 'Registration', icon: ListChecks });
   }
   if (canEditTimetable(me)) {
     sections.push({

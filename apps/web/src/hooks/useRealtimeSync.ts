@@ -11,6 +11,8 @@ import type {
   MessageUpdateEvent,
   NotificationDTO,
   PollDTO,
+  RegistrationHomeDTO,
+  RegistrationOfferDTO,
   TypingEvent,
 } from '@cui/shared';
 import { useQueryClient } from '@tanstack/react-query';
@@ -44,6 +46,7 @@ const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly (readonly str
   coursework: [keys.coursework],
   requests: [keys.services],
   fees: [keys.fees],
+  registration: [keys.registration],
   bookings: [keys.bookings, ['academics', 'slots'], ['academics', 'calendar']],
 };
 
@@ -268,6 +271,29 @@ export function useRealtimeSync(): void {
       void qc.invalidateQueries({ queryKey: keys.coursework });
     };
 
+    // Someone sent or took back a course plan: seat counts move on every registration page.
+    const onRegistrationSeats = ({ offers }: { offers: { id: string; seatsTaken: number }[] }) => {
+      const taken = new Map(offers.map((o) => [o.id, o.seatsTaken]));
+      const patch = <T extends RegistrationOfferDTO>(offer: T): T => {
+        const seats = taken.get(offer.id);
+        return seats === undefined
+          ? offer
+          : { ...offer, seatsTaken: seats, seatsLeft: Math.max(0, offer.capacity - seats) };
+      };
+      qc.setQueryData<RegistrationHomeDTO>(keys.registrationHome, (home) =>
+        home
+          ? {
+              ...home,
+              offers: home.offers.map(patch),
+              registration: home.registration && {
+                ...home.registration,
+                offers: home.registration.offers.map(patch),
+              },
+            }
+          : home,
+      );
+    };
+
     const onNotification = (notification: NotificationDTO) => {
       addNotification(qc, notification);
       // The notification means the data behind it changed: refresh those screens.
@@ -299,6 +325,7 @@ export function useRealtimeSync(): void {
     socket.on('notification:new', onNotification);
     socket.on('timetable:changed', onTimetableChanged);
     socket.on('quiz:state', onQuizState);
+    socket.on('registration:seats', onRegistrationSeats);
 
     if (socket.connected) onConnect();
     else {
@@ -328,6 +355,7 @@ export function useRealtimeSync(): void {
       socket.off('notification:new', onNotification);
       socket.off('timetable:changed', onTimetableChanged);
       socket.off('quiz:state', onQuizState);
+      socket.off('registration:seats', onRegistrationSeats);
     };
   }, [me.id, qc, navigate]);
 }

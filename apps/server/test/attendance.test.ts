@@ -246,7 +246,7 @@ describe('who can run and see attendance', () => {
       400,
     );
     const saved = await send(admin, 'PUT', '/api/admin/settings', { minAttendance: 60 });
-    expect(await saved.json()).toEqual({ minAttendance: 60 });
+    expect(await saved.json()).toMatchObject({ minAttendance: 60 });
 
     const ahmed = await app.login(ACCOUNTS.ahmed);
     const his: MyAttendanceCourseDTO[] = await (
@@ -257,7 +257,7 @@ describe('who can run and see attendance', () => {
     expect(compiler?.summary.state).not.toBe('short');
 
     await send(admin, 'PUT', '/api/admin/settings', { minAttendance: 80 });
-    expect(await (await app.api(ahmed, '/api/academics/settings')).json()).toEqual({
+    expect(await (await app.api(ahmed, '/api/academics/settings')).json()).toMatchObject({
       minAttendance: 80,
     });
   });

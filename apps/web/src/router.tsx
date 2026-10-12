@@ -40,6 +40,8 @@ const SeatingChartPage = lazy(() => import('@/pages/academics/SeatingChartPage')
 const RoomFinderPage = lazy(() => import('@/pages/academics/RoomFinderPage'));
 const TeachersPage = lazy(() => import('@/pages/academics/TeachersPage'));
 const TranscriptPage = lazy(() => import('@/pages/academics/TranscriptPage'));
+const RegistrationPage = lazy(() => import('@/pages/academics/RegistrationPage'));
+const RegistrationReviewPage = lazy(() => import('@/pages/academics/RegistrationReviewPage'));
 const ProgressPage = lazy(() => import('@/pages/academics/ProgressPage'));
 const CalendarPage = lazy(() => import('@/pages/academics/CalendarPage'));
 const CourseworkPage = lazy(() => import('@/pages/academics/CourseworkPage'));
@@ -164,6 +166,8 @@ export const router = createBrowserRouter([
           { path: 'rooms', element: <RoomFinderPage /> },
           { path: 'teachers', element: <TeachersPage /> },
           { path: 'transcript', element: <TranscriptPage /> },
+          { path: 'registration', element: <RegistrationPage /> },
+          { path: 'registration/:registrationId', element: <RegistrationReviewPage /> },
           { path: 'progress', element: <ProgressPage /> },
           { path: 'calendar', element: <CalendarPage /> },
           { path: 'coursework', element: <CourseworkPage /> },

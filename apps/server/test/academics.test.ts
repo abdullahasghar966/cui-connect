@@ -27,8 +27,11 @@ describe('terms, rooms and the catalog', () => {
     const terms: { code: string; current: boolean }[] = await (
       await app.api(cookie, '/api/academics/terms')
     ).json();
-    expect(terms[0]).toMatchObject({ code: 'FA26', current: true });
-    expect(terms.filter((t) => t.current)).toHaveLength(1);
+    expect(terms.filter((t) => t.current)).toEqual([
+      expect.objectContaining({ code: 'FA26', current: true }),
+    ]);
+    // Next term exists for course registration, but isn't current.
+    expect(terms.find((t) => t.code === 'SP27')).toMatchObject({ current: false });
   });
 
   it('searches the catalog and shows a course page', async () => {
@@ -228,27 +231,28 @@ describe('notification centre', () => {
 describe('a new term', () => {
   it('can be added and made current; new course offerings belong to it', async () => {
     const admin = await app.login(ACCOUNTS.admin);
+    // (Spring 2027 already exists: the demo opened registration for it.)
     const created = await send(admin, 'POST', '/api/admin/terms', {
-      code: 'sp27',
-      startsOn: '2027-02-15',
-      endsOn: '2027-07-15',
+      code: 'fa27',
+      startsOn: '2027-09-01',
+      endsOn: '2028-01-31',
     });
     expect(created.status).toBe(201);
     const term = await created.json();
-    expect(term).toMatchObject({ code: 'SP27', name: 'Spring 2027', current: false });
+    expect(term).toMatchObject({ code: 'FA27', name: 'Fall 2027', current: false });
     expect(
       (
         await send(admin, 'POST', '/api/admin/terms', {
-          code: 'SP27',
-          startsOn: '2027-02-15',
-          endsOn: '2027-07-15',
+          code: 'FA27',
+          startsOn: '2027-09-01',
+          endsOn: '2028-01-31',
         })
       ).status,
     ).toBe(409);
     const bad = await send(admin, 'POST', '/api/admin/terms', {
-      code: 'FA27',
-      startsOn: '2027-09-01',
-      endsOn: '2027-08-01',
+      code: 'SP28',
+      startsOn: '2028-02-15',
+      endsOn: '2028-01-01',
     });
     expect(bad.status).toBe(400);
 
@@ -256,7 +260,7 @@ describe('a new term', () => {
     const terms: { code: string; current: boolean }[] = await (
       await app.api(admin, '/api/academics/terms')
     ).json();
-    expect(terms.filter((t) => t.current).map((t) => t.code)).toEqual(['SP27']);
+    expect(terms.filter((t) => t.current).map((t) => t.code)).toEqual(['FA27']);
     // The admin's course list now shows the (empty) new term.
     expect(await (await app.api(admin, '/api/admin/courses')).json()).toEqual([]);
   });

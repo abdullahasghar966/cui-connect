@@ -76,13 +76,21 @@ import type {
   MyResultsDTO,
   NewRequestInput,
   NotificationsPage,
+  OfferStudentDTO,
   OfficeInput,
+  PlanOffersInput,
   ProgramDTO,
   ProgramInput,
   PublicUserDTO,
   PushSubscriptionInput,
   QuizInput,
   QuizViewDTO,
+  RegistrationDTO,
+  RegistrationHomeDTO,
+  RegistrationMode,
+  RegistrationOfferDTO,
+  RegistrationOfferInput,
+  RegistrationWindowDTO,
   RequestStatusInput,
   Role,
   RoomDTO,
@@ -387,6 +395,32 @@ export const api = {
       send<FeeChallanDTO>(`/api/services/fees/challans/${id}/unpaid`, 'POST'),
     cancelChallan: (id: string) =>
       send<{ ok: true }>(`/api/services/fees/challans/${id}`, 'DELETE'),
+  },
+
+  registration: {
+    home: () => request<RegistrationHomeDTO>('/api/academics/registration'),
+    savePlan: (offerIds: string[]) =>
+      send<RegistrationDTO>('/api/academics/registration/plan', 'PUT', { offerIds }),
+    submitPlan: () => send<RegistrationDTO>('/api/academics/registration/plan/submit', 'POST'),
+    withdrawPlan: () => send<RegistrationDTO>('/api/academics/registration/plan/withdraw', 'POST'),
+    approvals: () => request<RegistrationDTO[]>('/api/academics/registration/approvals'),
+    detail: (id: string) => request<RegistrationDTO>(`/api/academics/registration/${id}`),
+    approvePlan: (id: string, note: string | null) =>
+      send<RegistrationDTO>(`/api/academics/registration/${id}/approve`, 'POST', { note }),
+    returnPlan: (id: string, note: string) =>
+      send<RegistrationDTO>(`/api/academics/registration/${id}/return`, 'POST', { note }),
+    saveOffer: (input: RegistrationOfferInput, id?: string) =>
+      id
+        ? send<RegistrationOfferDTO>(`/api/academics/registration/offers/${id}`, 'PUT', input)
+        : send<RegistrationOfferDTO>('/api/academics/registration/offers', 'POST', input),
+    deleteOffer: (id: string) =>
+      send<{ ok: true }>(`/api/academics/registration/offers/${id}`, 'DELETE'),
+    planOffers: (input: PlanOffersInput) =>
+      send<{ created: number }>('/api/academics/registration/offers/plan', 'POST', input),
+    offerStudents: (id: string) =>
+      request<OfferStudentDTO[]>(`/api/academics/registration/offers/${id}/students`),
+    setWindow: (mode: RegistrationMode) =>
+      send<RegistrationWindowDTO>('/api/academics/registration/window', 'PUT', { mode }),
   },
 
   coursework: {

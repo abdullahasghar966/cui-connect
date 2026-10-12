@@ -101,6 +101,8 @@ export interface ServerToClientEvents {
   'notification:new': (notification: NotificationDTO) => void;
   /** A class of these course offerings was added, changed, cancelled or moved. */
   'timetable:changed': (payload: { offeringIds: string[] }) => void;
+  /** Seats were taken or freed in next term's offers (everyone registering sees it live). */
+  'registration:seats': (payload: { offers: { id: string; seatsTaken: number }[] }) => void;
   /** Someone checked in or was marked (sent to the people running the session). */
   'attendance:update': (payload: AttendanceUpdateEvent) => void;
   /** A live quiz moved on (started, next question, answer shown, ended): refetch it. */
