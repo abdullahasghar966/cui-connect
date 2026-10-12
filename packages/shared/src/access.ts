@@ -91,6 +91,20 @@ export function canViewStudentRecord(
   );
 }
 
+/**
+ * A course's (anonymous) teacher evaluation results: its teacher, the HOD of its department,
+ * the Director's Office (which runs evaluations, like a quality cell) and IT. Never students.
+ */
+export function canViewEvaluation(user: PolicyUser, offering: OfferingFacts): Decision {
+  if (!user.active) return inactive;
+  if (isAdmin(user) || inOffice(user, 'DIRECTOR')) return ALLOW;
+  if (teaches(user, offering) || isHodOf(user, offering.departmentId)) return ALLOW;
+  return deny(
+    'NOT_ALLOWED',
+    "Evaluation results are for the course's teacher, the HOD and the Director's Office.",
+  );
+}
+
 /** Build and change the weekly timetable of a department. */
 export function canManageTimetable(user: PolicyUser, departmentId: string | null): Decision {
   if (!user.active) return inactive;

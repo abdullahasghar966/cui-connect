@@ -11,6 +11,7 @@ import {
   ListChecks,
   NotebookPen,
   NotebookTabs,
+  Star,
   Users,
 } from 'lucide-react';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
@@ -57,6 +58,15 @@ export default function AcademicsLayout() {
     (me.role === 'staff' && (me.office === 'DEPARTMENT' || me.office === 'DIRECTOR'))
   ) {
     sections.push({ to: '/academics/registration', label: 'Registration', icon: ListChecks });
+  }
+  // Students evaluate their teachers; teachers, HODs, the Director's Office and IT read results.
+  if (
+    me.role === 'student' ||
+    me.role === 'faculty' ||
+    me.role === 'admin' ||
+    (me.role === 'staff' && me.office === 'DIRECTOR')
+  ) {
+    sections.push({ to: '/academics/evaluation', label: 'Evaluation', icon: Star });
   }
   if (canEditTimetable(me)) {
     sections.push({

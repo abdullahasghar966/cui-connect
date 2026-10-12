@@ -21,6 +21,7 @@ export function getCampusSettings(): Promise<CampusSettingsDTO> {
       .then((doc) => ({
         minAttendance: doc?.minAttendance ?? DEFAULT_MIN_ATTENDANCE,
         registrationMode: doc?.registrationMode ?? 'calendar',
+        evaluationOpen: doc?.evaluationOpen ?? false,
       }));
     cached = { value, at: Date.now() };
     value.catch(() => {

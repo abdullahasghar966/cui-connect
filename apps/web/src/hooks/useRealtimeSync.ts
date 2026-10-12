@@ -47,6 +47,7 @@ const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly (readonly str
   requests: [keys.services],
   fees: [keys.fees],
   registration: [keys.registration],
+  evaluation: [keys.evaluation],
   bookings: [keys.bookings, ['academics', 'slots'], ['academics', 'calendar']],
 };
 

@@ -6,6 +6,7 @@ export interface CampusSettingsDoc {
   _id: string;
   minAttendance: number;
   registrationMode: RegistrationMode;
+  evaluationOpen: boolean;
   updatedAt: Date;
 }
 
@@ -14,6 +15,7 @@ const campusSettingsSchema = new Schema<CampusSettingsDoc>(
     _id: { type: String, default: 'campus' },
     minAttendance: { type: Number, default: DEFAULT_MIN_ATTENDANCE },
     registrationMode: { type: String, enum: REGISTRATION_MODES, default: 'calendar' },
+    evaluationOpen: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: false, updatedAt: true } },
 );

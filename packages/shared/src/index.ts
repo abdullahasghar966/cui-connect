@@ -6,6 +6,7 @@ export * from './bookings';
 export * from './constants';
 export * from './coursework';
 export * from './dto';
+export * from './evaluation';
 export * from './events';
 export * from './fees';
 export * from './policy';

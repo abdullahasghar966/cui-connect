@@ -14,6 +14,7 @@ import { adminRouter } from './routes/admin';
 import { apiRouter } from './routes/api';
 import { authRouter } from './routes/auth';
 import { courseworkRouter } from './routes/coursework';
+import { evaluationRouter } from './routes/evaluation';
 import { examsRouter } from './routes/exams';
 import { filesRouter } from './routes/files';
 import { notificationsRouter } from './routes/notifications';
@@ -70,6 +71,7 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
   app.use('/api/academics/registration', requireAuth, registrationRouter);
+  app.use('/api/academics/evaluation', requireAuth, evaluationRouter);
   app.use('/api/academics', requireAuth, academicsRouter);
   app.use('/api/notifications', requireAuth, notificationsRouter);
   app.use('/api/teaching', requireAuth, teachingRouter);

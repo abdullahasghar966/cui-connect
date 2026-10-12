@@ -15,6 +15,7 @@ import type { BookingStatus } from './bookings';
 import type { NotificationType } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
+import type { EvaluationSummary } from './evaluation';
 import type { FeeInstalment, FeeItem, FeeStatus } from './fees';
 import type {
   OfferSlot,
@@ -595,6 +596,8 @@ export interface CampusSettingsDTO {
   minAttendance: number;
   /** Course registration follows the calendar, or is opened or closed by hand. */
   registrationMode: RegistrationMode;
+  /** Students can evaluate their teachers (the Director's Office opens it near the end of term). */
+  evaluationOpen: boolean;
 }
 
 export interface NotificationDTO {
@@ -952,6 +955,58 @@ export interface OfferStudentDTO {
   regNo: string | null;
   sectionName: string | null;
   status: 'submitted' | 'approved';
+}
+
+// ---- Teacher evaluation ----
+
+/** A course a student can evaluate this term. */
+export interface EvaluationCourseDTO {
+  offeringId: string;
+  code: string;
+  title: string;
+  sectionName: string;
+  teacher: { id: string; name: string } | null;
+  /** The student has answered (only a receipt says so; the answers carry no name). */
+  done: boolean;
+}
+
+/** One course's results line for a teacher, HOD, the Director's Office or IT. */
+export interface EvaluationRowDTO {
+  offeringId: string;
+  code: string;
+  title: string;
+  sectionName: string;
+  departmentCode: string | null;
+  teacher: { id: string; name: string } | null;
+  enrolled: number;
+  responses: number;
+  /** Null while results are hidden (still open, or too few answers). */
+  overall: number | null;
+}
+
+export interface EvaluationHomeDTO {
+  term: { id: string; code: string; name: string };
+  open: boolean;
+  /** The viewer opens and closes evaluation (Director's Office or IT). */
+  canChangeWindow: boolean;
+  /** Students: their courses. */
+  courses: EvaluationCourseDTO[];
+  /** Teachers, HODs, the Director's Office and IT: the courses whose results they may see. */
+  rows: EvaluationRowDTO[];
+}
+
+export interface EvaluationReportDTO {
+  offeringId: string;
+  term: { id: string; code: string; name: string };
+  code: string;
+  title: string;
+  sectionName: string;
+  teacher: { id: string; name: string } | null;
+  enrolled: number;
+  responses: number;
+  /** Why results are hidden; null when they are shown. */
+  hiddenReason: string | null;
+  summary: EvaluationSummary | null;
 }
 
 // ---- Fees ----

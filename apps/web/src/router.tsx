@@ -41,6 +41,9 @@ const RoomFinderPage = lazy(() => import('@/pages/academics/RoomFinderPage'));
 const TeachersPage = lazy(() => import('@/pages/academics/TeachersPage'));
 const TranscriptPage = lazy(() => import('@/pages/academics/TranscriptPage'));
 const RegistrationPage = lazy(() => import('@/pages/academics/RegistrationPage'));
+const EvaluationPage = lazy(() => import('@/pages/academics/EvaluationPage'));
+const EvaluateCoursePage = lazy(() => import('@/pages/academics/EvaluateCoursePage'));
+const EvaluationReportPage = lazy(() => import('@/pages/academics/EvaluationReportPage'));
 const RegistrationReviewPage = lazy(() => import('@/pages/academics/RegistrationReviewPage'));
 const ProgressPage = lazy(() => import('@/pages/academics/ProgressPage'));
 const CalendarPage = lazy(() => import('@/pages/academics/CalendarPage'));
@@ -168,6 +171,9 @@ export const router = createBrowserRouter([
           { path: 'transcript', element: <TranscriptPage /> },
           { path: 'registration', element: <RegistrationPage /> },
           { path: 'registration/:registrationId', element: <RegistrationReviewPage /> },
+          { path: 'evaluation', element: <EvaluationPage /> },
+          { path: 'evaluation/:offeringId', element: <EvaluateCoursePage /> },
+          { path: 'evaluation/:offeringId/report', element: <EvaluationReportPage /> },
           { path: 'progress', element: <ProgressPage /> },
           { path: 'calendar', element: <CalendarPage /> },
           { path: 'coursework', element: <CourseworkPage /> },

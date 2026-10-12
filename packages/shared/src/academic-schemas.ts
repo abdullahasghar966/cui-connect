@@ -13,6 +13,7 @@ import {
   toMinutes,
 } from './academics';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
+import { EVALUATION_QUESTIONS } from './evaluation';
 import { FEE_INSTALMENTS, feeTotal, LATE_FEE } from './fees';
 import { REGISTRATION_MODES } from './registration';
 import {
@@ -546,6 +547,18 @@ export const registrationOffersQuerySchema = z.object({
   departmentId: objectIdSchema.optional(),
 });
 
+// ---- Teacher evaluation ----
+
+export const evaluationSchema = z.object({
+  ratings: z
+    .array(z.number().int().min(1).max(5))
+    .length(EVALUATION_QUESTIONS.length, 'Answer every question'),
+  wentWell: z.string().trim().max(1000).nullish(),
+  improve: z.string().trim().max(1000).nullish(),
+});
+
+export const evaluationWindowSchema = z.object({ open: z.boolean() });
+
 // ---- Fees ----
 
 export const feeItemSchema = z.object({
@@ -642,6 +655,8 @@ export type RegistrationPlanInput = z.infer<typeof registrationPlanSchema>;
 export type RegistrationReturnInput = z.infer<typeof registrationReturnSchema>;
 export type RegistrationApproveInput = z.input<typeof registrationApproveSchema>;
 export type RegistrationWindowInput = z.infer<typeof registrationWindowSchema>;
+export type EvaluationInput = z.input<typeof evaluationSchema>;
+export type EvaluationWindowInput = z.infer<typeof evaluationWindowSchema>;
 export type IssueChallansInput = z.input<typeof issueChallansSchema>;
 export type MarkPaidInput = z.infer<typeof markPaidSchema>;
 export type FeeDeskQuery = z.input<typeof feeDeskQuerySchema>;

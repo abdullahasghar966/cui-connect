@@ -11,6 +11,7 @@ import { ClassChange } from './ClassChange';
 import { ClassSlot } from './ClassSlot';
 import { CourseOffering } from './CourseOffering';
 import { Department } from './Department';
+import { EvaluationReceipt, EvaluationSheet } from './Evaluation';
 import { Exam } from './Exam';
 import { FeeChallan } from './FeeChallan';
 import { Group } from './Group';
@@ -49,6 +50,7 @@ export * from './ClassChange';
 export * from './ClassSlot';
 export * from './CourseOffering';
 export * from './Department';
+export * from './Evaluation';
 export * from './Exam';
 export * from './FeeChallan';
 export * from './Group';
@@ -112,6 +114,8 @@ export const ALL_MODELS = [
   FeeChallan,
   RegistrationOffer,
   Registration,
+  EvaluationSheet,
+  EvaluationReceipt,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

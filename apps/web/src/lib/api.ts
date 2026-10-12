@@ -43,6 +43,9 @@ import type {
   DegreeProgressDTO,
   DepartmentDTO,
   DepartmentRefDTO,
+  EvaluationHomeDTO,
+  EvaluationInput,
+  EvaluationReportDTO,
   ExamCheckDTO,
   ExamDTO,
   ExamInput,
@@ -395,6 +398,16 @@ export const api = {
       send<FeeChallanDTO>(`/api/services/fees/challans/${id}/unpaid`, 'POST'),
     cancelChallan: (id: string) =>
       send<{ ok: true }>(`/api/services/fees/challans/${id}`, 'DELETE'),
+  },
+
+  evaluation: {
+    home: () => request<EvaluationHomeDTO>('/api/academics/evaluation'),
+    submit: (offeringId: string, input: EvaluationInput) =>
+      send<{ ok: true }>(`/api/academics/evaluation/${offeringId}`, 'POST', input),
+    report: (offeringId: string) =>
+      request<EvaluationReportDTO>(`/api/academics/evaluation/${offeringId}/report`),
+    setWindow: (open: boolean) =>
+      send<{ open: boolean }>('/api/academics/evaluation/window', 'PUT', { open }),
   },
 
   registration: {
