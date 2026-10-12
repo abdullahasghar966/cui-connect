@@ -21,6 +21,9 @@ import type {
   CalendarItemDTO,
   CampusEventDTO,
   CampusEventInput,
+  CampusPlaceDTO,
+  CampusPlaceInput,
+  CampusPlacesDTO,
   CampusSettingsDTO,
   CampusSettingsInput,
   CatalogCourseDTO,
@@ -418,6 +421,12 @@ export const api = {
       send<CampusEventDTO>(`/api/campus/events/${id}/cancel`, 'POST', { note }),
     rsvp: (id: string, status: RsvpStatus | null) =>
       send<CampusEventDTO>(`/api/campus/events/${id}/rsvp`, 'PUT', { status }),
+    places: () => request<CampusPlacesDTO>('/api/campus/places'),
+    savePlace: (input: CampusPlaceInput, id?: string) =>
+      id
+        ? send<CampusPlaceDTO>(`/api/campus/places/${id}`, 'PUT', input)
+        : send<CampusPlaceDTO>('/api/campus/places', 'POST', input),
+    deletePlace: (id: string) => send<{ ok: true }>(`/api/campus/places/${id}`, 'DELETE'),
   },
 
   evaluation: {

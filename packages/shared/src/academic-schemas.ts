@@ -12,7 +12,8 @@ import {
   TIME_PATTERN,
   toMinutes,
 } from './academics';
-import { EVENT_CATEGORIES, RSVP_STATUSES } from './campus';
+import { EVENT_CATEGORIES, PLACE_KINDS, RSVP_STATUSES } from './campus';
+import { OFFICES } from './constants';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
 import { EVALUATION_QUESTIONS } from './evaluation';
 import { FEE_INSTALMENTS, feeTotal, LATE_FEE } from './fees';
@@ -576,6 +577,29 @@ export const eventDecisionSchema = z.object({
 
 export const eventCancelSchema = z.object({ note: z.string().trim().max(500).nullish() });
 
+// ---- Campus map ----
+
+export const openingHoursSchema = z
+  .object({
+    days: z.array(z.number().int().min(1).max(7)).min(1, 'Pick at least one day').max(7),
+    open: timeSchema,
+    close: timeSchema,
+  })
+  .refine((h) => toMinutes(h.close) > toMinutes(h.open), {
+    message: 'It must close after it opens',
+    path: ['close'],
+  });
+
+export const campusPlaceSchema = z.object({
+  name: z.string().trim().min(2, 'Name the place').max(80),
+  kind: z.enum(PLACE_KINDS),
+  block: z.string().trim().min(1, 'Say which building').max(60),
+  floor: z.number().int().min(-2).max(30).nullable().default(null),
+  description: z.string().trim().max(300).nullish(),
+  office: z.enum(OFFICES).nullish(),
+  hours: z.array(openingHoursSchema).max(4).default([]),
+});
+
 // ---- Teacher evaluation ----
 
 export const evaluationSchema = z.object({
@@ -685,6 +709,7 @@ export type RegistrationReturnInput = z.infer<typeof registrationReturnSchema>;
 export type RegistrationApproveInput = z.input<typeof registrationApproveSchema>;
 export type RegistrationWindowInput = z.infer<typeof registrationWindowSchema>;
 export type CampusEventInput = z.input<typeof campusEventSchema>;
+export type CampusPlaceInput = z.input<typeof campusPlaceSchema>;
 export type RsvpInput = z.infer<typeof rsvpSchema>;
 export type EventDecisionInput = z.input<typeof eventDecisionSchema>;
 export type EventCancelInput = z.input<typeof eventCancelSchema>;

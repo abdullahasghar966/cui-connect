@@ -6,6 +6,7 @@ import { AuditLog } from './AuditLog';
 import { Booking } from './Booking';
 import { CalendarEvent } from './CalendarEvent';
 import { CampusEvent, EventRsvp } from './CampusEvent';
+import { CampusPlace } from './CampusPlace';
 import { CampusSettings } from './CampusSettings';
 import { CatalogCourse } from './CatalogCourse';
 import { ClassChange } from './ClassChange';
@@ -46,6 +47,7 @@ export * from './AuditLog';
 export * from './Booking';
 export * from './CalendarEvent';
 export * from './CampusEvent';
+export * from './CampusPlace';
 export * from './CampusSettings';
 export * from './CatalogCourse';
 export * from './ClassChange';
@@ -120,6 +122,7 @@ export const ALL_MODELS = [
   EvaluationReceipt,
   CampusEvent,
   EventRsvp,
+  CampusPlace,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

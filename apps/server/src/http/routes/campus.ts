@@ -12,6 +12,7 @@ import {
   rsvpEvent,
   updateEvent,
 } from '../../services/events';
+import { deletePlace, listPlaces, savePlace } from '../../services/places';
 
 export const campusRouter = Router();
 
@@ -43,4 +44,22 @@ campusRouter.post('/events/:eventId/cancel', async (req, res) => {
 
 campusRouter.put('/events/:eventId/rsvp', async (req, res) => {
   res.json(await rsvpEvent(currentUser(req), id(req, 'eventId'), req.body));
+});
+
+// ---- Map: offices and facilities ----
+
+campusRouter.get('/places', async (req, res) => {
+  res.json(await listPlaces(currentUser(req)));
+});
+
+campusRouter.post('/places', async (req, res) => {
+  res.status(201).json(await savePlace(currentUser(req), req.body));
+});
+
+campusRouter.put('/places/:placeId', async (req, res) => {
+  res.json(await savePlace(currentUser(req), req.body, id(req, 'placeId')));
+});
+
+campusRouter.delete('/places/:placeId', async (req, res) => {
+  res.json(await deletePlace(currentUser(req), id(req, 'placeId')));
 });

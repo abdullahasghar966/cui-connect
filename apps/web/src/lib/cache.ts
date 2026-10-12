@@ -46,6 +46,7 @@ export const keys = {
   request: (id: string) => ['services', 'request', id] as const,
   campusEvents: ['campus', 'events'] as const,
   campusEvent: (id: string) => ['campus', 'events', id] as const,
+  campusPlaces: ['campus', 'places'] as const,
   evaluation: ['academics', 'evaluation'] as const,
   evaluationReport: (offeringId: string) =>
     ['academics', 'evaluation', 'report', offeringId] as const,

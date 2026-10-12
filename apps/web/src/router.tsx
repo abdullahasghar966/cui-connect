@@ -59,6 +59,7 @@ const CampusIndex = lazy(() =>
 );
 const EventsPage = lazy(() => import('@/pages/campus/EventsPage'));
 const EventPage = lazy(() => import('@/pages/campus/EventPage'));
+const MapPage = lazy(() => import('@/pages/campus/MapPage'));
 const ServicesLayout = lazy(() => import('@/pages/services/ServicesLayout'));
 const ServicesIndex = lazy(() =>
   import('@/pages/services/ServicesLayout').then((m) => ({ default: m.ServicesIndex })),
@@ -150,6 +151,7 @@ export const router = createBrowserRouter([
           { index: true, element: <CampusIndex /> },
           { path: 'events', element: <EventsPage /> },
           { path: 'events/:eventId', element: <EventPage /> },
+          { path: 'map', element: <MapPage /> },
         ],
       },
       {

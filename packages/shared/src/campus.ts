@@ -1,7 +1,9 @@
 /**
- * Campus life: events (with RSVP), and later the map, jobs, lost & found and transport.
- * Offices publish events directly; a student's or teacher's event waits for Student Affairs.
+ * Campus life: events (with RSVP), the map of offices and facilities, and later jobs, lost &
+ * found and transport. Offices publish events directly; a student's or teacher's event waits for
+ * Student Affairs.
  */
+import { formatClock, toMinutes } from './academics';
 
 export const EVENT_CATEGORIES = [
   'seminar',
@@ -42,3 +44,57 @@ export type RsvpStatus = (typeof RSVP_STATUSES)[number];
 /** Seats left, or null when the event has no limit. */
 export const seatsLeft = (event: { capacity: number | null; going: number }) =>
   event.capacity === null ? null : Math.max(0, event.capacity - event.going);
+
+// ---- Campus map: offices and facilities ----
+
+export const PLACE_KINDS = ['office', 'facility'] as const;
+export type PlaceKind = (typeof PLACE_KINDS)[number];
+
+/** Open on these ISO weekdays (1 = Monday … 7 = Sunday) between two campus times. */
+export interface OpeningHours {
+  days: readonly number[];
+  open: string;
+  close: string;
+}
+
+export function isOpenAt(
+  hours: readonly OpeningHours[],
+  weekday: number,
+  minutes: number,
+): boolean {
+  return hours.some(
+    (h) => h.days.includes(weekday) && toMinutes(h.open) <= minutes && minutes < toMinutes(h.close),
+  );
+}
+
+const DAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/** `[1,2,3,4,5]` → `Mon–Fri`, `[1,3]` → `Mon, Wed`, all seven → `Every day`. */
+export function describeDays(days: readonly number[]): string {
+  const sorted = [...new Set(days)].filter((d) => d >= 1 && d <= 7).sort((a, b) => a - b);
+  if (sorted.length === 7) return 'Every day';
+  const runs: string[] = [];
+  let start = sorted[0];
+  for (let i = 0; i < sorted.length; i++) {
+    const day = sorted[i] as number;
+    const next = sorted[i + 1];
+    if (next === day + 1) continue;
+    if (start === undefined) break;
+    runs.push(
+      day - start >= 2
+        ? `${DAY_NAMES[start]}–${DAY_NAMES[day]}`
+        : day === start
+          ? `${DAY_NAMES[day]}`
+          : `${DAY_NAMES[start]}, ${DAY_NAMES[day]}`,
+    );
+    start = next;
+  }
+  return runs.join(', ');
+}
+
+/** `Mon–Fri 8:30 AM–4:30 PM · Sat 9:00 AM–1:00 PM`. */
+export function describeHours(hours: readonly OpeningHours[]): string {
+  return hours
+    .map((h) => `${describeDays(h.days)} ${formatClock(h.open)}–${formatClock(h.close)}`)
+    .join(' · ');
+}

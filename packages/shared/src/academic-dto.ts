@@ -12,8 +12,8 @@ import type {
   RoomKind,
 } from './academics';
 import type { BookingStatus } from './bookings';
-import type { EventCategory, EventStatus, RsvpStatus } from './campus';
-import type { NotificationType } from './constants';
+import type { EventCategory, EventStatus, OpeningHours, PlaceKind, RsvpStatus } from './campus';
+import type { NotificationType, Office } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
 import type { EvaluationSummary } from './evaluation';
@@ -1005,6 +1005,28 @@ export interface EventRsvpEvent {
   eventId: string;
   going: number;
   interested: number;
+}
+
+// ---- Campus map ----
+
+/** An office or facility on the map, with its opening hours. */
+export interface CampusPlaceDTO {
+  id: string;
+  name: string;
+  kind: PlaceKind;
+  block: string;
+  floor: number | null;
+  description: string | null;
+  office: Office | null;
+  hours: OpeningHours[];
+  /** Open at this moment (campus time); null when no hours are set. */
+  openNow: boolean | null;
+}
+
+export interface CampusPlacesDTO {
+  places: CampusPlaceDTO[];
+  /** IT edits places. */
+  canManage: boolean;
 }
 
 // ---- Teacher evaluation ----
