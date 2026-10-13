@@ -15,6 +15,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import {
   Ellipsis,
   FileUp,
+  IdCard,
   KeyRound,
   Pencil,
   Save,
@@ -574,6 +575,35 @@ function ResetPasswordDialog({ user, onClose }: { user: UserDTO | null; onClose:
   );
 }
 
+/** A replacement ID card: its QR gets a new code, so the old card stops verifying. */
+function IssueCardDialog({ user, onClose }: { user: UserDTO | null; onClose: () => void }) {
+  const issue = useMutation({
+    mutationFn: () => api.admin.issueIdCard(user?.id ?? ''),
+    onSuccess: (card) => {
+      toast.success(`Card ${card.issue} issued to ${card.name}. The old card no longer verifies.`);
+      onClose();
+    },
+    onError: (err) => toast.error(errorMessage(err)),
+  });
+  return (
+    <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        title={`Issue a new ID card to ${user?.name ?? ''}?`}
+        description="For a lost or damaged card. The new card gets a new QR code, so the old one stops verifying at once. They are told."
+      >
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => issue.mutate()} loading={issue.isPending}>
+            <IdCard /> Issue new card
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function UsersPage() {
   const qc = useQueryClient();
   const [q, setQ] = useState('');
@@ -581,6 +611,7 @@ export default function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [resetFor, setResetFor] = useState<UserDTO | null>(null);
+  const [cardFor, setCardFor] = useState<UserDTO | null>(null);
   const [editing, setEditing] = useState<UserDTO | null>(null);
   const search = useDebounced(q);
   const users = useQuery({
@@ -751,6 +782,11 @@ export default function UsersPage() {
                         <DropdownMenuItem onSelect={() => setResetFor(user)}>
                           <KeyRound /> Reset password
                         </DropdownMenuItem>
+                        {user.active && (
+                          <DropdownMenuItem onSelect={() => setCardFor(user)}>
+                            <IdCard /> Issue a new ID card
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         {user.active ? (
                           <DropdownMenuItem
@@ -780,6 +816,7 @@ export default function UsersPage() {
       <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
       <ResetPasswordDialog user={resetFor} onClose={() => setResetFor(null)} />
+      <IssueCardDialog user={cardFor} onClose={() => setCardFor(null)} />
       <EditUserDialog user={editing} onClose={() => setEditing(null)} />
     </>
   );

@@ -256,6 +256,19 @@ export async function openFile(
   };
 }
 
+/** A profile photo by id, for the public ID card check (which has already checked the card). */
+export async function openProfilePhoto(
+  fileId: Types.ObjectId,
+): Promise<{ file: StoredFileDoc; stream: Readable }> {
+  const file = await StoredFile.findOne({
+    _id: fileId,
+    purpose: 'avatar',
+    attachedTo: { $ne: null },
+  }).lean<StoredFileDoc>();
+  if (!file) throw notFound('File not found.');
+  return { file, stream: bucket().openDownloadStream(file._id) };
+}
+
 /** Deletes a file you uploaded that isn't attached to anything yet. */
 export async function discardFile(user: UserDoc, fileId: string): Promise<void> {
   const file = await StoredFile.findById(toObjectId(fileId)).lean<StoredFileDoc>();

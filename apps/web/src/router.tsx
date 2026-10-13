@@ -26,6 +26,8 @@ const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const MeLayout = lazy(() => import('@/pages/me/MeLayout'));
 const ProfilePage = lazy(() => import('@/pages/me/ProfilePage'));
+const IdCardPage = lazy(() => import('@/pages/me/IdCardPage'));
+const VerifyPage = lazy(() => import('@/pages/VerifyPage'));
 const AcademicsLayout = lazy(() => import('@/pages/academics/AcademicsLayout'));
 const TimetablePage = lazy(() => import('@/pages/academics/TimetablePage'));
 const TimetableEditorPage = lazy(() => import('@/pages/academics/TimetableEditorPage'));
@@ -142,6 +144,15 @@ function RequireAdmin() {
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/setup', element: <SetupPage /> },
+  // Public: opened by scanning an ID card, signed in or not.
+  {
+    path: '/verify/:code',
+    element: (
+      <Suspense fallback={<FullScreenSpinner />}>
+        <VerifyPage />
+      </Suspense>
+    ),
+  },
   {
     element: <RequireAuth />,
     children: [
@@ -151,7 +162,10 @@ export const router = createBrowserRouter([
       {
         path: '/me',
         element: <MeLayout />,
-        children: [{ index: true, element: <ProfilePage /> }],
+        children: [
+          { index: true, element: <ProfilePage /> },
+          { path: 'id-card', element: <IdCardPage /> },
+        ],
       },
       { path: '/attend/:sessionId', element: <CheckInPage /> },
       { path: '/search', element: <SearchPage /> },

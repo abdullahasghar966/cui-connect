@@ -1,9 +1,12 @@
-import { UserRound } from 'lucide-react';
+import { IdCard, UserRound } from 'lucide-react';
 import { AreaLayout, type AreaSection } from '@/components/AreaLayout';
 
-/** The viewer's own corner: profile (the ID card and notification settings follow). */
+/** The viewer's own corner: profile and ID card (notification settings follow). */
 export default function MeLayout() {
-  const sections: AreaSection[] = [{ to: '/me', label: 'Profile', icon: UserRound, end: true }];
+  const sections: AreaSection[] = [
+    { to: '/me', label: 'Profile', icon: UserRound, end: true },
+    { to: '/me/id-card', label: 'ID card', icon: IdCard },
+  ];
   return (
     <AreaLayout
       title="You"

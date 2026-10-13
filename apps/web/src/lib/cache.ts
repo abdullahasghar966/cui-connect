@@ -10,6 +10,7 @@ export type MessagesData = InfiniteData<
 
 export const keys = {
   me: ['me'] as const,
+  idCard: ['id-card'] as const,
   groups: ['groups'] as const,
   messages: (groupId: string) => ['messages', groupId] as const,
   members: (groupId: string) => ['members', groupId] as const,

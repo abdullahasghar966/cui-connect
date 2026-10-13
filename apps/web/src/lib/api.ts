@@ -68,6 +68,8 @@ import type {
   GradingWeights,
   GroupDTO,
   GroupType,
+  IdCardCheckDTO,
+  IdCardDTO,
   IssueChallansInput,
   IssueChallansResultDTO,
   JobDTO,
@@ -217,6 +219,9 @@ export const api = {
   logout: () => send<{ ok: true }>('/api/auth/logout', 'POST'),
   me: () => request<{ user: UserDTO }>('/api/auth/me'),
   setProfilePhoto: (photoId: string | null) => send<UserDTO>('/api/me/photo', 'PUT', { photoId }),
+  idCard: () => request<IdCardDTO>('/api/me/id-card'),
+  /** Public: what anyone who scans an ID card's QR sees. */
+  checkIdCard: (code: string) => request<IdCardCheckDTO>(`/api/verify/${encodeURIComponent(code)}`),
   demoAccounts: () =>
     request<{ password: string; accounts: DemoAccount[] }>('/api/auth/demo-accounts'),
   setupStatus: () => request<{ needed: boolean; codeRequired: boolean }>('/api/auth/setup'),
@@ -579,6 +584,7 @@ export const api = {
     users: (params: { q?: string; role?: Role }) =>
       request<UserDTO[]>(`/api/admin/users${query(params)}`),
     createUser: (input: CreateUserInput) => send<UserDTO>('/api/admin/users', 'POST', input),
+    issueIdCard: (userId: string) => send<IdCardDTO>(`/api/admin/users/${userId}/id-card`, 'POST'),
     updateUser: (userId: string, input: UpdateUserInput) =>
       send<UserDTO>(`/api/admin/users/${userId}`, 'PATCH', input),
     importUsers: (csv: string, defaultPassword?: string) =>

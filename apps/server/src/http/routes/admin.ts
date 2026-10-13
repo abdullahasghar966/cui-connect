@@ -37,6 +37,7 @@ import {
 import { onlineUserIds } from '../../realtime/presence';
 import { recordAudit } from '../../services/audit';
 import { countMembers, toAdminGroupDTO } from '../../services/groups';
+import { issueIdCardByIT } from '../../services/idcard';
 import { getOrgLookup, toAuditDTO, toUserDTO } from '../../services/mappers';
 import { addMember } from '../../services/moderation';
 import { deleteRoom, saveRoom } from '../../services/rooms';
@@ -192,6 +193,11 @@ adminRouter.patch('/users/:userId', async (req, res) => {
     parse(updateUserSchema, req.body),
   );
   res.json(toUserDTO(user, await getOrgLookup()));
+});
+
+/** A new ID card (the old one stops verifying), e.g. for a member of staff who lost theirs. */
+adminRouter.post('/users/:userId/id-card', async (req, res) => {
+  res.json(await issueIdCardByIT(currentUser(req), param(req, 'userId')));
 });
 
 adminRouter.post('/users/import', async (req, res) => {

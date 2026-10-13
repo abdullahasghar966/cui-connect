@@ -36,6 +36,7 @@ import {
   type UserDoc,
 } from '../models';
 import { recordAudit } from './audit';
+import { reissueIdCard } from './idcard';
 import { getOrgLookup, type Id, idOf, sameId, toObjectId, toPolicyUser } from './mappers';
 import { notify } from './notifications';
 import { currentTerm } from './terms';
@@ -375,6 +376,9 @@ export async function changeRequestStatus(
 
   let leaveDays = 0;
   if (doc.kind === 'leave' && status === 'approved') leaveDays = await applyLeave(updated);
+  // A new card gets a new QR code, so the lost or damaged one stops verifying.
+  const newCard =
+    doc.kind === 'idcard' && status === 'completed' ? await reissueIdCard(doc.studentId) : null;
   const label = requestStatusLabel(doc.kind, status);
   const student = await User.findById(doc.studentId).select('name').lean();
   void recordAudit({
@@ -396,6 +400,7 @@ export async function changeRequestStatus(
         leaveDays
           ? `${leaveDays} missed class${leaveDays === 1 ? ' is' : 'es are'} now marked as leave.`
           : null,
+        newCard ? 'Your digital ID card has a new QR code; the old card no longer verifies.' : null,
       ]
         .filter(Boolean)
         .join(' ') || doc.title,

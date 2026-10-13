@@ -276,6 +276,12 @@ export default function RequestPage() {
                   </Button>
                 ))}
               </div>
+              {request.kind === 'idcard' && choices.includes('completed') && (
+                <p className="text-[12.5px] text-muted-foreground">
+                  Marking it ready issues the student a new digital ID card: the old card's QR code
+                  stops verifying at once.
+                </p>
+              )}
             </div>
           </Card>
         )}

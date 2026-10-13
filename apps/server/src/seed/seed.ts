@@ -52,6 +52,7 @@ import {
 import { seedEvaluation } from './evaluation';
 import { seedEvents } from './events';
 import { seedFees } from './fees';
+import { seedIdCards } from './idcards';
 import { seedPlaces } from './places';
 import { seedRegistration } from './registration';
 import { seedRequests } from './requests';
@@ -201,6 +202,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   await seedPlaces();
   await seedCampusLife();
   await seedTransport();
+  await seedIdCards();
 
   // Everyone joins the official groups their role, department, section and courses imply.
   for (const user of people.values()) await reconcileUser(user._id, { notify: false });

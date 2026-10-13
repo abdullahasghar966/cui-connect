@@ -1,5 +1,6 @@
 /** Wire formats returned by the REST API and pushed over Socket.IO. */
 import type { GroupType, MemberRole, Office, Role } from './constants';
+import type { IdCardStatus } from './idcard';
 import type { GroupSettings, PolicyGroup, PolicyMembership, PolicyUser } from './policy';
 
 export interface UserDTO {
@@ -45,6 +46,48 @@ export interface MessageSenderDTO {
   isHOD: boolean;
   isCR: boolean;
   photoUrl: string | null;
+}
+
+/** Your own ID card: what is printed on it, and the code in its QR. */
+export interface IdCardDTO {
+  name: string;
+  photoUrl: string | null;
+  role: Role;
+  /** The band across the card: Student, Faculty, Staff or IT Services. */
+  kind: string;
+  regNo: string | null;
+  /** Faculty and staff: their designation, or the office they work in. */
+  designation: string | null;
+  department: string | null;
+  programme: string | null;
+  sectionName: string | null;
+  /** 1 for the first card, 2 after the first replacement, and so on. */
+  issue: number;
+  issuedOn: string;
+  validUntil: string | null;
+  status: IdCardStatus;
+  /** The code in the QR; the verification page is `/verify/<code>`. */
+  code: string;
+}
+
+/**
+ * What anyone who scans a card sees. Only a valid card names its holder, and only with what is
+ * printed on the card (no email, marks or anything else).
+ */
+export interface IdCardCheckDTO {
+  status: IdCardStatus;
+  checkedAt: string;
+  holder: {
+    name: string;
+    kind: string;
+    /** Registration number, or designation for faculty and staff. */
+    number: string | null;
+    department: string | null;
+    validUntil: string | null;
+    issue: number;
+    /** The photo can be fetched from `/api/verify/<code>/photo`. */
+    hasPhoto: boolean;
+  } | null;
 }
 
 export interface PollDTO {

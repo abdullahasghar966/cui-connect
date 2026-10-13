@@ -23,6 +23,7 @@ import { pushRouter } from './routes/push';
 import { registrationRouter } from './routes/registration';
 import { servicesRouter } from './routes/services';
 import { teachingRouter } from './routes/teaching';
+import { verifyRouter } from './routes/verify';
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof AppError) {
@@ -70,6 +71,8 @@ export function createApp() {
     res.json({ ok: true, time: new Date().toISOString() });
   });
   app.use('/api/auth', authRouter);
+  // Public: anyone may check an ID card by scanning its QR.
+  app.use('/api/verify', verifyRouter);
   app.use('/api/admin', requireAuth, requireAdmin, adminRouter);
   app.use('/api/academics/registration', requireAuth, registrationRouter);
   app.use('/api/academics/evaluation', requireAuth, evaluationRouter);

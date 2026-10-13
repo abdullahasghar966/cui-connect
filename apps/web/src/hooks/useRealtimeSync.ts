@@ -48,7 +48,9 @@ const REFRESH_ON: Partial<Record<NotificationDTO['type'], readonly (readonly str
   exams: [keys.myExams],
   events: [['academics', 'calendar'], keys.campusEvents],
   coursework: [keys.coursework],
-  requests: [keys.services],
+  // A completed ID card request means a new card.
+  requests: [keys.services, keys.idCard],
+  system: [keys.idCard],
   fees: [keys.fees],
   registration: [keys.registration],
   evaluation: [keys.evaluation],

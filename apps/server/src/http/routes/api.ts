@@ -22,6 +22,7 @@ import {
   listMembers,
   toAdminGroupDTO,
 } from '../../services/groups';
+import { myIdCard } from '../../services/idcard';
 import { toPolicyGroup, toPolicyMembership, toPolicyUser } from '../../services/mappers';
 import { listMessages, listPins } from '../../services/messages';
 import { addMember, removeMember, setMemberRole, updateGroup } from '../../services/moderation';
@@ -39,6 +40,11 @@ apiRouter.get('/groups', async (req, res) => {
 /** Your own profile photo (upload it as `avatar` first). */
 apiRouter.put('/me/photo', async (req, res) => {
   res.json(await setProfilePhoto(currentUser(req), req.body));
+});
+
+/** Your ID card (issued the first time you open it). */
+apiRouter.get('/me/id-card', async (req, res) => {
+  res.json(await myIdCard(currentUser(req)));
 });
 
 /** Open groups (societies) the viewer is eligible to join. */

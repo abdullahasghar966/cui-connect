@@ -1,6 +1,15 @@
 import { OFFICES, type Office, ROLES, type Role } from '@cui/shared';
 import { model, Schema, type Types } from 'mongoose';
 
+export interface IdCard {
+  /** The random code in the card's QR (see services/idcard.ts). */
+  code: string;
+  issue: number;
+  issuedAt: Date;
+  /** YYYY-MM-DD; null for faculty and staff, whose cards last while they work here. */
+  validUntil: string | null;
+}
+
 export interface UserDoc {
   _id: Types.ObjectId;
   name: string;
@@ -24,6 +33,8 @@ export interface UserDoc {
   officeHours: { day: number; start: string; end: string }[];
   /** Profile photo (a stored image), shown to everyone signed in. */
   photoId: Types.ObjectId | null;
+  /** The current ID card; null until it is first opened (or seeded). */
+  idCard: IdCard | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +58,18 @@ const userSchema = new Schema<UserDoc>(
     officeLocation: { type: String, default: null, trim: true },
     officeHours: { type: [{ _id: false, day: Number, start: String, end: String }], default: [] },
     photoId: { type: Schema.Types.ObjectId, ref: 'StoredFile', default: null },
+    idCard: {
+      type: new Schema<IdCard>(
+        {
+          code: { type: String, required: true },
+          issue: { type: Number, required: true },
+          issuedAt: { type: Date, required: true },
+          validUntil: { type: String, default: null },
+        },
+        { _id: false },
+      ),
+      default: null,
+    },
   },
   { timestamps: true },
 );
@@ -54,6 +77,11 @@ const userSchema = new Schema<UserDoc>(
 userSchema.index(
   { regNo: 1 },
   { unique: true, partialFilterExpression: { regNo: { $type: 'string' } } },
+);
+
+userSchema.index(
+  { 'idCard.code': 1 },
+  { unique: true, partialFilterExpression: { 'idCard.code': { $type: 'string' } } },
 );
 
 export const User = model<UserDoc>('User', userSchema);
