@@ -4,6 +4,7 @@ import { AttendanceRecord } from './AttendanceRecord';
 import { AttendanceSession } from './AttendanceSession';
 import { AuditLog } from './AuditLog';
 import { Booking } from './Booking';
+import { BusRoute, SavedRoute } from './BusRoute';
 import { CalendarEvent } from './CalendarEvent';
 import { CampusEvent, EventRsvp } from './CampusEvent';
 import { CampusPlace } from './CampusPlace';
@@ -47,6 +48,7 @@ export * from './AttendanceRecord';
 export * from './AttendanceSession';
 export * from './AuditLog';
 export * from './Booking';
+export * from './BusRoute';
 export * from './CalendarEvent';
 export * from './CampusEvent';
 export * from './CampusPlace';
@@ -131,6 +133,8 @@ export const ALL_MODELS = [
   SavedJob,
   LostItem,
   LostClaim,
+  BusRoute,
+  SavedRoute,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

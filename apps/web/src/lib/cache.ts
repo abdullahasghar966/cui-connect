@@ -49,6 +49,7 @@ export const keys = {
   campusPlaces: ['campus', 'places'] as const,
   jobs: ['campus', 'jobs'] as const,
   lostFound: ['campus', 'lost-found'] as const,
+  transport: ['campus', 'transport'] as const,
   lostItem: (id: string) => ['campus', 'lost-found', id] as const,
   evaluation: ['academics', 'evaluation'] as const,
   evaluationReport: (offeringId: string) =>

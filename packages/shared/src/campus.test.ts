@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { campusEventSchema } from './academic-schemas';
+import { busRouteSchema, campusEventSchema } from './academic-schemas';
 import { canPublishEvent } from './access';
-import { describeDays, describeHours, isOpenAt, seatsLeft } from './campus';
+import { describeDays, describeHours, isOpenAt, nextBus, seatsLeft } from './campus';
 import type { PolicyUser } from './policy';
 
 describe('campus events', () => {
@@ -39,6 +39,56 @@ describe('campus events', () => {
     expect(describeDays([3, 1])).toBe('Mon, Wed');
     expect(describeDays([1, 2])).toBe('Mon, Tue');
     expect(describeDays([1, 2, 3, 5])).toBe('Mon–Wed, Fri');
+  });
+
+  it('finds the next bus at a stop: this morning, this evening, or the next day it runs', () => {
+    const route = {
+      days: [1, 2, 3, 4, 5],
+      stops: [
+        { name: 'Saddar', morning: '06:50', evening: '17:40' },
+        { name: 'Faizabad', morning: '07:20', evening: '17:10' },
+        { name: 'Campus', morning: '07:50', evening: '16:40' },
+      ],
+    };
+    // Monday 12 Oct 2026.
+    expect(nextBus(route, 'Faizabad', { date: '2026-10-12', minutes: 6 * 60 })).toEqual({
+      run: 'morning',
+      date: '2026-10-12',
+      time: '07:20',
+    });
+    expect(nextBus(route, 'Faizabad', { date: '2026-10-12', minutes: 12 * 60 })).toEqual({
+      run: 'evening',
+      date: '2026-10-12',
+      time: '17:10',
+    });
+    // Friday evening after the last run: Monday morning.
+    expect(nextBus(route, 'Faizabad', { date: '2026-10-16', minutes: 18 * 60 })).toEqual({
+      run: 'morning',
+      date: '2026-10-19',
+      time: '07:20',
+    });
+    expect(nextBus(route, 'Nowhere', { date: '2026-10-12', minutes: 0 })).toBeNull();
+  });
+
+  it('wants stops from the farthest, with times that make sense', () => {
+    const route = {
+      name: 'Route 1',
+      bus: 'Bus 1',
+      capacity: 40,
+      days: [1, 2, 3, 4, 5],
+      stops: [
+        { name: 'Saddar', morning: '06:50', evening: '17:40' },
+        { name: 'Campus', morning: '07:50', evening: '16:40' },
+      ],
+    };
+    expect(busRouteSchema.safeParse(route).success).toBe(true);
+    expect(busRouteSchema.safeParse({ ...route, stops: [...route.stops].reverse() }).success).toBe(
+      false,
+    );
+    expect(
+      busRouteSchema.safeParse({ ...route, stops: [route.stops[0], route.stops[0]] }).success,
+    ).toBe(false);
+    expect(busRouteSchema.safeParse({ ...route, driverPhone: 'call me' }).success).toBe(false);
   });
 
   it('needs an event to end after it starts', () => {

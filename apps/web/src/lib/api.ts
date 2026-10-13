@@ -16,6 +16,8 @@ import type {
   AuditDTO,
   BookingDTO,
   BookingInput,
+  BusRouteDTO,
+  BusRouteInput,
   CalendarEventDTO,
   CalendarEventInput,
   CalendarItemDTO,
@@ -131,6 +133,7 @@ import type {
   TimetableWeekDTO,
   TodayDTO,
   TranscriptDTO,
+  TransportDTO,
   UpdateGroupInput,
   UpdateUserInput,
   UserDTO,
@@ -453,6 +456,16 @@ export const api = {
     resolveItem: (id: string, claimId: string | null) =>
       send<LostItemDTO>(`/api/campus/lost-found/${id}/resolve`, 'POST', { claimId }),
     deleteItem: (id: string) => send<{ ok: true }>(`/api/campus/lost-found/${id}`, 'DELETE'),
+    transport: () => request<TransportDTO>('/api/campus/transport'),
+    saveRoute: (input: BusRouteInput, id?: string) =>
+      id
+        ? send<BusRouteDTO>(`/api/campus/transport/routes/${id}`, 'PUT', input)
+        : send<BusRouteDTO>('/api/campus/transport/routes', 'POST', input),
+    deleteRoute: (id: string) => send<{ ok: true }>(`/api/campus/transport/routes/${id}`, 'DELETE'),
+    setRouteNotice: (id: string, text: string | null) =>
+      send<BusRouteDTO>(`/api/campus/transport/routes/${id}/notice`, 'PUT', { text }),
+    followRoute: (id: string, saved: boolean, stop: string | null) =>
+      send<BusRouteDTO>(`/api/campus/transport/routes/${id}/saved`, 'PUT', { saved, stop }),
   },
 
   evaluation: {

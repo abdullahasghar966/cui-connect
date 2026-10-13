@@ -13,6 +13,7 @@ import type {
 } from './academics';
 import type { BookingStatus } from './bookings';
 import type {
+  BusStop,
   EventCategory,
   EventStatus,
   ItemCategory,
@@ -1086,6 +1087,33 @@ export interface LostFoundHomeDTO {
   mine: LostItemDTO[];
   /** Recently returned items. */
   resolved: LostItemDTO[];
+}
+
+// ---- Transport ----
+
+export interface BusRouteDTO {
+  id: string;
+  name: string;
+  bus: string;
+  capacity: number;
+  days: number[];
+  /** From the farthest stop to campus. */
+  stops: BusStop[];
+  notes: string | null;
+  /** For staff and IT only (null for students and teachers). */
+  driver: { name: string | null; phone: string | null } | null;
+  /** Today's notice (e.g. running late), if any. */
+  notice: string | null;
+  saved: boolean;
+  /** The stop the viewer saved with the route. */
+  myStop: string | null;
+  updatedAt: string;
+}
+
+export interface TransportDTO {
+  routes: BusRouteDTO[];
+  /** IT manages routes and posts notices. */
+  canManage: boolean;
 }
 
 // ---- Campus map ----

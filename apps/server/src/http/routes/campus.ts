@@ -1,4 +1,4 @@
-/** Campus life (`/api/campus`): events, jobs, lost & found and the map (transport follows). */
+/** Campus life (`/api/campus`): events, jobs, lost & found, the map and transport. */
 import { objectIdSchema } from '@cui/shared';
 import { type Request, Router } from 'express';
 import { z } from 'zod';
@@ -23,6 +23,13 @@ import {
   resolveItem,
 } from '../../services/lostfound';
 import { deletePlace, listPlaces, savePlace } from '../../services/places';
+import {
+  deleteRoute,
+  saveRoute,
+  setRouteNotice,
+  setSavedRoute,
+  transportHome,
+} from '../../services/transport';
 
 export const campusRouter = Router();
 
@@ -103,6 +110,32 @@ campusRouter.post('/lost-found/:itemId/resolve', async (req, res) => {
 
 campusRouter.delete('/lost-found/:itemId', async (req, res) => {
   res.json(await deleteItem(currentUser(req), id(req, 'itemId')));
+});
+
+// ---- Transport ----
+
+campusRouter.get('/transport', async (req, res) => {
+  res.json(await transportHome(currentUser(req)));
+});
+
+campusRouter.post('/transport/routes', async (req, res) => {
+  res.status(201).json(await saveRoute(currentUser(req), req.body));
+});
+
+campusRouter.put('/transport/routes/:routeId', async (req, res) => {
+  res.json(await saveRoute(currentUser(req), req.body, id(req, 'routeId')));
+});
+
+campusRouter.delete('/transport/routes/:routeId', async (req, res) => {
+  res.json(await deleteRoute(currentUser(req), id(req, 'routeId')));
+});
+
+campusRouter.put('/transport/routes/:routeId/notice', async (req, res) => {
+  res.json(await setRouteNotice(currentUser(req), id(req, 'routeId'), req.body));
+});
+
+campusRouter.put('/transport/routes/:routeId/saved', async (req, res) => {
+  res.json(await setSavedRoute(currentUser(req), id(req, 'routeId'), req.body));
 });
 
 // ---- Map: offices and facilities ----

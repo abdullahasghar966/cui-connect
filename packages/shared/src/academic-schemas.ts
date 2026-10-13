@@ -629,6 +629,63 @@ export const lostClaimSchema = z.object({
 
 export const resolveItemSchema = z.object({ claimId: objectIdSchema.nullish() });
 
+// ---- Transport ----
+
+export const busStopSchema = z.object({
+  name: z.string().trim().min(2, 'Name the stop').max(60),
+  morning: timeSchema,
+  evening: timeSchema,
+});
+
+export const busRouteSchema = z
+  .object({
+    name: z.string().trim().min(3, 'Name the route').max(80),
+    bus: z.string().trim().min(2, 'Say which bus').max(40),
+    capacity: z.number().int().min(10).max(100),
+    days: z.array(z.number().int().min(1).max(7)).min(1, 'Pick the days it runs').max(7),
+    stops: z.array(busStopSchema).min(2, 'Add at least two stops').max(20),
+    driverName: z.string().trim().max(60).nullish(),
+    driverPhone: z
+      .string()
+      .trim()
+      .regex(/^[0-9+\- ]{7,20}$/, 'Use a phone number like 0300-1234567')
+      .nullish(),
+    notes: z.string().trim().max(300).nullish(),
+  })
+  .refine((r) => new Set(r.stops.map((s) => s.name.toLowerCase())).size === r.stops.length, {
+    message: 'Each stop can appear once',
+    path: ['stops'],
+  })
+  .refine(
+    (r) =>
+      r.stops.every(
+        (s, i) => i === 0 || toMinutes(s.morning) > toMinutes(r.stops[i - 1]?.morning ?? '00:00'),
+      ),
+    {
+      message: 'Morning times must get later towards campus (list stops from the farthest)',
+      path: ['stops'],
+    },
+  )
+  .refine(
+    (r) =>
+      r.stops.every(
+        (s, i) => i === 0 || toMinutes(s.evening) < toMinutes(r.stops[i - 1]?.evening ?? '23:59'),
+      ),
+    {
+      message: 'Evening times must get earlier towards campus (the bus starts from campus)',
+      path: ['stops'],
+    },
+  );
+
+export const busNoticeSchema = z.object({
+  text: z.string().trim().min(3, 'Say what is happening').max(200).nullable(),
+});
+
+export const savedRouteSchema = z.object({
+  saved: z.boolean(),
+  stop: z.string().trim().max(60).nullish(),
+});
+
 // ---- Campus map ----
 
 export const openingHoursSchema = z
@@ -763,6 +820,9 @@ export type RegistrationWindowInput = z.infer<typeof registrationWindowSchema>;
 export type CampusEventInput = z.input<typeof campusEventSchema>;
 export type CampusPlaceInput = z.input<typeof campusPlaceSchema>;
 export type JobInput = z.input<typeof jobSchema>;
+export type BusRouteInput = z.input<typeof busRouteSchema>;
+export type BusNoticeInput = z.infer<typeof busNoticeSchema>;
+export type SavedRouteInput = z.input<typeof savedRouteSchema>;
 export type LostItemInput = z.input<typeof lostItemSchema>;
 export type LostClaimInput = z.infer<typeof lostClaimSchema>;
 export type ResolveItemInput = z.input<typeof resolveItemSchema>;

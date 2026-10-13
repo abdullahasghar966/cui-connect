@@ -3,7 +3,7 @@
  * found and transport. Offices publish events directly; a student's or teacher's event waits for
  * Student Affairs.
  */
-import { formatClock, toMinutes } from './academics';
+import { addDays, formatClock, toMinutes, weekdayOf } from './academics';
 
 export const EVENT_CATEGORIES = [
   'seminar',
@@ -90,6 +90,47 @@ export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
   bottles: 'Bottles and lunch boxes',
   other: 'Something else',
 };
+
+// ---- Transport ----
+
+/**
+ * A stop on a bus route, listed from the farthest stop to campus: the morning run picks people
+ * up in that order, and the evening run drops them off in reverse.
+ */
+export interface BusStop {
+  name: string;
+  /** Morning pick-up time at this stop. */
+  morning: string;
+  /** Evening drop-off time at this stop. */
+  evening: string;
+}
+
+export interface NextBus {
+  run: 'morning' | 'evening';
+  date: string;
+  time: string;
+}
+
+/** The next time a route's bus is at a stop, from `now` (campus time); null if it never runs. */
+export function nextBus(
+  route: { days: readonly number[]; stops: readonly BusStop[] },
+  stopName: string,
+  now: { date: string; minutes: number },
+): NextBus | null {
+  const stop = route.stops.find((s) => s.name === stopName);
+  if (!stop || !route.days.length) return null;
+  for (let ahead = 0; ahead < 8; ahead++) {
+    const date = addDays(now.date, ahead);
+    if (!route.days.includes(weekdayOf(date))) continue;
+    const runs: NextBus[] = [
+      { run: 'morning', date, time: stop.morning },
+      { run: 'evening', date, time: stop.evening },
+    ];
+    const next = runs.find((r) => ahead > 0 || toMinutes(r.time) > now.minutes);
+    if (next) return next;
+  }
+  return null;
+}
 
 // ---- Campus map: offices and facilities ----
 
