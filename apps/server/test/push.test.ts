@@ -155,4 +155,33 @@ describe('phone push notifications', () => {
     expect(off.status).toBe(200);
     expect(await PushSubscription.countDocuments({ userId: aliUser._id })).toBe(0);
   });
+
+  it('keeps "only in the app" kinds and, if asked, direct messages off the phone', async () => {
+    const hiraCookie = await app.login(ACCOUNTS.hira);
+    const hira = await userBy(ACCOUNTS.hira);
+    const saved = await app.api(hiraCookie, '/api/notifications/settings', {
+      method: 'PUT',
+      body: JSON.stringify({ levels: { results: 'app' }, directMessagePush: false }),
+    });
+    expect(saved.status).toBe(200);
+
+    await notify([hira._id], { type: 'results', title: 'Quiz 5 marks are out' });
+    const imran = await app.connect(ACCOUNTS.imran);
+    const opened = await imran.timeout(5000).emitWithAck('dm:open', { userId: String(hira._id) });
+    if (!opened.ok) throw new Error(opened.message);
+    await imran.timeout(5000).emitWithAck('message:send', {
+      groupId: opened.data.id,
+      body: 'Are you coming to the lab?',
+      clientId: clientId(),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(pushes.sent).toHaveLength(0);
+    // Still in the app.
+    const page = await (await app.api(hiraCookie, '/api/notifications')).json();
+    expect(page.notifications[0].title).toBe('Quiz 5 marks are out');
+
+    // Announcements from IT always reach the phone.
+    await notify([hira._id], { type: 'system', title: 'Campus closed tomorrow' });
+    await vi.waitFor(() => expect(pushes.sent).toHaveLength(1));
+  });
 });

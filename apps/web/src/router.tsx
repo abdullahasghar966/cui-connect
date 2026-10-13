@@ -27,6 +27,7 @@ const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 const MeLayout = lazy(() => import('@/pages/me/MeLayout'));
 const ProfilePage = lazy(() => import('@/pages/me/ProfilePage'));
 const IdCardPage = lazy(() => import('@/pages/me/IdCardPage'));
+const NotificationSettingsPage = lazy(() => import('@/pages/me/NotificationSettingsPage'));
 const VerifyPage = lazy(() => import('@/pages/VerifyPage'));
 const AcademicsLayout = lazy(() => import('@/pages/academics/AcademicsLayout'));
 const TimetablePage = lazy(() => import('@/pages/academics/TimetablePage'));
@@ -165,6 +166,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <ProfilePage /> },
           { path: 'id-card', element: <IdCardPage /> },
+          { path: 'notifications', element: <NotificationSettingsPage /> },
         ],
       },
       { path: '/attend/:sessionId', element: <CheckInPage /> },

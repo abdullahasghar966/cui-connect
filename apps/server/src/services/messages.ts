@@ -177,8 +177,14 @@ export async function sendMessage(user: UserDoc, input: SendMessageInput): Promi
   // The room gets the anonymous version; only the author's own copy names them.
   broadcastMessage(toMessageDTO(doc, user));
   recordMessageSent();
-  // A direct message to someone who isn't online goes to their phone (one notification per chat).
-  if (group.type === 'DIRECT' && peer && !isOnline(String(peer._id))) {
+  // A direct message to someone who isn't online goes to their phone (one notification per chat),
+  // unless they turned that off.
+  if (
+    group.type === 'DIRECT' &&
+    peer &&
+    !isOnline(String(peer._id)) &&
+    peer.notificationPrefs?.directMessagePush !== false
+  ) {
     void sendPush([peer._id], {
       title: user.name,
       body: snippetOf(doc.kind === 'poll' ? `Poll: ${doc.body}` : doc.body, 140),

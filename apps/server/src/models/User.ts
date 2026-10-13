@@ -1,4 +1,11 @@
-import { OFFICES, type Office, ROLES, type Role } from '@cui/shared';
+import {
+  NOTIFICATION_TYPES,
+  type NotificationPrefs,
+  OFFICES,
+  type Office,
+  ROLES,
+  type Role,
+} from '@cui/shared';
 import { model, Schema, type Types } from 'mongoose';
 
 export interface IdCard {
@@ -35,6 +42,8 @@ export interface UserDoc {
   photoId: Types.ObjectId | null;
   /** The current ID card; null until it is first opened (or seeded). */
   idCard: IdCard | null;
+  /** Kinds of notification turned off or kept off the phone (missing on older accounts). */
+  notificationPrefs?: NotificationPrefs;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +78,17 @@ const userSchema = new Schema<UserDoc>(
         { _id: false },
       ),
       default: null,
+    },
+    notificationPrefs: {
+      type: new Schema<NotificationPrefs>(
+        {
+          off: { type: [{ type: String, enum: NOTIFICATION_TYPES }], default: [] },
+          appOnly: { type: [{ type: String, enum: NOTIFICATION_TYPES }], default: [] },
+          directMessagePush: { type: Boolean, default: true },
+        },
+        { _id: false },
+      ),
+      default: () => ({}),
     },
   },
   { timestamps: true },

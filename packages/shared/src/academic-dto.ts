@@ -28,6 +28,7 @@ import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
 import type { EvaluationSummary } from './evaluation';
 import type { FeeInstalment, FeeItem, FeeStatus } from './fees';
+import type { NotificationLevel } from './notification-settings';
 import type {
   OfferSlot,
   RegistrationIssue,
@@ -626,6 +627,14 @@ export interface NotificationsPage {
   notifications: NotificationDTO[];
   unread: number;
   hasMore: boolean;
+}
+
+export interface NotificationSettingsDTO {
+  levels: Record<NotificationType, NotificationLevel>;
+  /** Push a direct message to your phone while you're not online. */
+  directMessagePush: boolean;
+  /** Kinds that can't be turned off. */
+  alwaysOn: NotificationType[];
 }
 
 // ---- Coursework: files, assignments, materials, live quizzes ----

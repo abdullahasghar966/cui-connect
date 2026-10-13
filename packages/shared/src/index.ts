@@ -11,6 +11,7 @@ export * from './evaluation';
 export * from './events';
 export * from './fees';
 export * from './idcard';
+export * from './notification-settings';
 export * from './policy';
 export * from './registration';
 export * from './requests';

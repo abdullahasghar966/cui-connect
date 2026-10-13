@@ -95,6 +95,8 @@ import type {
   MyFeesDTO,
   MyResultsDTO,
   NewRequestInput,
+  NotificationSettingsDTO,
+  NotificationSettingsInput,
   NotificationsPage,
   OfferStudentDTO,
   OfficeInput,
@@ -251,6 +253,9 @@ export const api = {
     request<NotificationsPage>(`/api/notifications${query({ before, limit: 30 })}`),
   markNotifications: (input: MarkNotificationsInput) =>
     send<{ unread: number }>('/api/notifications/read', 'POST', input),
+  notificationSettings: () => request<NotificationSettingsDTO>('/api/notifications/settings'),
+  saveNotificationSettings: (input: NotificationSettingsInput) =>
+    send<NotificationSettingsDTO>('/api/notifications/settings', 'PUT', input),
 
   academics: {
     terms: () => request<TermDTO[]>('/api/academics/terms'),

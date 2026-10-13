@@ -21,10 +21,11 @@ import {
   PLACE_KINDS,
   RSVP_STATUSES,
 } from './campus';
-import { OFFICES } from './constants';
+import { NOTIFICATION_TYPES, OFFICES } from './constants';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
 import { EVALUATION_QUESTIONS } from './evaluation';
 import { FEE_INSTALMENTS, feeTotal, LATE_FEE } from './fees';
+import { ALWAYS_ON_NOTIFICATIONS, NOTIFICATION_LEVELS } from './notification-settings';
 import { REGISTRATION_MODES } from './registration';
 import {
   COMPLAINT_CATEGORIES,
@@ -350,6 +351,17 @@ export const markNotificationsSchema = z.union([
   z.object({ all: z.literal(true) }),
   z.object({ ids: z.array(objectIdSchema).min(1).max(100) }),
 ]);
+
+export const notificationSettingsSchema = z.object({
+  levels: z
+    .partialRecord(z.enum(NOTIFICATION_TYPES), z.enum(NOTIFICATION_LEVELS))
+    .refine(
+      (levels) => ALWAYS_ON_NOTIFICATIONS.every((type) => (levels[type] ?? 'all') === 'all'),
+      "Announcements from IT can't be turned off.",
+    ),
+  directMessagePush: z.boolean(),
+});
+export type NotificationSettingsInput = z.infer<typeof notificationSettingsSchema>;
 
 // ---- Coursework ----
 
