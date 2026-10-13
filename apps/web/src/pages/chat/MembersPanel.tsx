@@ -119,7 +119,12 @@ export function MembersPanel({ group, onClose }: { group: GroupDTO; onClose: () 
         key={member.user.id}
         className="group/member flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-surface-2 has-[[data-state=open]]:bg-surface-2"
       >
-        <Avatar name={member.user.name} size="sm" online={self || online.has(member.user.id)} />
+        <Avatar
+          name={member.user.name}
+          photo={member.user.photoUrl}
+          size="sm"
+          online={self || online.has(member.user.id)}
+        />
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 text-[14px]">
             <span className="truncate font-semibold">

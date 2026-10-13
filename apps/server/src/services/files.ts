@@ -6,7 +6,8 @@
  * - a submission: the student, and whoever may see the class's records (instructor, HOD, Exam
  *   Office, IT);
  * - course material or an assignment's handout: everyone in the course;
- * - a lost & found photo (images only, no course): everyone signed in, once it is on a report.
+ * - a lost & found photo or a profile photo (images only, no course): everyone signed in, once
+ *   it is on a report or someone's profile.
  */
 import type { Readable } from 'node:stream';
 import {
@@ -29,6 +30,9 @@ import { loadOffering, manageDecision, type OfferingContext } from './offering-c
 import { offeringFacts } from './timetable';
 
 const PENDING_LIFETIME_MS = 24 * 60 * 60 * 1000;
+
+/** Images that belong to no course and that everyone signed in may see once attached. */
+const PHOTO_PURPOSES: readonly FilePurpose[] = ['lostfound', 'avatar'];
 
 function bucket() {
   const db = mongoose.connection.db;
@@ -77,9 +81,10 @@ export async function uploadFile(
   request: UploadRequest,
   body: Buffer,
 ): Promise<FileDTO> {
-  // Lost & found photos belong to no course; anyone signed in may add one.
+  // Photos (lost & found, profile) belong to no course; anyone signed in may add one.
+  const photo = PHOTO_PURPOSES.includes(request.purpose);
   let offeringId: Types.ObjectId | null = null;
-  if (request.purpose !== 'lostfound') {
+  if (!photo) {
     if (!request.offeringId) throw badRequest('Say which course the file is for.');
     const ctx = await loadOffering(request.offeringId);
     assertMayUpload(user, ctx, request.purpose);
@@ -99,7 +104,7 @@ export async function uploadFile(
       'This kind of file cannot be uploaded. Use PDF, Word, PowerPoint, Excel, text, code, images or ZIP.',
     );
   }
-  if (request.purpose === 'lostfound' && !type.inline) {
+  if (photo && !type.inline) {
     throw badRequest('Add a photo (JPG, PNG, GIF or WebP).');
   }
   if (!body.length) throw badRequest('The file is empty.');
@@ -226,8 +231,8 @@ export async function releaseFiles(
 async function mayDownload(user: UserDoc, file: StoredFileDoc): Promise<boolean> {
   if (sameId(file.ownerId, user._id)) return true;
   if (!file.attachedTo) return false;
-  // A photo on a lost & found report is for everyone looking for their things.
-  if (file.purpose === 'lostfound') return true;
+  // A lost & found photo, or someone's profile photo, is for everyone signed in.
+  if (PHOTO_PURPOSES.includes(file.purpose)) return true;
   if (!file.offeringId) return false;
   const ctx = await loadOffering(String(file.offeringId));
   const facts = offeringFacts(ctx.offering, ctx.section);

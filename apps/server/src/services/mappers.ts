@@ -86,13 +86,41 @@ export function toUserDTO(user: UserDoc, org: OrgLookup): UserDTO {
     sectionName: sectionId ? (org.sections.get(sectionId)?.name ?? null) : null,
     isHOD: !!user.isHOD,
     isCR: !!user.isCR,
+    photoUrl: photoUrlOf(user),
   };
 }
 
+/** Where someone's profile photo is served (files never change, so the URL changes with it). */
+export const photoUrlOf = (user: Pick<UserDoc, 'photoId'>) =>
+  user.photoId ? `/api/files/${user.photoId}` : null;
+
 export function toPublicUserDTO(user: UserDoc, org: OrgLookup): PublicUserDTO {
-  const { id, name, role, regNo, designation, office, departmentCode, sectionName, isHOD, isCR } =
-    toUserDTO(user, org);
-  return { id, name, role, regNo, designation, office, departmentCode, sectionName, isHOD, isCR };
+  const {
+    id,
+    name,
+    role,
+    regNo,
+    designation,
+    office,
+    departmentCode,
+    sectionName,
+    isHOD,
+    isCR,
+    photoUrl,
+  } = toUserDTO(user, org);
+  return {
+    id,
+    name,
+    role,
+    regNo,
+    designation,
+    office,
+    departmentCode,
+    sectionName,
+    isHOD,
+    isCR,
+    photoUrl,
+  };
 }
 
 export function toSenderDTO(user: UserDoc | undefined, fallbackId: Id): MessageSenderDTO {
@@ -105,6 +133,7 @@ export function toSenderDTO(user: UserDoc | undefined, fallbackId: Id): MessageS
       office: null,
       isHOD: false,
       isCR: false,
+      photoUrl: null,
     };
   }
   return {
@@ -115,6 +144,7 @@ export function toSenderDTO(user: UserDoc | undefined, fallbackId: Id): MessageS
     office: user.office ?? null,
     isHOD: !!user.isHOD,
     isCR: !!user.isCR,
+    photoUrl: photoUrlOf(user),
   };
 }
 
@@ -141,6 +171,7 @@ export const ANONYMOUS_SENDER: MessageSenderDTO = {
   office: null,
   isHOD: false,
   isCR: false,
+  photoUrl: null,
 };
 
 /**

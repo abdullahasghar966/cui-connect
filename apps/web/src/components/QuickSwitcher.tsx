@@ -82,7 +82,7 @@ export function QuickSwitcher() {
       section: 'Conversations',
       icon:
         g.type === 'DIRECT' && g.peer ? (
-          <Avatar name={g.peer.name} size="xs" />
+          <Avatar name={g.peer.name} photo={g.peer.photoUrl} size="xs" />
         ) : (
           <GroupIcon type={g.type} settings={g.settings} />
         ),

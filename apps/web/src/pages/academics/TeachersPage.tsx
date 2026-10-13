@@ -165,7 +165,7 @@ function TeacherCard({
       aria-label={teacher.user.name}
       className="flex flex-col gap-3 rounded-lg border bg-surface p-4 sm:flex-row sm:items-start"
     >
-      <Avatar name={teacher.user.name} size="lg" />
+      <Avatar name={teacher.user.name} photo={teacher.user.photoUrl} size="lg" />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="flex flex-wrap items-center gap-2">
           <span className="text-[15px] font-bold">{teacher.user.name}</span>

@@ -59,6 +59,7 @@ function SidebarItem({ group, active }: { group: GroupDTO; active: boolean }) {
         {group.type === 'DIRECT' && group.peer ? (
           <Avatar
             name={group.peer.name}
+            photo={group.peer.photoUrl}
             size="xs"
             online={online}
             ring={active ? 'active' : 'sidebar'}

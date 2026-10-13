@@ -22,6 +22,8 @@ export interface UserDoc {
   /** Faculty: where to find them, and when they take questions. */
   officeLocation: string | null;
   officeHours: { day: number; start: string; end: string }[];
+  /** Profile photo (a stored image), shown to everyone signed in. */
+  photoId: Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +46,7 @@ const userSchema = new Schema<UserDoc>(
     lastSeenAt: { type: Date, default: null },
     officeLocation: { type: String, default: null, trim: true },
     officeHours: { type: [{ _id: false, day: Number, start: String, end: String }], default: [] },
+    photoId: { type: Schema.Types.ObjectId, ref: 'StoredFile', default: null },
   },
   { timestamps: true },
 );

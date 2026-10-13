@@ -54,6 +54,7 @@ export function useSendMessage() {
           role: me.role,
           designation: me.designation,
           office: me.office,
+          photoUrl: me.photoUrl,
           isHOD: me.isHOD,
           isCR: me.isCR,
         },

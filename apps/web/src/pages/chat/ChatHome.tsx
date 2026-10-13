@@ -58,7 +58,7 @@ export function ChatHome() {
                     className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-2"
                   >
                     {group.type === 'DIRECT' && group.peer ? (
-                      <Avatar name={group.peer.name} />
+                      <Avatar name={group.peer.name} photo={group.peer.photoUrl} />
                     ) : (
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-surface-2 text-muted-foreground">
                         <GroupIcon type={group.type} settings={group.settings} />

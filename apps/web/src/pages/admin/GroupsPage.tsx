@@ -178,7 +178,7 @@ function AddMember({ groupId }: { groupId: string }) {
                 onClick={() => add.mutate(user.id)}
                 className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
               >
-                <Avatar name={user.name} size="xs" />
+                <Avatar name={user.name} photo={user.photoUrl} size="xs" />
                 <span className="truncate">{user.name}</span>
                 <RoleBadge person={user} showStudent />
                 <UserPlus className="ml-auto size-4 text-muted-foreground" aria-hidden />
@@ -262,7 +262,7 @@ function ManageGroup({ group }: { group: AdminGroupDTO }) {
           <ul className="mt-3 max-h-[28rem] divide-y overflow-y-auto">
             {members.data?.map((m) => (
               <li key={m.user.id} className="flex items-center gap-2.5 py-2">
-                <Avatar name={m.user.name} size="sm" />
+                <Avatar name={m.user.name} photo={m.user.photoUrl} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-sm">
                     <span className="truncate font-medium">{m.user.name}</span>

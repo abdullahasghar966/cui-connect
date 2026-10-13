@@ -282,7 +282,7 @@ export function Composer({ group }: { group: GroupDTO }) {
                 i === active && 'bg-primary text-primary-foreground',
               )}
             >
-              <Avatar name={m.user.name} size="xs" />
+              <Avatar name={m.user.name} photo={m.user.photoUrl} size="xs" />
               <span className="truncate font-semibold">{m.user.name}</span>
             </div>
           ))}

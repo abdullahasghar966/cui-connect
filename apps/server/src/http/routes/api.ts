@@ -25,6 +25,7 @@ import {
 import { toPolicyGroup, toPolicyMembership, toPolicyUser } from '../../services/mappers';
 import { listMessages, listPins } from '../../services/messages';
 import { addMember, removeMember, setMemberRole, updateGroup } from '../../services/moderation';
+import { setProfilePhoto } from '../../services/profile';
 import { searchEverything, searchMessages } from '../../services/search';
 
 export const apiRouter = Router();
@@ -33,6 +34,11 @@ const param = (req: Request, name: string) => parse(objectIdSchema, req.params[n
 
 apiRouter.get('/groups', async (req, res) => {
   res.json(await buildGroupDTOs(currentUser(req)._id));
+});
+
+/** Your own profile photo (upload it as `avatar` first). */
+apiRouter.put('/me/photo', async (req, res) => {
+  res.json(await setProfilePhoto(currentUser(req), req.body));
 });
 
 /** Open groups (societies) the viewer is eligible to join. */

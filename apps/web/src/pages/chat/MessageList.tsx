@@ -171,7 +171,7 @@ function MessageRow({ message, group, me, grouped, seen, highlight }: RowProps) 
             <VenetianMask className="size-5" />
           </span>
         ) : (
-          <Avatar name={message.sender.name} className="mt-0.5" />
+          <Avatar name={message.sender.name} photo={message.sender.photoUrl} className="mt-0.5" />
         )}
       </div>
       <div className="min-w-0 flex-1">
@@ -313,7 +313,7 @@ function ConversationIntro({ group }: { group: GroupDTO }) {
   if (group.type === 'DIRECT' && group.peer) {
     return (
       <div className="px-5 pt-8 pb-4">
-        <Avatar name={group.peer.name} size="xl" />
+        <Avatar name={group.peer.name} photo={group.peer.photoUrl} size="xl" />
         <h2 className="mt-3 text-[22px] font-bold">{group.peer.name}</h2>
         <p className="mt-0.5 text-[14px] text-muted-foreground">
           {[roleLabel(group.peer), group.peer.designation ?? group.peer.regNo]

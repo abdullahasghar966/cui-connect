@@ -38,6 +38,9 @@ export const firstAdminSchema = z.object({
   setupCode: z.string().max(200).optional(),
 });
 
+/** A photo uploaded as `avatar` becomes the profile photo; null removes it. */
+export const profilePhotoSchema = z.object({ photoId: objectIdSchema.nullable() });
+
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Enter your current password').max(200),
   newPassword: passwordSchema,
@@ -275,6 +278,7 @@ export const openDmSchema = z.object({ userId: objectIdSchema });
 export type LoginInput = z.infer<typeof loginSchema>;
 export type FirstAdminInput = z.infer<typeof firstAdminSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ProfilePhotoInput = z.infer<typeof profilePhotoSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CsvImportInput = z.infer<typeof csvImportSchema>;

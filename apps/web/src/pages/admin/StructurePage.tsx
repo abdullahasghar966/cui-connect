@@ -364,7 +364,7 @@ function EnrollmentDialog({ course, onClose }: { course: CourseDTO | null; onClo
               const already = enrolledIds.has(student.id);
               return (
                 <li key={student.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
-                  <Avatar name={student.name} size="xs" />
+                  <Avatar name={student.name} photo={student.photoUrl} size="xs" />
                   <span className="min-w-0 flex-1 truncate text-sm">
                     {student.name}{' '}
                     <span className="text-muted-foreground">
@@ -403,7 +403,7 @@ function EnrollmentDialog({ course, onClose }: { course: CourseDTO | null; onClo
           <ul className="divide-y rounded-xl border">
             {enrolled.data.map((student) => (
               <li key={student.id} className="flex items-center gap-2.5 px-3 py-2">
-                <Avatar name={student.name} size="sm" />
+                <Avatar name={student.name} photo={student.photoUrl} size="sm" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">{student.name}</span>
                   <span className="block truncate text-xs text-muted-foreground">

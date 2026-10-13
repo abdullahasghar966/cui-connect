@@ -9,6 +9,7 @@ import {
   Moon,
   Sun,
   Trees,
+  UserRound,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -76,7 +77,7 @@ export function UserMenu({ variant }: { variant: 'rail' | 'tab' }) {
             aria-label="Account menu"
             className="rounded-lg p-0.5 outline-offset-2 transition-opacity hover:opacity-85"
           >
-            <Avatar name={me.name} online={connected} ring="rail" />
+            <Avatar name={me.name} photo={me.photoUrl} online={connected} ring="rail" />
           </button>
         ) : (
           <button
@@ -84,14 +85,14 @@ export function UserMenu({ variant }: { variant: 'rail' | 'tab' }) {
             aria-label="Account menu"
             className="flex flex-1 flex-col items-center gap-0.5 py-1.5 text-[11px] font-semibold text-muted-foreground"
           >
-            <Avatar name={me.name} size="xs" online={connected} />
+            <Avatar name={me.name} photo={me.photoUrl} size="xs" online={connected} />
             You
           </button>
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent side={variant === 'rail' ? 'right' : 'top'} align="end" className="w-64">
         <div className="flex items-center gap-2.5 px-3.5 pt-1.5 pb-2.5">
-          <Avatar name={me.name} size="lg" />
+          <Avatar name={me.name} photo={me.photoUrl} size="lg" />
           <div className="min-w-0">
             <p className="truncate text-[14.5px] font-bold">{me.name}</p>
             <p className="truncate text-[12.5px] text-muted-foreground">{describeUser(me)}</p>
@@ -113,6 +114,9 @@ export function UserMenu({ variant }: { variant: 'rail' | 'tab' }) {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => navigate('/me')}>
+          <UserRound /> Your profile
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => navigate('/campus')}>
           <Trees /> Campus: events and campus life
         </DropdownMenuItem>

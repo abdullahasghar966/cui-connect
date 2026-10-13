@@ -92,6 +92,7 @@ function MembersButton({
             <Avatar
               key={m.user.id}
               name={m.user.name}
+              photo={m.user.photoUrl}
               size="xs"
               className="rounded-[5px] ring-2 ring-surface"
             />
@@ -192,7 +193,12 @@ function ChatHeader({
       <div className="min-w-0 flex-1">
         <h1 className="flex min-w-0 items-center gap-1.5 text-[16.5px] leading-tight font-bold">
           {isDirect && group.peer ? (
-            <Avatar name={group.peer.name} size="xs" online={peerOnline} />
+            <Avatar
+              name={group.peer.name}
+              photo={group.peer.photoUrl}
+              size="xs"
+              online={peerOnline}
+            />
           ) : (
             <GroupIcon
               type={group.type}

@@ -685,7 +685,7 @@ export default function UsersPage() {
                 <tr key={user.id} className={user.active ? undefined : 'opacity-60'}>
                   <td>
                     <span className="flex items-center gap-2.5">
-                      <Avatar name={user.name} size="sm" />
+                      <Avatar name={user.name} photo={user.photoUrl} size="sm" />
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{user.name}</span>
                         <span className="block truncate text-xs text-muted-foreground">

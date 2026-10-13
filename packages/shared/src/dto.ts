@@ -17,6 +17,8 @@ export interface UserDTO {
   sectionName: string | null;
   isHOD: boolean;
   isCR: boolean;
+  /** Profile photo (null: initials are shown). */
+  photoUrl: string | null;
 }
 
 export type PublicUserDTO = Pick<
@@ -31,6 +33,7 @@ export type PublicUserDTO = Pick<
   | 'sectionName'
   | 'isHOD'
   | 'isCR'
+  | 'photoUrl'
 >;
 
 export interface MessageSenderDTO {
@@ -41,6 +44,7 @@ export interface MessageSenderDTO {
   office: Office | null;
   isHOD: boolean;
   isCR: boolean;
+  photoUrl: string | null;
 }
 
 export interface PollDTO {

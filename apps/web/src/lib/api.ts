@@ -216,6 +216,7 @@ export const api = {
   login: (input: LoginInput) => send<{ user: UserDTO }>('/api/auth/login', 'POST', input),
   logout: () => send<{ ok: true }>('/api/auth/logout', 'POST'),
   me: () => request<{ user: UserDTO }>('/api/auth/me'),
+  setProfilePhoto: (photoId: string | null) => send<UserDTO>('/api/me/photo', 'PUT', { photoId }),
   demoAccounts: () =>
     request<{ password: string; accounts: DemoAccount[] }>('/api/auth/demo-accounts'),
   setupStatus: () => request<{ needed: boolean; codeRequired: boolean }>('/api/auth/setup'),

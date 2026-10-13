@@ -112,7 +112,7 @@ export function NewMessageDialog({
                 disabled={opening !== null}
                 className="flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left hover:bg-surface-2 disabled:opacity-60"
               >
-                <Avatar name={person.name} online={online.has(person.id)} />
+                <Avatar name={person.name} photo={person.photoUrl} online={online.has(person.id)} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="truncate text-[14.5px] font-semibold">{person.name}</span>

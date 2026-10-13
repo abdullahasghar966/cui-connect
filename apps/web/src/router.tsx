@@ -24,6 +24,8 @@ const AuditPage = lazy(() => import('@/pages/admin/AuditPage'));
 const AcademicSetupPage = lazy(() => import('@/pages/admin/AcademicSetupPage'));
 const HomePage = lazy(() => import('@/pages/home/HomePage'));
 const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
+const MeLayout = lazy(() => import('@/pages/me/MeLayout'));
+const ProfilePage = lazy(() => import('@/pages/me/ProfilePage'));
 const AcademicsLayout = lazy(() => import('@/pages/academics/AcademicsLayout'));
 const TimetablePage = lazy(() => import('@/pages/academics/TimetablePage'));
 const TimetableEditorPage = lazy(() => import('@/pages/academics/TimetableEditorPage'));
@@ -146,6 +148,11 @@ export const router = createBrowserRouter([
       { path: '/', element: <Navigate to="/home" replace /> },
       { path: '/home', element: <HomePage /> },
       { path: '/notifications', element: <NotificationsPage /> },
+      {
+        path: '/me',
+        element: <MeLayout />,
+        children: [{ index: true, element: <ProfilePage /> }],
+      },
       { path: '/attend/:sessionId', element: <CheckInPage /> },
       { path: '/search', element: <SearchPage /> },
       {
