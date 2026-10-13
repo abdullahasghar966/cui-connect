@@ -5,7 +5,8 @@
  * - a file not attached yet: only the person who uploaded it;
  * - a submission: the student, and whoever may see the class's records (instructor, HOD, Exam
  *   Office, IT);
- * - course material or an assignment's handout: everyone in the course.
+ * - course material or an assignment's handout: everyone in the course;
+ * - a lost & found photo (images only, no course): everyone signed in, once it is on a report.
  */
 import type { Readable } from 'node:stream';
 import {
@@ -67,7 +68,8 @@ export interface UploadRequest {
   /** As sent by the browser (URI-encoded). */
   name: string;
   purpose: FilePurpose;
-  offeringId: string;
+  /** Required for course files; none for lost & found photos. */
+  offeringId?: string | null;
 }
 
 export async function uploadFile(
@@ -75,8 +77,14 @@ export async function uploadFile(
   request: UploadRequest,
   body: Buffer,
 ): Promise<FileDTO> {
-  const ctx = await loadOffering(request.offeringId);
-  assertMayUpload(user, ctx, request.purpose);
+  // Lost & found photos belong to no course; anyone signed in may add one.
+  let offeringId: Types.ObjectId | null = null;
+  if (request.purpose !== 'lostfound') {
+    if (!request.offeringId) throw badRequest('Say which course the file is for.');
+    const ctx = await loadOffering(request.offeringId);
+    assertMayUpload(user, ctx, request.purpose);
+    offeringId = ctx.offering._id;
+  }
 
   let decoded: string;
   try {
@@ -90,6 +98,9 @@ export async function uploadFile(
     throw badRequest(
       'This kind of file cannot be uploaded. Use PDF, Word, PowerPoint, Excel, text, code, images or ZIP.',
     );
+  }
+  if (request.purpose === 'lostfound' && !type.inline) {
+    throw badRequest('Add a photo (JPG, PNG, GIF or WebP).');
   }
   if (!body.length) throw badRequest('The file is empty.');
   if (body.length > MAX_FILE_BYTES) {
@@ -110,7 +121,7 @@ export async function uploadFile(
     body,
     ownerId: user._id,
     purpose: request.purpose,
-    offeringId: ctx.offering._id,
+    offeringId,
     attachedTo: null,
   });
   return toFileDTO(file);
@@ -122,7 +133,7 @@ export async function storeFile(input: {
   body: Buffer;
   ownerId: Types.ObjectId;
   purpose: FilePurpose;
-  offeringId: Types.ObjectId;
+  offeringId: Types.ObjectId | null;
   attachedTo: Types.ObjectId | null;
   createdAt?: Date;
 }): Promise<StoredFileDoc> {
@@ -162,7 +173,7 @@ export async function clearStoredFiles(): Promise<void> {
 export async function claimFiles(
   user: UserDoc,
   ids: readonly string[],
-  target: { purpose: FilePurpose; offeringId: Types.ObjectId; attachTo: Types.ObjectId },
+  target: { purpose: FilePurpose; offeringId: Types.ObjectId | null; attachTo: Types.ObjectId },
 ): Promise<StoredFileDoc[]> {
   const unique = [...new Set(ids)].map((id) => toObjectId(id));
   const files = await filesByIds(unique);
@@ -170,7 +181,7 @@ export async function claimFiles(
     (f) =>
       sameId(f.ownerId, user._id) &&
       f.purpose === target.purpose &&
-      sameId(f.offeringId, target.offeringId) &&
+      (target.offeringId ? sameId(f.offeringId, target.offeringId) : !f.offeringId) &&
       (!f.attachedTo || sameId(f.attachedTo, target.attachTo)),
   );
   if (usable.length !== unique.length) {
@@ -215,6 +226,9 @@ export async function releaseFiles(
 async function mayDownload(user: UserDoc, file: StoredFileDoc): Promise<boolean> {
   if (sameId(file.ownerId, user._id)) return true;
   if (!file.attachedTo) return false;
+  // A photo on a lost & found report is for everyone looking for their things.
+  if (file.purpose === 'lostfound') return true;
+  if (!file.offeringId) return false;
   const ctx = await loadOffering(String(file.offeringId));
   const facts = offeringFacts(ctx.offering, ctx.section);
   const policyUser = toPolicyUser(user);

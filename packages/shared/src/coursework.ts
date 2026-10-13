@@ -13,7 +13,8 @@ export const FILE_QUOTA_BYTES = 50 * 1024 * 1024;
 export const MAX_FILES_PER_ITEM = 5;
 
 /** Why a file was uploaded; it decides who may download it. */
-export const FILE_PURPOSES = ['submission', 'material', 'assignment'] as const;
+/** `lostfound`: a photo on a lost & found report (images only, no course). */
+export const FILE_PURPOSES = ['submission', 'material', 'assignment', 'lostfound'] as const;
 export type FilePurpose = (typeof FILE_PURPOSES)[number];
 
 /**

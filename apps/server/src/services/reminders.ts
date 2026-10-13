@@ -42,6 +42,7 @@ import {
   User,
 } from '../models';
 import { bookingPeople } from './bookings';
+import { jobDeadlineReminders } from './jobs';
 import { notify } from './notifications';
 
 const EVENING = 18 * 60;
@@ -249,6 +250,7 @@ export async function runReminders(now = new Date()): Promise<number> {
     sent += await calendarDay(clock.date, ['deadline', 'registration'], 'Today');
     sent += await appointmentsToday(clock.date);
     sent += await feeReminders(clock.date);
+    sent += await jobDeadlineReminders(clock.date);
   }
   sent += await assignmentsDueSoon(now);
   return sent;

@@ -45,6 +45,52 @@ export type RsvpStatus = (typeof RSVP_STATUSES)[number];
 export const seatsLeft = (event: { capacity: number | null; going: number }) =>
   event.capacity === null ? null : Math.max(0, event.capacity - event.going);
 
+// ---- Jobs and internships ----
+
+export const JOB_KINDS = ['internship', 'part-time', 'graduate', 'research'] as const;
+export type JobKind = (typeof JOB_KINDS)[number];
+
+export const JOB_KIND_LABELS: Record<JobKind, string> = {
+  internship: 'Internship',
+  'part-time': 'Part-time',
+  graduate: 'Graduate job',
+  research: 'Research assistant',
+};
+
+/** People who saved a job hear about its deadline this many days before. */
+export const JOB_DEADLINE_REMINDER_DAYS = 2;
+
+/** Only web links may be followed from a job post (no `javascript:` and the like). */
+export const isWebLink = (url: string) => /^https?:\/\//i.test(url);
+
+// ---- Lost & found ----
+
+export const LOST_FOUND_KINDS = ['lost', 'found'] as const;
+export type LostFoundKind = (typeof LOST_FOUND_KINDS)[number];
+
+export const ITEM_CATEGORIES = [
+  'electronics',
+  'cards',
+  'bags',
+  'books',
+  'keys',
+  'clothing',
+  'bottles',
+  'other',
+] as const;
+export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
+
+export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
+  electronics: 'Phones, laptops and chargers',
+  cards: 'ID cards and wallets',
+  bags: 'Bags',
+  books: 'Books and notes',
+  keys: 'Keys',
+  clothing: 'Clothing',
+  bottles: 'Bottles and lunch boxes',
+  other: 'Something else',
+};
+
 // ---- Campus map: offices and facilities ----
 
 export const PLACE_KINDS = ['office', 'facility'] as const;

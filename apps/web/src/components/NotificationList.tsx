@@ -14,6 +14,7 @@ import {
   Megaphone,
   PartyPopper,
   Star,
+  Trees,
   UserCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -32,6 +33,7 @@ export const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   requests: FileText,
   registration: ListChecks,
   evaluation: Star,
+  campus: Trees,
   fees: Banknote,
   events: PartyPopper,
   bookings: CalendarCheck,

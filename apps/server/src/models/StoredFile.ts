@@ -13,7 +13,8 @@ export interface StoredFileDoc {
   type: string;
   ownerId: Types.ObjectId;
   purpose: FilePurpose;
-  offeringId: Types.ObjectId;
+  /** The course it belongs to (null for lost & found photos). */
+  offeringId: Types.ObjectId | null;
   /** The assignment, submission or material it belongs to; null until then (only the owner sees it). */
   attachedTo: Types.ObjectId | null;
   createdAt: Date;
@@ -26,7 +27,7 @@ const storedFileSchema = new Schema<StoredFileDoc>(
     type: { type: String, required: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     purpose: { type: String, enum: FILE_PURPOSES, required: true },
-    offeringId: { type: Schema.Types.ObjectId, ref: 'CourseOffering', required: true },
+    offeringId: { type: Schema.Types.ObjectId, ref: 'CourseOffering', default: null },
     attachedTo: { type: Schema.Types.ObjectId, default: null },
   },
   { timestamps: { createdAt: true, updatedAt: false } },

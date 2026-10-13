@@ -37,6 +37,7 @@ import {
   seedTimetable,
 } from './academic';
 import { seedBookings } from './bookings';
+import { seedCampusLife } from './campuslife';
 import { seedCoursework } from './coursework';
 import {
   COURSES,
@@ -197,6 +198,7 @@ export async function seedDatabase(): Promise<SeedSummary> {
   await seedEvaluation();
   await seedEvents();
   await seedPlaces();
+  await seedCampusLife();
 
   // Everyone joins the official groups their role, department, section and courses imply.
   for (const user of people.values()) await reconcileUser(user._id, { notify: false });

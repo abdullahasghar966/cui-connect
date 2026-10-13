@@ -12,7 +12,16 @@ import type {
   RoomKind,
 } from './academics';
 import type { BookingStatus } from './bookings';
-import type { EventCategory, EventStatus, OpeningHours, PlaceKind, RsvpStatus } from './campus';
+import type {
+  EventCategory,
+  EventStatus,
+  ItemCategory,
+  JobKind,
+  LostFoundKind,
+  OpeningHours,
+  PlaceKind,
+  RsvpStatus,
+} from './campus';
 import type { NotificationType, Office } from './constants';
 import type { QuizStatus } from './coursework';
 import type { PublicUserDTO } from './dto';
@@ -1005,6 +1014,78 @@ export interface EventRsvpEvent {
   eventId: string;
   going: number;
   interested: number;
+}
+
+// ---- Jobs and internships ----
+
+export interface JobDTO {
+  id: string;
+  title: string;
+  company: string;
+  kind: JobKind;
+  location: string;
+  description: string;
+  applyUrl: string | null;
+  applyEmail: string | null;
+  deadline: string;
+  /** Programmes it is meant for (empty: everyone). */
+  programs: string[];
+  postedBy: { id: string; name: string };
+  postedAt: string;
+  /** Past its deadline, or closed early. */
+  closed: boolean;
+  saved: boolean;
+}
+
+export interface JobsHomeDTO {
+  open: JobDTO[];
+  saved: JobDTO[];
+  /** Student Affairs and IT: closed and expired posts. */
+  closed: JobDTO[];
+  canManage: boolean;
+}
+
+// ---- Lost & found ----
+
+export interface LostClaimDTO {
+  id: string;
+  user: { id: string; name: string; detail: string | null };
+  message: string;
+  createdAt: string;
+  accepted: boolean;
+}
+
+export interface LostItemDTO {
+  id: string;
+  kind: LostFoundKind;
+  title: string;
+  category: ItemCategory;
+  description: string | null;
+  place: string;
+  date: string;
+  photo: FileDTO | null;
+  reporter: { id: string; name: string };
+  resolved: boolean;
+  resolvedAt: string | null;
+  createdAt: string;
+  /** Reported by the viewer. */
+  mine: boolean;
+  /** The reporter or Student Affairs (IT) may close it. */
+  canResolve: boolean;
+  /** Everyone's claims, for those who may resolve it; otherwise null. */
+  claims: LostClaimDTO[] | null;
+  /** The viewer's own claim, if any. */
+  myClaim: LostClaimDTO | null;
+  claimCount: number;
+}
+
+export interface LostFoundHomeDTO {
+  /** Open reports, newest first. */
+  items: LostItemDTO[];
+  /** The viewer's own reports (open and resolved). */
+  mine: LostItemDTO[];
+  /** Recently returned items. */
+  resolved: LostItemDTO[];
 }
 
 // ---- Campus map ----

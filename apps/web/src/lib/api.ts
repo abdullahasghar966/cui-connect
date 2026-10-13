@@ -68,7 +68,13 @@ import type {
   GroupType,
   IssueChallansInput,
   IssueChallansResultDTO,
+  JobDTO,
+  JobInput,
+  JobsHomeDTO,
   LoginInput,
+  LostFoundHomeDTO,
+  LostItemDTO,
+  LostItemInput,
   MarkNotificationsInput,
   MarkPaidInput,
   MarksInput,
@@ -182,8 +188,11 @@ const query = (params: Record<string, string | number | undefined>) => {
   return text ? `?${text}` : '';
 };
 
-/** Sends a file's raw bytes; the server checks its type, size and who may upload it. */
-const uploadFile = (file: File, purpose: FilePurpose, offeringId: string) =>
+/**
+ * Sends a file's raw bytes; the server checks its type, size and who may upload it. Course files
+ * name their course; lost & found photos don't.
+ */
+const uploadFile = (file: File, purpose: FilePurpose, offeringId?: string) =>
   request<FileDTO>(`/api/files${query({ purpose, offeringId })}`, {
     method: 'POST',
     body: file,
@@ -427,6 +436,23 @@ export const api = {
         ? send<CampusPlaceDTO>(`/api/campus/places/${id}`, 'PUT', input)
         : send<CampusPlaceDTO>('/api/campus/places', 'POST', input),
     deletePlace: (id: string) => send<{ ok: true }>(`/api/campus/places/${id}`, 'DELETE'),
+    jobs: () => request<JobsHomeDTO>('/api/campus/jobs'),
+    saveJob: (input: JobInput, id?: string) =>
+      id
+        ? send<JobDTO>(`/api/campus/jobs/${id}`, 'PUT', input)
+        : send<JobDTO>('/api/campus/jobs', 'POST', input),
+    closeJob: (id: string) => send<JobDTO>(`/api/campus/jobs/${id}/close`, 'POST'),
+    setJobSaved: (id: string, saved: boolean) =>
+      send<JobDTO>(`/api/campus/jobs/${id}/saved`, 'PUT', { saved }),
+    lostFound: () => request<LostFoundHomeDTO>('/api/campus/lost-found'),
+    lostItem: (id: string) => request<LostItemDTO>(`/api/campus/lost-found/${id}`),
+    reportItem: (input: LostItemInput) =>
+      send<LostItemDTO>('/api/campus/lost-found', 'POST', input),
+    claimItem: (id: string, message: string) =>
+      send<LostItemDTO>(`/api/campus/lost-found/${id}/claims`, 'POST', { message }),
+    resolveItem: (id: string, claimId: string | null) =>
+      send<LostItemDTO>(`/api/campus/lost-found/${id}/resolve`, 'POST', { claimId }),
+    deleteItem: (id: string) => send<{ ok: true }>(`/api/campus/lost-found/${id}`, 'DELETE'),
   },
 
   evaluation: {

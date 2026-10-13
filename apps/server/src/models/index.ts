@@ -17,6 +17,8 @@ import { EvaluationReceipt, EvaluationSheet } from './Evaluation';
 import { Exam } from './Exam';
 import { FeeChallan } from './FeeChallan';
 import { Group } from './Group';
+import { JobPost, SavedJob } from './JobPost';
+import { LostClaim, LostItem } from './LostItem';
 import { Mark } from './Mark';
 import { Material } from './Material';
 import { Membership } from './Membership';
@@ -58,6 +60,8 @@ export * from './Evaluation';
 export * from './Exam';
 export * from './FeeChallan';
 export * from './Group';
+export * from './JobPost';
+export * from './LostItem';
 export * from './Mark';
 export * from './Material';
 export * from './Membership';
@@ -123,6 +127,10 @@ export const ALL_MODELS = [
   CampusEvent,
   EventRsvp,
   CampusPlace,
+  JobPost,
+  SavedJob,
+  LostItem,
+  LostClaim,
 ] as const;
 
 /** Campus data, wiped by a reseed or a fresh setup (server keys stay). */

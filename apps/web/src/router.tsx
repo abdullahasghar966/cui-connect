@@ -60,6 +60,9 @@ const CampusIndex = lazy(() =>
 const EventsPage = lazy(() => import('@/pages/campus/EventsPage'));
 const EventPage = lazy(() => import('@/pages/campus/EventPage'));
 const MapPage = lazy(() => import('@/pages/campus/MapPage'));
+const JobsPage = lazy(() => import('@/pages/campus/JobsPage'));
+const LostFoundPage = lazy(() => import('@/pages/campus/LostFoundPage'));
+const LostItemPage = lazy(() => import('@/pages/campus/LostItemPage'));
 const ServicesLayout = lazy(() => import('@/pages/services/ServicesLayout'));
 const ServicesIndex = lazy(() =>
   import('@/pages/services/ServicesLayout').then((m) => ({ default: m.ServicesIndex })),
@@ -152,6 +155,9 @@ export const router = createBrowserRouter([
           { path: 'events', element: <EventsPage /> },
           { path: 'events/:eventId', element: <EventPage /> },
           { path: 'map', element: <MapPage /> },
+          { path: 'jobs', element: <JobsPage /> },
+          { path: 'lost-found', element: <LostFoundPage /> },
+          { path: 'lost-found/:itemId', element: <LostItemPage /> },
         ],
       },
       {

@@ -14,7 +14,8 @@ export const filesRouter = Router();
 
 const uploadQuerySchema = z.object({
   purpose: z.enum(FILE_PURPOSES),
-  offeringId: objectIdSchema,
+  /** Every purpose but lost & found photos belongs to a course. */
+  offeringId: objectIdSchema.optional(),
 });
 
 filesRouter.post(

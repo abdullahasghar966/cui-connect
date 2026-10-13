@@ -12,7 +12,15 @@ import {
   TIME_PATTERN,
   toMinutes,
 } from './academics';
-import { EVENT_CATEGORIES, PLACE_KINDS, RSVP_STATUSES } from './campus';
+import {
+  EVENT_CATEGORIES,
+  ITEM_CATEGORIES,
+  isWebLink,
+  JOB_KINDS,
+  LOST_FOUND_KINDS,
+  PLACE_KINDS,
+  RSVP_STATUSES,
+} from './campus';
 import { OFFICES } from './constants';
 import { MAX_FILES_PER_ITEM, QUIZ_LIMITS } from './coursework';
 import { EVALUATION_QUESTIONS } from './evaluation';
@@ -577,6 +585,50 @@ export const eventDecisionSchema = z.object({
 
 export const eventCancelSchema = z.object({ note: z.string().trim().max(500).nullish() });
 
+// ---- Jobs and lost & found ----
+
+export const jobSchema = z
+  .object({
+    title: z.string().trim().min(3, 'Name the role').max(100),
+    company: z.string().trim().min(2, 'Name the company').max(80),
+    kind: z.enum(JOB_KINDS),
+    location: z.string().trim().min(2, 'Say where it is').max(80),
+    description: z.string().trim().min(10, 'Describe the role').max(3000),
+    applyUrl: z
+      .string()
+      .trim()
+      .max(500)
+      .refine(isWebLink, 'Use a web link starting with https://')
+      .nullish(),
+    applyEmail: z.string().trim().max(120).email('Use a valid email').nullish(),
+    deadline: dateSchema,
+    programs: z.array(z.string().trim().toUpperCase().min(2).max(10)).max(10).default([]),
+  })
+  .refine((j) => !!j.applyUrl || !!j.applyEmail, {
+    message: 'Give a link or an email to apply',
+    path: ['applyUrl'],
+  });
+
+export const lostItemSchema = z.object({
+  kind: z.enum(LOST_FOUND_KINDS),
+  title: z.string().trim().min(3, 'Say what it is').max(80),
+  category: z.enum(ITEM_CATEGORIES),
+  description: z.string().trim().max(1000).nullish(),
+  place: z.string().trim().min(2, 'Say where').max(120),
+  date: dateSchema,
+  photoId: objectIdSchema.nullish(),
+});
+
+export const lostClaimSchema = z.object({
+  message: z
+    .string()
+    .trim()
+    .min(5, 'Say how it is yours (a detail only the owner would know)')
+    .max(500),
+});
+
+export const resolveItemSchema = z.object({ claimId: objectIdSchema.nullish() });
+
 // ---- Campus map ----
 
 export const openingHoursSchema = z
@@ -710,6 +762,10 @@ export type RegistrationApproveInput = z.input<typeof registrationApproveSchema>
 export type RegistrationWindowInput = z.infer<typeof registrationWindowSchema>;
 export type CampusEventInput = z.input<typeof campusEventSchema>;
 export type CampusPlaceInput = z.input<typeof campusPlaceSchema>;
+export type JobInput = z.input<typeof jobSchema>;
+export type LostItemInput = z.input<typeof lostItemSchema>;
+export type LostClaimInput = z.infer<typeof lostClaimSchema>;
+export type ResolveItemInput = z.input<typeof resolveItemSchema>;
 export type RsvpInput = z.infer<typeof rsvpSchema>;
 export type EventDecisionInput = z.input<typeof eventDecisionSchema>;
 export type EventCancelInput = z.input<typeof eventCancelSchema>;
